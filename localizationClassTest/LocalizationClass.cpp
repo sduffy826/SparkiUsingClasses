@@ -122,6 +122,38 @@ float LocalizationClass::getShortestAngleDeltaToGetToOrientation(float targetOri
     return (targetOrientation - getCurrentAngle());
   }
 }
+
+// Calculate the distance between two poses
+float LocalizationClass::distanceBetweenPoses(Pose &firstPose, Pose &secondPose) {
+  return sqrt(sq(secondPose.xPos - firstPose.xPos) + sq(secondPose.yPos - firstPose.yPos));
+}
+
+// Return a pose that's based on an existing on, and an angle of movement and distance
+Pose LocalizationClass::calculatePose(Pose thePos, int angleOfMovement, int distanceMoved) {
+  // Will return a pose give an existing pose that's moved an angle and movement; note we don't use the angle in the pose
+  // since the movement could be a different angle, yet the pose of that object remains the same.
+  Pose rtnPos;
+  rtnPos.xPos = thePos.xPos + (distanceMoved * cos(degreesToRadians(angleOfMovement)));
+  rtnPos.yPos = thePos.yPos + (distanceMoved * sin(degreesToRadians(angleOfMovement)));
+  rtnPos.angle = thePos.angle;
+}
+
+// Triangulate a third pos STOPPED HERE... WONDER IF POSES HAVE THE ANGLE THEY ARE POINTING TO, AND ANGLE OF MOVEMENT IS NEEDED?? CAN BE DERIVED BY POINTS I THINK
+Pose LocalizationClass::triangulatePoses(Pose firstPose, Pose secondPose, int angleOfMovement) {
+
+  // Calculate the new position after movement
+
+  /* Pose movedPose = calculatePose(firstPose, 
+struct Pose {
+  float xPos;
+  float yPos;
+  float angle;
+};
+*/
+    
+}
+
+
  
 // For debugging we may want to show values on lcd screen
 void LocalizationClass::showLocation() {

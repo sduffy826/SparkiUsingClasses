@@ -35,5 +35,8 @@ class LocalizationClass {
           void setNewPosition(float distance, float angleDelta);
           float getShortestAngleDeltaToGetToOrientation(float targetOrientation);
           void showLocation();
+          float distanceBetweenPoses(Pose &firstPose, Pose &secondPose);
+          Pose calculatePose(Pose thePos, int angleOfMovement, int distanceMoved);
+          Pose triangulatePoses(Pose firstPose, Pose secondPose, int angleOfMovement);
 };
 #endif
