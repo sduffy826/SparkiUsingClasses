@@ -5,30 +5,40 @@ DetermineWorldClass::DetermineWorldClass() { }  // Default constructor, shouldn'
 DetermineWorldClass::DetermineWorldClass(UltrasonicClass &ultrasonicObj, LocalizationClass &localizationObj) {
     ultrasonicObject = ultrasonicObj;
     localizationObject = localizationObj;
-    worldXDimension = 0.0;
-    worldYDimension = 0.0;
+
+    worldCoord.xMax = 0.0;
+    worldCoord.xMin = 0.0;
+    worldCoord.yMax = 0.0;
+    worldCoord.yMin = 0.0;
 }
 
-void  DetermineWorldClass::adjustWorldCoordinate(float newX, float newY) {
-  worldXDimension = newX;
-  worldYDimension = newY;
+WorldCoord DetermineWorldClass::getWorldCoordinates() {
+  return worldCoord;
 }
 
-float DetermineWorldClass::getWorldXDimension() {
-  return worldXDimension;
-}
-
-float DetermineWorldClass::getWorldYDimension() {
-  return worldYDimension;
+// This uses the localization objects current position and see's if we need to adjust the world coordinates.
+void  DetermineWorldClass::checkWorldCoordinates() {
+  float tempVar = localizationObject.getCurrentXPosition();
+  worldCoord.xMax = (worldCoord.xMax > tempVar ? worldCoord.xMax : tempVar);
+  worldCoord.xMin = (worldCoord.xMin < tempVar ? worldCoord.xMin : tempVar);
+  
+  tempVar = localizationObject.getCurrentYPosition();
+  worldCoord.yMax = (worldCoord.yMax > tempVar ? worldCoord.yMax : tempVar);
+  worldCoord.yMin = (worldCoord.yMin < tempVar ? worldCoord.yMin : tempVar);
 }
 
 void DetermineWorldClass::showWorld() {
   // Write to the lcd or the serial device 
   #if USE_LCD 
-    sparki.print("World dimensions x: ");
-    sparki.print(worldXDimension);
-    sparki.print(" y: ");
-    sparki.println(worldYDimension);
+    sparki.println("World dimensions");
+    sparki.print("xMin: ");
+    sparki.print(worldCoord.xMin);
+    sparki.print(" xMax: ");
+    sparki.println(worldCoord.xMax);
+    sparki.print("yMin: ");
+    sparki.print(worldCoord.yMin);
+    sparki.print(" yMax: ");
+    sparki.println(worldCoord.yMax);
     
     sparki.print("My position x: ");
     sparki.print(localizationObject.getCurrentXPosition());
@@ -37,10 +47,14 @@ void DetermineWorldClass::showWorld() {
     sparki.updateLCD();
     delay(5000);
   #else
-    Serial.print("DW,x,");
-    Serial.print(getWorldXDimension());
-    Serial.print(",y,");
-    Serial.println(getWorldYDimension());
+    Serial.print("DW,x1,");
+    Serial.print(worldCoord.xMin);
+    Serial.print(",x2,");
+    Serial.print(worldCoord.xMax);
+    Serial.print(",y1,");
+    Serial.print(worldCoord.yMin);
+    Serial.print(",y2,");
+    Serial.println(worldCoord.yMax);
 
     Serial.print("DP,x,");
     Serial.print(localizationObject.getCurrentXPosition());
@@ -62,8 +76,11 @@ void DetermineWorldClass::showWorld() {
 // dimensions differ, then make an adjustment).
 void DetermineWorldClass::calculateRectangularCoordinates() {
   delay(DELAY_AFTER_MOVEMENT);
+
+  worldCoord.xMin = 0.0;
+  worldCoord.yMin = 0.0;
   
-  worldXDimension = ultrasonicObject.distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER;
+  worldCoord.xMax = ultrasonicObject.distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER;
   sparki.moveRight(90);
   delay(DELAY_AFTER_MOVEMENT);
 
@@ -74,14 +91,13 @@ void DetermineWorldClass::calculateRectangularCoordinates() {
   delay(DELAY_AFTER_MOVEMENT);
 
   localizationObject.setCurrentXPosition(ultrasonicObject.distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER);
-  worldXDimension = worldXDimension + localizationObject.getCurrentXPosition();
+  worldCoord.xMax += localizationObject.getCurrentXPosition();
   sparki.moveRight(90);
   delay(DELAY_AFTER_MOVEMENT);
   
-  worldYDimension = ultrasonicObject.distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER + localizationObject.getCurrentYPosition();
+  worldCoord.yMax = ultrasonicObject.distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER + localizationObject.getCurrentYPosition();
 
   // Go back to starting position
   sparki.moveRight(90);
-  showWorld();
   localizationObject.setCurrentAngle(0.0);  // We are back at origin, set angle to 0'
 }

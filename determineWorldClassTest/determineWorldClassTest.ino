@@ -24,10 +24,10 @@ void loop() {
     LocalizationClass localizationObj;
     localizationObj.setPose(1.0, 2.0, 3.0);
     DetermineWorldClass myWorld(ultrasonicObj, localizationObj);
-    myWorld.showWorld();
-    // routine below has the logic to calculate our rectangular world coordinates
-    //myWorld.calculateRectangularCoordinates();
     
- 
+    // routine below has the logic to calculate our rectangular world coordinates
+    myWorld.calculateRectangularCoordinates();
+    myWorld.showWorld();
+   
   }
 }

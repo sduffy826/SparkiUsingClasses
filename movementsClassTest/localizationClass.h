@@ -13,7 +13,8 @@ struct Pose {
 class LocalizationClass {
   private: Pose pose;
 
-  public: void setPose(float x, float y, float angle);
+  public: convertCoordinateSystemAngle(int angle);
+          void setPose(float x, float y, float angle);
           Pose getPose();
           void setCurrentAngle(float angle);
           float getCurrentAngle();
@@ -26,6 +27,7 @@ class LocalizationClass {
           int getCurrentYPositionInMM();
           int getCurrentYPositionInCM();
           float degreesToRadians(float degrees);
+          float radiansToDegrees(float radians);
           byte getQuadrantAngleIsIn(float degrees);
           float getAngle(float angleInDegrees);
           float calculateRealAngleWithAdjustment(float angleDelta);
@@ -35,5 +37,8 @@ class LocalizationClass {
           void setNewPosition(float distance, float angleDelta);
           float getShortestAngleDeltaToGetToOrientation(float targetOrientation);
           void showLocation();
+          float distanceBetweenPoses(Pose &firstPose, Pose &secondPose);
+          Pose calculatePose(Pose thePos, int angleOfMovement, int distanceMoved);
+          Pose triangulatePoses(Pose firstPose, Pose secondPose, int angleOfMovement);
 };
 #endif

@@ -6,18 +6,22 @@
 #include "localizationClass.h"
 #include "ultrasonicClass.h"
 
+struct WorldCoord {
+  float xMax;
+  float xMin;
+  float yMax;
+  float yMin;
+};
+
 class DetermineWorldClass {
   private: UltrasonicClass ultrasonicObject;
            LocalizationClass localizationObject;
-  
-           float worldXDimension;
-           float worldYDimension;
+           WorldCoord worldCoord;
 
   public: DetermineWorldClass();
           DetermineWorldClass(UltrasonicClass &ultrasonicObj, LocalizationClass &localizationObj);
-          void adjustWorldCoordinate(float newX, float newY);
-          float getWorldXDimension();
-          float getWorldYDimension();
+          WorldCoord getWorldCoordinates();
+          void checkWorldCoordinates();   // Call this periodically to check and adjust world coordinates based on current position
           void showWorld();
           void calculateRectangularCoordinates();
 };

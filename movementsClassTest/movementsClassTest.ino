@@ -26,7 +26,7 @@ void loop() {
     
     MovementsClass movementObj(ultrasonicObj, localizationObj, determineWorldObj);
     
-    if (true == false) {
+    if (true == true) {
       // routine below has the logic to calculate our rectangular world coordinates
       movementObj.initMovements();
       movementObj.followWall();
@@ -40,7 +40,7 @@ void loop() {
       movementObj.turnRight(90);
     }
 
-    if (true == true) {
+    if (true == false) {
       movementObj.turnRight(134);
       delay(2000);
       movementObj.turnTo90ClosestDegreeOrientation();

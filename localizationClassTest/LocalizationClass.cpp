@@ -9,6 +9,12 @@ Pose LocalizationClass::getPose() {
   return pose;
 }
 
+// This will convert an angle from one coordinate system to another, i.e. from
+// compass system to cartesian or vica versa.
+int LocalizationClass::convertCoordinateSystemAngle(int angle) {
+  return (450-angle)%360;
+}
+
 void LocalizationClass::setCurrentAngle(float angle) {
   pose.angle = angle;
 }
@@ -48,8 +54,13 @@ int LocalizationClass::getCurrentYPositionInMM() {
 int LocalizationClass::getCurrentYPositionInCM() {
   return (int)(pose.yPos+.5);
 }
+
 float LocalizationClass::degreesToRadians(float degrees) {
   return (degrees * (PI / 180.0));
+}
+
+float LocalizationClass::radiansToDegrees(float radians) {
+  return (radians * (180 / PI));
 }
 
 byte LocalizationClass::getQuadrantAngleIsIn(float degrees) {
@@ -138,11 +149,51 @@ Pose LocalizationClass::calculatePose(Pose thePos, int angleOfMovement, int dist
   rtnPos.angle = thePos.angle;
 }
 
-// Triangulate a third pos STOPPED HERE... WONDER IF POSES HAVE THE ANGLE THEY ARE POINTING TO, AND ANGLE OF MOVEMENT IS NEEDED?? CAN BE DERIVED BY POINTS I THINK
+// Triangulate a third pose based on two poses and the angle of movement used to get from first pose to the second... I believe I can
+// calculate that angle but can do that down the road... the caller has it so may was well use for now.
 Pose LocalizationClass::triangulatePoses(Pose firstPose, Pose secondPose, int angleOfMovement) {
 
+  Pose rtnPose;
+  rtnPose.xPos = 0.0;
+  rtnPose.yPos = 0.0;
+  rtnPose.angle = -1.0;
+  
   // Calculate the new position after movement
+  unsigned int distanceTraveled = distanceBetweenPoses(firstPose, secondPose);
 
+  // For naming... firstDegrees is degrees of 'firstPose' point angle, secondDegrees is similar... these are the
+  // angles in the triangle they make up (not their pose angle), the thirdDegrees is stored in rtnPose.angle (save memory :))
+  // It's not needed anyway so may as well use it
+  unsigned int firstDegrees = abs(angleOfMovement - (int)firstPose.angle);
+  rtnPose.angle = abs((int)secondPose.angle - (int)firstPose.angle);
+  
+  if (rtnPose.angle < 90) {  // Must be an intersection
+    unsigned int secondDegrees = 180 - (firstDegrees + rtnPose.angle);
+
+    // Sine law is that oppositeSide/sine(angle) are all the same for any triangle... cool :)
+    float sineLawThird = distanceTraveled/sin(degreesToRadians(rtnPose.angle));  
+
+    // We can now derive the distance of line opposite first angle (that and secondPose gives use point we want)
+    float distanceToLight = sineLawThird * sin(degreesToRadians(firstDegrees));
+    rtnPose.xPos = secondPose.xPos + (distanceToLight * cos(degreesToRadians(secondDegrees)));
+    rtnPose.yPos = secondPose.yPos + (distanceToLight * sin(degreesToRadians(secondDegrees)));
+  }
+  
+
+  /* Old way
+  unsigned int firstLightAngle  = abs(angleOfMovement - (int)firstPose.angle);
+  unsigned int secondLightDeltaAngle = abs((int)secondPose.angle - (int)firstPose.angle);
+  if (secondLightDeltaAngle < 90) {
+    // Continue... if it's >= 90 then error
+    unsigned int secondLightAngle = 90 - secondLightDeltaAngle;
+    unsigned int thirdLightAngle = 180 - (firstLightAngle + secondLightAngle);
+    float sineLawThird = distanceTraveled/sin(degreesToRadians(thirdLightAngle));
+    float distanceToLight = sineLawThird * sin(degreesToRadians(firstLightAngle));
+    rtnPose.xPos = secondPos.xPos + (distanceToLight * cos(degreesToRadians(secondLightAngle)));
+    rtnPose.yPos = secondPos.yPos + (distanceToLight * sin(degreesToRadians(secondLightAngle)));
+    rtnPose.angle = thirdLightAngle; // not needed but give anyway
+  } */
+  
   /* Pose movedPose = calculatePose(firstPose, 
 struct Pose {
   float xPos;

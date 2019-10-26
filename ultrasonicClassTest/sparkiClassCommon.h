@@ -2,6 +2,7 @@
 #define _INCL_SPARKIC
 
 #define USE_LCD false
+#define USE_CARTESIANSYSTEM false
 
 // Ultrasonic position info
 #define ULTRASONIC_FORWARD_OF_CENTER 4.2

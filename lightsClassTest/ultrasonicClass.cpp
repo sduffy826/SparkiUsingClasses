@@ -3,9 +3,11 @@
 
 UltrasonicClass::UltrasonicClass() {
   this->ultrasonicAngle = 190;
+  positionServo(0); 
 }
 
 void UltrasonicClass::positionServo(int theAngle) {
+  theAngle = (USE_CARTESIANSYSTEM ? -theAngle : theAngle);
   if (ultrasonicAngle != theAngle ) {
     sparki.servo(theAngle + ULTRASONIC_SERVO_ANGLE_ADJUSTMENT);
     

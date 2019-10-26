@@ -82,12 +82,12 @@ boolean MovementsClass::moveForward(float distanceToTravel, float minAllowedDist
 // Turn left or right byt certain degrees and set your current orientation angle
 void MovementsClass::turnLeft(byte degrees) {
   sparki.moveLeft(degrees);
-  localizationObj.setCurrentAngle(localizationObj.calculateRealAngleWithAdjustment((float)degrees));
+  localizationObj.setCurrentAngle(localizationObj.calculateRealAngleWithAdjustment(-(float)degrees));
 }
   
 void MovementsClass::turnRight(byte degrees) {
   sparki.moveRight(degrees);
-  localizationObj.setCurrentAngle(localizationObj.calculateRealAngleWithAdjustment(-(float)degrees));
+  localizationObj.setCurrentAngle(localizationObj.calculateRealAngleWithAdjustment((float)degrees));
 }
 
 int MovementsClass::getClosest90Angle() {
@@ -97,10 +97,10 @@ int MovementsClass::getClosest90Angle() {
 void MovementsClass::turnToAngle(int theAngle) {
   int shortestPath = (int)localizationObj.getShortestAngleDeltaToGetToOrientation((float)theAngle);
   if (shortestPath < 0) {
-    turnRight(-shortestPath);
+    turnLeft(-shortestPath);
   }
   else {
-    turnLeft(shortestPath);
+    turnRight(shortestPath);
   }
 }
 
