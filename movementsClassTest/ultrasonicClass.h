@@ -10,9 +10,9 @@ class UltrasonicClass {
 
   public: UltrasonicClass();
           void positionServo(int theAngle);
-          int distanceAtAngle(int angleOfServo);
+          int distanceAtAngle(const int &angleOfServo);
           int distanceRight();
           int distanceLeft();
-          void showUltrasonic(int theAngle, int theDistance);
+          void showUltrasonic(const int &theAngle, const int &theDistance);
 };
 #endif

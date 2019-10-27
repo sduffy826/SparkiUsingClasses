@@ -42,7 +42,7 @@ void LightsClass::setLightAttributes() {
   
 }
 
-void LightsClass::showLightAttributes(int theAngle) {
+void LightsClass::showLightAttributes(const int &theAngle) {
   #if USE_LCD 
     sparki.print("Light angle");
     sparki.print(theAngle);
@@ -84,10 +84,10 @@ void LightsClass::sampleWorldLights() {
 }
 
 // Return the delta pct between current value and calibration one, note it can be negative
-int LightsClass::getDeltaPct(int currentValue, int calibrationValue) {
+int LightsClass::getDeltaPct(const int &currentValue, const int &calibrationValue) {
   int deltaAmt = currentValue - calibrationValue; // Delta
   if (deltaAmt > calibrationValue) {
-    // Delta is greater than base, return 100
+    // Delta is greater than base (meaning more than twice it's original value), return 100 as %
     return 100;
   }
   else
@@ -120,12 +120,12 @@ void LightsClass::calculateLightDeltas() {
 }
 
 // Little help routine, just returns an integer representing the delta pct (with the correct sign)
-int LightsClass::deltaPctHelper(int deltaPct, bool isPositive) {
+int LightsClass::deltaPctHelper(const int &deltaPct, const bool &isPositive) {
   return (isPositive ? deltaPct : -deltaPct);
 }
 
 // Helper method
-bool LightsClass::numberBetweenRange(int theNum, int lowValue, int highValue) {
+bool LightsClass::numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue) {
   if (lowValue > highValue) {   // It wraps around i.e 11 -> 1
      return ((theNum >= highValue || theNum <= lowValue) ? true : false);
   }
@@ -138,7 +138,7 @@ bool LightsClass::numberBetweenRange(int theNum, int lowValue, int highValue) {
 // angle and some delta around it (CONSTANT)
 // The multFactor passed in should be 1 for highest and -1 for lowest delta, we also have args to ignore
 // a range of angles... idea to ignore range that has a light we're not interested in
-int LightsClass::getAngleWithBiggestLightDelta(int multFactor, int angle2IgnoreStart, int angle2IgnoreEnd) {
+int LightsClass::getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
   // We'll use the center light for now... may want to change but since we're rotating that should
   // be brightest when pointing directly at light
   if (angle2IgnoreStart >= 0) {
@@ -156,6 +156,7 @@ int LightsClass::getAngleWithBiggestLightDelta(int multFactor, int angle2IgnoreS
   int holdValue = -100 * multFactor; // Using a +1 or -1 mult factor will return largest + or largest - #
 
   for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
+    // Make sure it's not in the range to ignore
     if (numberBetweenRange(i * LIGHTSAMPLEANGLE, angle2IgnoreStart, angle2IgnoreEnd) == false) {
       if ((indexPos == -1) || 
           ((deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerPos) * multFactor) > holdValue)) {
@@ -175,16 +176,16 @@ int LightsClass::getAngleWithBiggestLightDelta(int multFactor, int angle2IgnoreS
 }
 
 // Helper method, will return highest delta, if don't want to ignore angle range pass in -1 and -1 
-int LightsClass::getAngleWithHighestLightDelta(int angle2IgnoreStart, int angle2IgnoreEnd) {
+int LightsClass::getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
   return getAngleWithBiggestLightDelta(1, angle2IgnoreStart, angle2IgnoreEnd);
 }
 
 // Helper method, will return smallest delta (good if want to find shadows)
-int LightsClass::getAngleWithLowestLightDelta(int angle2IgnoreStart, int angle2IgnoreEnd) {
+int LightsClass::getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
   return getAngleWithBiggestLightDelta(-1, angle2IgnoreStart, angle2IgnoreEnd);
 }
 
-void LightsClass::showLightDirection(int theAngle) {
+void LightsClass::showLightDirection(const int &theAngle) {
   int indexOfDelta = theAngle/LIGHTSAMPLEANGLE;
   #if USE_LCD 
     sparki.print("Bright angle");
@@ -225,12 +226,39 @@ void LightsClass::showLightDirection(int theAngle) {
 };
 
 void LightsClass::setPotentialLightTargets() {
-  // routine below has the logic to calculate our rectangular world coordinates
+  // This routine has logic to calculate potential locations of the lights... the lights need to be a distance apart (if
+  // we're searching for more thane one).  The array lights2Review has the following when this is done
+  //    lights2Review[0] has x,y coordinate of starting
+  //    lights2Review[1] has the x,y coordinate of the brightest light (calc'd via triangulation)
+  //    lights2Review[2] also has the x,y coordinate starting with
+  //    lights2Review[3] has the position of the next brightest light (calc'd via triangulation)
+  // Logic
+  //    Save current position in pos 0, 2 of lights2Review
+  //    Calculate the light deltas
+  //      lights2Review[0].angle <- angle to the brightest light
+  //      lights2Review[2].angle <- angle of brightest light but ignores angle that first light is at, and angles between LIGHTANGLERANGETOIGNORE
+  //    Get the midpoint between angles[0] and [2] (we want to split it and move toward that direction if we can)
+  //      we store the angle between them in [1].angle
+  //      we store alternate angle at [3].angle (alternate is 180 away from [1].angle)
+  //    We want to find angle that we can move toward ([1].angle is preferred)
+  //      Get distance available at angle [1].angle
+  //      if it's less than minimum triangulation distance then try [3].angle
+  //      Use best angle we can
+  //    Move forward at that angle a MINTRIANGULATION distance
+  //    Calculate light deltas
+  //       lights2Review[1].angle <- angle brightest light, it ingores lights2Review[2].angle
+  //       lights2Review[3].angle <- angle of brightest light, it ignores lights2Review[0].angle
+  //    Triangulate positions [0] with [1] and [2] with [3]
+  //
+  
   Pose lights2Review[4];  // 0,1 is for first light, 2,3 is for second  
   lights2Review[0] = localizationObj.getPose();
   lights2Review[2] = localizationObj.getPose();
+  int angleMoved;
 
   // Test this it aint working as expected
+  // Calculate the light deltas from the 
+  localizationObj.writeMsg2Serial("CalcDelta");
   calculateLightDeltas();
   lights2Review[0].angle = getAngleWithHighestLightDelta(-1,-1);  // Use invalid angle to not ignore
   showLightDirection(lights2Review[0].angle);
@@ -252,19 +280,27 @@ void LightsClass::setPotentialLightTargets() {
   lights2Review[3].angle = localizationObj.getAngle(lights2Review[1].angle + 180); // and calculate 180' away, may need
   
   lights2Review[1].xPos = movementsObj.getDistanceAtAngle(lights2Review[1].angle);
+  angleMoved = lights2Review[1].angle; // Save this, want it for the triangulation routine
   if (lights2Review[1].xPos < LIGHTMINTRIANGULATION) {
     // It's less than what we want to triangulate, try 180' away
-    lights2Review[3].yPos = movementsObj.getDistanceAtAngle(lights2Review[3].angle);
+    lights2Review[3].xPos = movementsObj.getDistanceAtAngle(lights2Review[3].angle);
     if (lights2Review[3].xPos < lights2Review[1].xPos) {
       // Go back to original, it's less than we want but more than at 180'
       movementsObj.turnToAngle(lights2Review[1].angle);
     }
+    else
+      angleMoved = lights2Review[3].angle;  // We used alternate angle so replace the angleMoved value
   }
 
-  // Move forward
-  while (movementsObj.moveForward(LIGHTOPTIMALTRIANGULATION, ULTRASONIC_MIN_SAFE_DISTANCE));
+  localizationObj.writeMsg2Serial("Triangulating");
+  Serial.print(angleMoved);
+  localizationObj.writeMsg2Serial(" am");
+
+  // Move forward, we'll try and move the optimal triangulation distance
+  while (movementsObj.moveForward(LIGHTOPTIMALTRIANGULATION, ULTRASONIC_MIN_SAFE_DISTANCE, true));
 
   // Calculate the delta's at a distance
+  localizationObj.writeMsg2Serial("CalcNewDelta");
   calculateLightDeltas();
   lights2Review[1].angle = getAngleWithHighestLightDelta(localizationObj.getAngle(lights2Review[2].angle-LIGHTANGLERANGETOIGNORE),
                                                          localizationObj.getAngle(lights2Review[2].angle+LIGHTANGLERANGETOIGNORE));
@@ -279,5 +315,10 @@ void LightsClass::setPotentialLightTargets() {
   }
 
   // Calculate the triangulation
+  Pose firstLightPosition = localizationObj.triangulatePoses(lights2Review[0], lights2Review[1], angleMoved);
+  localizationObj.showPose(firstLightPosition);
+                       
+  Pose secondLightPosition = localizationObj.triangulatePoses(lights2Review[2], lights2Review[3], angleMoved);  
+  localizationObj.showPose(secondLightPosition);
  
 }

@@ -20,7 +20,7 @@ void UltrasonicClass::positionServo(int theAngle) {
   }
 }
 
-int UltrasonicClass::distanceAtAngle(int angleOfServo) {
+int UltrasonicClass::distanceAtAngle(const int &angleOfServo) {
   positionServo(angleOfServo);
   ultrasonicTempInt = 0;
   for (byte i = 0; i < ULTRASONIC_SAMPLE_SIZE; i++) {
@@ -41,7 +41,7 @@ int UltrasonicClass::distanceLeft() {
 }
 
 // For debugging we may want to show values on lcd screen
-void UltrasonicClass::showUltrasonic(int theAngle, int theDistance) {
+void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance) {
    #if USE_LCD 
     sparki.clearLCD(); // wipe the LCD clear
     sparki.print("<: ");

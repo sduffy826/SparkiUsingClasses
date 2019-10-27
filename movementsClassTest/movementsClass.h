@@ -9,8 +9,12 @@
 
 struct MovementAttributes {
   unsigned int startTime;
+  unsigned int elapsedStartOpening;  // The elapsed time that we saw start of opening
   unsigned int amMoving : 1;
-  unsigned int reserved : 7; // bits avail within boundry
+  unsigned int wallOpening : 1;
+  unsigned int rightWall : 1;
+  unsigned int inReverse : 1;
+  unsigned int reserved : 4; // bits avail within boundry
 };
 
 class MovementsClass {
@@ -18,23 +22,29 @@ class MovementsClass {
            UltrasonicClass ultrasonicObj;
            LocalizationClass localizationObj;
            DetermineWorldClass determineWorldObj;
+           void handleWallChange(int startWallDistance, int currWallDistance, bool rightWall);
 
   public: MovementsClass::MovementsClass();
           MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, DetermineWorldClass &determineWorldObject);
           void initMovements();
           unsigned int getElapsed();
-          unsigned int getMillisToGetThere(float distanceInCM);
-          void startMovingForward();
+          unsigned int getMillisToGetThere(const float &distanceInCM);
+          void startMoving(const bool &goForward);
+          float getDistanceTraveledForTime(const int &milliseconds);
           float getDistanceTraveledSoFar();
           void stopMoving();
-          boolean moveForward(float distanceToTravel, float minAllowedDistanceToObstacle);
-          void turnLeft(byte degrees);
-          void turnRight(byte degrees);
+          boolean moveBackward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance);
+          boolean moveForward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance);
+          void turnLeft(const int &degrees);
+          void turnRight(const int &degrees);
           int getClosest90Angle();
-          void turnToAngle(int theAngle);
-          int getDistanceAtAngle(int angle);
+          void turnToAngle(const int &theAngle);
+          int getDistanceAtAngle(const int &angle);
           void turnToZero();
           void turnTo90ClosestDegreeOrientation();
+          int adjustDistanceToWall(const int &desiredDistance, const int &currentWallDistance);
+          float wallOpeningDistance(int &distanceToMoveForward, const int &startWallDistance, const int &lastWallDistance);
+          
           void followWall();
           void showTurnRadius();
           void showWallMovements();

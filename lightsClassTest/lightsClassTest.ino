@@ -16,13 +16,15 @@ void setup() {
   counter = 0;
 }
 
+
 void loop() {
   // Just want to test once :)
   if (counter == 0) {
+    counter++;
 
     UltrasonicClass ultrasonicObj;
     LocalizationClass localizationObj;
-    localizationObj.setPose(1.0, 2.0, 3.0);
+    localizationObj.setPose(1.0, 2.0, 3);
     
     DetermineWorldClass determineWorldObj(ultrasonicObj, localizationObj);
     MovementsClass movementsObj(ultrasonicObj, localizationObj, determineWorldObj);
@@ -31,15 +33,30 @@ void loop() {
     
     // Make sure the servo isn't blocking a light
     ultrasonicObj.positionServo(0);
-  
+
+    if (true == true) {
+      // localizationObj.setPose(1.0, 2.0, 0);
+      movementsObj.turnToZero();
+      sparki.beep();
+      Serial.println("After first turnToZero");
+      delay(2000);
+      movementsObj.turnToAngle(0);
+      sparki.beep();
+      Serial.println("After second turnToZero");
+      delay(2000);
+      localizationObj.writeMsg2Serial("End");
+    }
+    if (true == false) {
     // Calculate world
+    localizationObj.writeMsg2Serial("LightsOff");
     determineWorldObj.calculateRectangularCoordinates();
     
     lightsObj.sampleWorldLights();
     sparki.beep();
-    delay(2000);
-
-    if (true == true) {
+    localizationObj.writeMsg2Serial("LightsOn");
+    delay(5000);
+    }
+    if (true == false) {
       lightsObj.setPotentialLightTargets();
     }
     
@@ -53,9 +70,7 @@ void loop() {
       // Get the next brightest
       theAngle = lightsObj.getAngleWithHighestLightDelta(localizationObj.getAngle(theAngle-90),localizationObj.getAngle(theAngle+90));
       lightsObj.showLightDirection(theAngle);
-
-      
     } 
-    counter++;
+   
   }
 }

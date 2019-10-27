@@ -24,13 +24,26 @@ void loop() {
   // put your main code here, to run repeatedly:
   if (counter == 0) {
 
-    LocalizationClass localizationClass;
+    LocalizationClass localizationObj;
 
-    // Show another call, we'll move do it another way
-    localizationClass.setPose(20.0, 4.0, 15.0);
-    localizationClass.setNewPosition(4.9, 20.0);  
-    localizationClass.showLocation();
-
+    
+    if (true == true) {
+      // Test that the turn angles are correct
+      localizationObj.setPose(20.0, 4.0, 179);
+      // Show another call, we'll move do it another way
+      //localizationObj.setNewPosition(4.9, 20.0);  
+      //localizationObj.showLocation();
+  
+      for (int i = 0; i < 360; i+=30) {
+        Serial.print("from: ");
+        Serial.print(localizationObj.getCurrentAngle());
+        Serial.print(" to: ");
+        Serial.print(i);
+        Serial.print(" is: ");
+        Serial.println(localizationObj.getShortestAngleDeltaToGetToOrientation(i));    
+      }
+      
+    }
     counter++;
   }
 }

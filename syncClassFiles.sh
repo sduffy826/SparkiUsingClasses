@@ -41,3 +41,9 @@ rsync -av SparkiCommonClass/sparkiClassCommon.h movementsClassTest/
 rsync -av SparkiCommonClass/sparkiClassCommon.h localizationClassTest/
 rsync -av sparkiCommonClass/sparkiClassCommon.h ultrasonicClassTest/
 rsync -av SparkiCommonClass/sparkiClassCommon.h lightsClassTest/
+
+# rsync -av SparkiCommonClass/sparkiClassCommon.cpp determineWorldClassTest/
+# rsync -av SparkiCommonClass/sparkiClassCommon.cpp movementsClassTest/
+# rsync -av SparkiCommonClass/sparkiClassCommon.cpp localizationClassTest/
+# rsync -av sparkiCommonClass/sparkiClassCommon.cpp ultrasonicClassTest/
+# rsync -av SparkiCommonClass/sparkiClassCommon.cpp lightsClassTest/

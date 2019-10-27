@@ -10,16 +10,6 @@
 
 #define DEBUGLIGHTS false
 
-#define LIGHTSAMPLEANGLE 30
-#define LIGHTSAMPLESIZE 3
-#define LIGHTSAMPLEDELAY 50
-#define LIGHTSAMPLEVALUE2USE 1  // The median value
-#define LIGHTCALIBRATIONARRAYSIZE (360/30)  // Degrees / Sample Angle
-#define LIGHTANGLERANGETOIGNORE 90 // Degrees to ignore of an existing light source, this is ignore left and right (so it's double)
-#define LIGHTSINWORKSPACE 2 // Can't be more than 2 for now
-#define LIGHTMINTRIANGULATION 6 // Min cm to be able to triangulate angle
-#define LIGHTOPTIMALTRIANGULATION 10  // CM for best triangulation
-
 struct LightAttributes {
   unsigned int lightLeft : 10;
   unsigned int lightCenter : 10;
@@ -49,16 +39,16 @@ class LightsClass {
 
   public: LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, MovementsClass &movementsObject);
           void setLightAttributes();
-          void showLightAttributes(int theAngle);
+          void showLightAttributes(const int &theAngle);
           void sampleWorldLights();
-          int getDeltaPct(int currentValue, int calibrationValue);
+          int getDeltaPct(const int &currentValue, const int &calibrationValue);
           void calculateLightDeltas();
-          int deltaPctHelper(int deltaPct, bool isPositive);
-          bool numberBetweenRange(int theNum, int lowValue, int highValue);
-          int getAngleWithBiggestLightDelta(int multFactor, int angle2IgnoreStart, int angle2IgnoreEnd);
-          int getAngleWithHighestLightDelta(int angle2IgnoreStart, int angle2IgnoreEnd);
-          int getAngleWithLowestLightDelta(int angle2IgnoreStart, int angle2IgnoreEnd);
-          void showLightDirection(int theAngle);
+          int deltaPctHelper(const int &deltaPct, const bool &isPositive);
+          bool numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue);
+          int getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
+          int getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
+          int getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
+          void showLightDirection(const int &theAngle);
           void setPotentialLightTargets();
 };
 #endif

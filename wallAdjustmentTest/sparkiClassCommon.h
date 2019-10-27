@@ -1,8 +1,6 @@
 #ifndef _INCL_SPARKIC
 #define _INCL_SPARKIC
 
-#include <Sparki.h>
-
 #define USE_LCD false
 #define USE_CARTESIANSYSTEM false
 
@@ -58,21 +56,5 @@
 
 // Wall to follow, right (true), left false
 #define FOLLOW_RIGHT_WALL true
-
-// Light constants
-#define LIGHTSAMPLEANGLE 30  // We can't store 360' of light samples, this is the angle we sample 
-#define LIGHTSAMPLESIZE 3  // When taking light reading this is the sample size we use 
-#define LIGHTSAMPLEDELAY 50  // Milliseconds to delay between samples
-#define LIGHTSAMPLEVALUE2USE 1  // The median value... this is the index position of the median value (sample is sorted)
-#define LIGHTCALIBRATIONARRAYSIZE (360/30)  // Degrees / Sample Angle
-#define LIGHTANGLERANGETOIGNORE 90 // Degrees to ignore of an existing light source, this is ignore left and right (so it's double)
-#define LIGHTSINWORKSPACE 2 // Can't be more than 2 for now
-#define LIGHTMINTRIANGULATION 6 // Min cm to be able to triangulate angle
-#define LIGHTOPTIMALTRIANGULATION 10  // CM for best triangulation
-
-
-//class SparkiClassCommon {
-//  public: static void writeMsg2Serial(char *msg);
-//};
 
 #endif
