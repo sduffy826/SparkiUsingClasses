@@ -26,6 +26,9 @@ class LocalizationClass {
           float getCurrentYPosition();
           int getCurrentYPositionInMM();
           int getCurrentYPositionInCM();
+          float getSlopeOfAngle(const int &degrees);  // Same as tangent of angle
+          float getYInterceptForPose(const Pose &thePose);
+          Pose getPointOfIntersection(const Pose &pose1, const Pose &pose2);
           float degreesToRadians(const int &degrees);
           int radiansToDegrees(const float &radians);
           byte getQuadrantAngleIsIn(const int &degrees);

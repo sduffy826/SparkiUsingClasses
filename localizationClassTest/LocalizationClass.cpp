@@ -1,4 +1,5 @@
 #include "localizationClass.h"
+#define DEBUGTRIAN true 
 
 void LocalizationClass::setPose(const float &x, const float &y, const int &angle) {
   pose.xPos = x;
@@ -54,6 +55,60 @@ int LocalizationClass::getCurrentYPositionInMM() {
 int LocalizationClass::getCurrentYPositionInCM() {
   return (int)(pose.yPos+.5);
 }
+
+// Get slop of pose
+float LocalizationClass::getSlopeOfAngle(const int &theAngle) {
+  if ((theAngle % 180) == 0) {  
+    return 0;  // Slope is 0 at 0 and 180'
+  }
+  else 
+    if ((theAngle % 90) == 0) {
+      // It's undefined (infinity) at 90 adn 270, we'll return 100 (a big #)
+      return 100;
+    }
+    else {  
+      // The slope is change change in y/x (which is tangent)
+      return tan(degreesToRadians(theAngle));
+    }
+}
+
+// Return the y intercept for the pose
+float LocalizationClass::getYInterceptForPose(const Pose &thePose) {
+  return (thePose.yPos - (getSlopeOfAngle(thePose.angle) * thePose.xPos));
+}
+
+Pose LocalizationClass::getPointOfIntersection(const Pose &pose1, const Pose &pose2) {
+  Pose rtnPose;
+  rtnPose.xPos = 0.0;
+  rtnPose.yPos = 0.0;
+  rtnPose.angle = -1; // Invalid value
+
+  // Use variable to save slopes
+  rtnPose.xPos = getSlopeOfAngle(pose1.angle);
+  rtnPose.yPos = getSlopeOfAngle(pose2.angle);
+  if (rtnPose.xPos == rtnPose.yPos) {
+    return rtnPose; // Undefined, slopes are the same...  caller will have to inspect angles
+  }
+  if (rtnPose.xPos == 0.0) {
+    // We will call routine again flipping first and second positions... we want the first one to have a slope
+    // for the formulas that follow
+    return getPointOfIntersection(pose2, pose1);
+  }
+
+  // Below is basically (pose2 intercept - pose1 intercept) / (pose1 slope - pose2 slope) 
+  // YES order above is correct... the formula's are setting y=mx+b, setting formulas equal and
+  // solving for x
+  rtnPose.xPos = (getYInterceptForPose(pose2) - getYInterceptForPose(pose1)) / (rtnPose.xPos - rtnPose.yPos);
+
+  // Now solve for y
+  rtnPose.yPos = getSlopeOfAngle(pose1.angle) * rtnPose.xPos + getYInterceptForPose(pose1);
+
+  // NOTE you should calculate the angle that they intersect and handle it where the won't... because
+  // they point away from eachother  TODO TODO TODO
+  rtnPose.angle = 0.0;
+  return rtnPose;
+}
+
 
 float LocalizationClass::degreesToRadians(const int &degrees) {
   return (degrees * (PI / 180.0));
@@ -165,24 +220,63 @@ Pose LocalizationClass::triangulatePoses(const Pose &firstPose, const Pose &seco
   // Calculate the new position after movement
   float distanceTraveled = distanceBetweenPoses(firstPose, secondPose);
 
+  #if DEBUGTRIAN
+    Serial.print("distTrav: ");
+    Serial.println(distanceTraveled);
+  #endif
   // For naming... firstDegrees is degrees of 'firstPose' point angle, secondDegrees is similar... these are the
   // angles in the triangle they make up (not their pose angle), the thirdDegrees is stored in rtnPose.angle (save memory :))
   // It's not needed anyway so may as well use it
   unsigned int firstDegrees = abs(angleOfMovement - firstPose.angle);
-  rtnPose.angle = abs(secondPose.angle - firstPose.angle);
+  rtnPose.angle = abs(secondPose.angle - firstPose.angle);  // Just making sure the pose angles are less than 90 degrees
+
+  #if DEBUGTRIAN
+    Serial.print("firstDegrees: ");
+    Serial.print(firstDegrees);
+    Serial.print(" rtnPose.angle: ");
+    Serial.println(rtnPose.angle);
+  #endif
   
   if (rtnPose.angle < 90) {  // Must be an intersection which means less than 90'
-    unsigned int secondDegrees = 180 - (firstDegrees + rtnPose.angle);
+    // old unsigned int secondDegrees = 180 - (firstDegrees + rtnPose.angle);
+    
+    // Want interior angle so it's 180-angle 
+    unsigned int secondDegrees = 180 - abs(angleOfMovement - secondPose.angle);
+    // Third angle
+    rtnPose.angle = 180 - (secondDegrees + firstDegrees);
+    
+    #if DEBUGTRIAN
+      Serial.print("secondDegrees: ");
+      Serial.print(secondDegrees);
+      Serial.print(" thirdDegrees: ");
+      Serial.println(rtnPose.angle);
+    #endif
 
     // Sine law is that oppositeSide/sine(angle) are all the same for any triangle... cool :)
     float sineLawThird = distanceTraveled/sin(degreesToRadians(rtnPose.angle));  
 
+    #if DEBUGTRIAN
+      Serial.print("sineLawThird: ");
+      Serial.println(sineLawThird);
+    #endif
+
     // We can now derive the distance of line opposite first angle (that and secondPose gives use point we want)
     float distanceToLight = sineLawThird * sin(degreesToRadians(firstDegrees));
 
-    rtnPose = calculatePose(secondPose, secondDegrees, distanceToLight);
+    #if DEBUGTRIAN
+      Serial.print("dist2Light: ");
+      Serial.println(distanceToLight);
+    #endif
+
+    // old rtnPose = calculatePose(secondPose, secondDegrees, distanceToLight);
+
+    // Calculate the new pose... we're starting at second point, at his angle and the
+    // distance to the light... that's the location where light exists
+    rtnPose = calculatePose(secondPose, secondPose.angle, distanceToLight);
+    
     // The angle returned from method above is secondPose's angle, put it back
-    rtnPose.angle = abs(secondPose.angle - firstPose.angle);
+    // old rtnPose.angle = abs(secondPose.angle - firstPose.angle);
+    rtnPose.angle = 180 - (secondDegrees + firstDegrees);
     
     //rtnPose.xPos = secondPose.xPos + (distanceToLight * cos(degreesToRadians(secondDegrees)));
     //rtnPose.yPos = secondPose.yPos + (distanceToLight * sin(degreesToRadians(secondDegrees)));
