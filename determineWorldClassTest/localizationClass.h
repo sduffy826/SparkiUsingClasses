@@ -26,9 +26,11 @@ class LocalizationClass {
           float getCurrentYPosition();
           int getCurrentYPositionInMM();
           int getCurrentYPositionInCM();
+          bool closeEnuf(const float &value1, const float &value2, const float &allowedDelta, const boolean &areAngles);
+          int calculateAngleBetweenPoints(const float &x1, const float &y1, const float &x2, const float &y2);
           float getSlopeOfAngle(const int &degrees);  // Same as tangent of angle
           float getYInterceptForPose(const Pose &thePose);
-          Pose getPointOfIntersection(const Pose &pose1, const Pose &pose2);
+          boolean setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update);
           float degreesToRadians(const int &degrees);
           int radiansToDegrees(const float &radians);
           byte getQuadrantAngleIsIn(const int &degrees);
@@ -44,6 +46,6 @@ class LocalizationClass {
           void writeMsg2Serial(char *theMessage);  // Little helper method
           float distanceBetweenPoses(const Pose &firstPose, const Pose &secondPose);
           Pose calculatePose(const Pose &thePos, const int &angleOfMovement, const int &distanceMoved);
-          Pose triangulatePoses(const Pose &firstPose, const Pose &secondPose, const int &angleOfMovement);
+          // Pose triangulatePoses(const Pose &firstPose, const Pose &secondPose, const int &angleOfMovement);
 };
 #endif

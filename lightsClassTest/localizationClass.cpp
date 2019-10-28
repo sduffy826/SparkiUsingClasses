@@ -1,11 +1,12 @@
 #include "localizationClass.h"
-#define DEBUGTRIAN true 
+#define DEBUGTRIAN false 
 
 void LocalizationClass::setPose(const float &x, const float &y, const int &angle) {
   pose.xPos = x;
   pose.yPos = y;
   pose.angle = angle;
 }
+
 Pose LocalizationClass::getPose() {
   return pose;
 }
@@ -56,6 +57,44 @@ int LocalizationClass::getCurrentYPositionInCM() {
   return (int)(pose.yPos+.5);
 }
 
+// Little helper to determine if two float values are within an allowable range 
+boolean LocalizationClass::closeEnuf(const float &value1, const float &value2, const float &allowedDelta, const boolean &areAngles) {
+  if (areAngles == true) {
+     // Call myself with angles converted and say we're not doing angles
+     return closeEnuf(getAngle(value1),getAngle(value2),allowedDelta,false); 
+  }
+  else {
+    if ((value1 - value2) > allowedDelta) {
+      return false;  
+    }
+    else
+      if ((value1 - value2) < -allowedDelta) {
+        return false;
+      }
+    return true;
+  }
+}
+
+int LocalizationClass::calculateAngleBetweenPoints(const float &x1, const float &y1, const float &x2, const float &y2) {
+  #if DEBUGTRIAN
+    Serial.print("< between points ");
+    Serial.print(" 1: (");
+    Serial.print(x1);
+    Serial.print(",");
+    Serial.print(y1);
+    Serial.print(") 2: (");
+    Serial.print(x2);
+    Serial.print(",");
+    Serial.print(y2);
+    Serial.print(") atan2(): ");
+    Serial.print(atan2(y2-y1,x2-x1));
+    Serial.print(" * (180/PI) ");
+    Serial.println(atan2(y2-y1,x2-x1)*(180.0/PI));
+  #endif
+   
+  return atan2(y2-y1,x2-x1)*(180.0/PI);
+}
+
 // Get slop of pose
 float LocalizationClass::getSlopeOfAngle(const int &theAngle) {
   if ((theAngle % 180) == 0) {  
@@ -77,36 +116,69 @@ float LocalizationClass::getYInterceptForPose(const Pose &thePose) {
   return (thePose.yPos - (getSlopeOfAngle(thePose.angle) * thePose.xPos));
 }
 
-Pose LocalizationClass::getPointOfIntersection(const Pose &pose1, const Pose &pose2) {
-  Pose rtnPose;
-  rtnPose.xPos = 0.0;
-  rtnPose.yPos = 0.0;
-  rtnPose.angle = -1; // Invalid value
+// Sets point of intersection between two poses
+boolean LocalizationClass::setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update) {
+  pose2Update.xPos = 0.0;
+  pose2Update.yPos = 0.0;
+  pose2Update.angle = -1; // Invalid value
 
   // Use variable to save slopes
-  rtnPose.xPos = getSlopeOfAngle(pose1.angle);
-  rtnPose.yPos = getSlopeOfAngle(pose2.angle);
-  if (rtnPose.xPos == rtnPose.yPos) {
-    return rtnPose; // Undefined, slopes are the same...  caller will have to inspect angles
+  pose2Update.xPos = getSlopeOfAngle(pose1.angle);
+  pose2Update.yPos = getSlopeOfAngle(pose2.angle);
+  #if DEBUGTRIAN
+    Serial.print("Slopes");
+    Serial.print(" 1: ");
+    Serial.print(pose2Update.xPos);
+    Serial.print(" 2:");
+    Serial.println(pose2Update.yPos);
+  #endif
+  
+  if (pose2Update.xPos == pose2Update.yPos) {
+    return false; // Undefined, slopes are the same...  caller will have to inspect angles
   }
-  if (rtnPose.xPos == 0.0) {
+  if (pose2Update.xPos == 0.0) {
     // We will call routine again flipping first and second positions... we want the first one to have a slope
     // for the formulas that follow
-    return getPointOfIntersection(pose2, pose1);
+    return setPointOfIntersection(pose2, pose1, pose2Update);
   }
 
   // Below is basically (pose2 intercept - pose1 intercept) / (pose1 slope - pose2 slope) 
   // YES order above is correct... the formula's are setting y=mx+b, setting formulas equal and
   // solving for x
-  rtnPose.xPos = (getYInterceptForPose(pose2) - getYInterceptForPose(pose1)) / (rtnPose.xPos - rtnPose.yPos);
+  pose2Update.xPos = (getYInterceptForPose(pose2) - getYInterceptForPose(pose1)) / (pose2Update.xPos - pose2Update.yPos);
+  #if DEBUGTRIAN
+    Serial.print("Y Intercept");
+    Serial.print(" 1: ");
+    Serial.print(getYInterceptForPose(pose1));
+    Serial.print(" 2:");
+    Serial.println(getYInterceptForPose(pose2));
+  #endif
 
-  // Now solve for y
-  rtnPose.yPos = getSlopeOfAngle(pose1.angle) * rtnPose.xPos + getYInterceptForPose(pose1);
+  // Now solve for y using x value got above... it's basically y-mx+b on the first pose (which we know doens't have slope of 0)
+  pose2Update.yPos = getSlopeOfAngle(pose1.angle) * pose2Update.xPos + getYInterceptForPose(pose1);
 
-  // NOTE you should calculate the angle that they intersect and handle it where the won't... because
-  // they point away from eachother  TODO TODO TODO
-  rtnPose.angle = 0.0;
-  return rtnPose;
+  #if DEBUGTRIAN
+    Serial.println("Poses");
+    showPose(pose1);
+    showPose(pose2);
+    Serial.print("Intersect: ");
+    Serial.print(pose2Update.xPos);
+    Serial.print(",");
+    Serial.print(pose2Update.yPos);
+    Serial.print(" < to 1st: ");
+    Serial.print(calculateAngleBetweenPoints(pose1.xPos, pose1.yPos, pose2Update.xPos, pose2Update.yPos));
+    Serial.print(" < to 2nd: ");
+    Serial.println(calculateAngleBetweenPoints(pose2.xPos, pose2.yPos, pose2Update.xPos, pose2Update.yPos));
+  #endif
+
+  // Check that the angles in our pose are the same as angle to get to the point of intersection
+  if ( closeEnuf(calculateAngleBetweenPoints(pose1.xPos, pose1.yPos, pose2Update.xPos, pose2Update.yPos),pose1.angle,1.0,true) &&
+       closeEnuf(calculateAngleBetweenPoints(pose2.xPos, pose2.yPos, pose2Update.xPos, pose2Update.yPos),pose2.angle,1.0,true) ) {
+    pose2Update.angle = 0.0;     
+    return true; 
+  }
+  
+  return false;
 }
 
 
@@ -115,7 +187,7 @@ float LocalizationClass::degreesToRadians(const int &degrees) {
 }
 
 int LocalizationClass::radiansToDegrees(const float &radians) {
-  return (int)(radians * (180 / PI));
+  return (int)(radians * (180.0 / PI));
 }
 
 byte LocalizationClass::getQuadrantAngleIsIn(const int &degrees) {
@@ -210,6 +282,7 @@ Pose LocalizationClass::calculatePose(const Pose &thePos, const int &angleOfMove
 // calculate that angle but can do that down the road... the caller has it so may was well use for now.
 
 // The pose returned has the x and y position of the triangulated object; 
+/*
 Pose LocalizationClass::triangulatePoses(const Pose &firstPose, const Pose &secondPose, const int &angleOfMovement) {
 
   Pose rtnPose;
@@ -283,29 +356,20 @@ Pose LocalizationClass::triangulatePoses(const Pose &firstPose, const Pose &seco
   }
   return rtnPose;
 
-  /* Old way
-  unsigned int firstLightAngle  = abs(angleOfMovement - (int)firstPose.angle);
-  unsigned int secondLightDeltaAngle = abs((int)secondPose.angle - (int)firstPose.angle);
-  if (secondLightDeltaAngle < 90) {
-    // Continue... if it's >= 90 then error
-    unsigned int secondLightAngle = 90 - secondLightDeltaAngle;
-    unsigned int thirdLightAngle = 180 - (firstLightAngle + secondLightAngle);
-    float sineLawThird = distanceTraveled/sin(degreesToRadians(thirdLightAngle));
-    float distanceToLight = sineLawThird * sin(degreesToRadians(firstLightAngle));
-    rtnPose.xPos = secondPos.xPos + (distanceToLight * cos(degreesToRadians(secondLightAngle)));
-    rtnPose.yPos = secondPos.yPos + (distanceToLight * sin(degreesToRadians(secondLightAngle)));
-    rtnPose.angle = thirdLightAngle; // not needed but give anyway
-  } */
-  
-  /* Pose movedPose = calculatePose(firstPose, 
-struct Pose {
-  float xPos;
-  float yPos;
-  float angle;
-};
-*/
-    
-}
+  // Old way
+  //unsigned int firstLightAngle  = abs(angleOfMovement - (int)firstPose.angle);
+  //unsigned int secondLightDeltaAngle = abs((int)secondPose.angle - (int)firstPose.angle);
+  //if (secondLightDeltaAngle < 90) {
+  //  // Continue... if it's >= 90 then error
+  //  unsigned int secondLightAngle = 90 - secondLightDeltaAngle;
+  //  unsigned int thirdLightAngle = 180 - (firstLightAngle + secondLightAngle);
+  //  float sineLawThird = distanceTraveled/sin(degreesToRadians(thirdLightAngle));
+  //  float distanceToLight = sineLawThird * sin(degreesToRadians(firstLightAngle));
+  //  rtnPose.xPos = secondPos.xPos + (distanceToLight * cos(degreesToRadians(secondLightAngle)));
+  //  rtnPose.yPos = secondPos.yPos + (distanceToLight * sin(degreesToRadians(secondLightAngle)));
+  //  rtnPose.angle = thirdLightAngle; // not needed but give anyway
+  //}    
+} */ // End of block commenting out the triangle method
 
 // For debugging we may want to show values on lcd screen
 void LocalizationClass::showPose(const Pose &pos2Show) {
