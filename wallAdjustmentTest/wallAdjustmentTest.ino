@@ -30,7 +30,7 @@ void adjustDistanceToWall(MovementsClass &movementObj, UltrasonicClass &ultrason
   // We will calculate distance it takes to change one CM
   movementObj.turnRight(90);
   // Move forward till within min distance
-  while (movementObj.moveForward(100, ULTRASONIC_MIN_SAFE_DISTANCE, true));
+  while (movementObj.moveForward(1000, ULTRASONIC_MIN_SAFE_DISTANCE, true));
   int theDistance = ultrasonicObj.distanceAtAngle(0);
   // Now move slow till we hit the wall... this should force it to be at 90'
   //sparki.moveForward(GRIPPER_LENGTH . ULTRASONIC_FORWARD_OF_CENTER . OVERALL_LENGTH_LESS_GRIPPER

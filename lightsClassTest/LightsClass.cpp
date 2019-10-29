@@ -315,10 +315,20 @@ void LightsClass::setPotentialLightTargets() {
   }
 
   // Calculate the triangulation
-  Pose firstLightPosition = localizationObj.triangulatePoses(lights2Review[0], lights2Review[1], angleMoved);
-  localizationObj.showPose(firstLightPosition);
-                       
-  Pose secondLightPosition = localizationObj.triangulatePoses(lights2Review[2], lights2Review[3], angleMoved);  
-  localizationObj.showPose(secondLightPosition);
+  Pose lightPose;
+  if (localizationObj.setPointOfIntersection(lights2Review[0], lights2Review[1], lightPose) == true) {
+    localizationObj.showPose(lightPose);
+    movementsObj.moveToPose(lightPose);
+  }
+  else {
+    localizationObj.writeMsg2Serial("^Intrsct1stLght");
+  }
+  if (localizationObj.setPointOfIntersection(lights2Review[2], lights2Review[3], lightPose) == true) {
+    localizationObj.showPose(lightPose);
+    movementsObj.moveToPose(lightPose);
+  }
+  else {
+    localizationObj.writeMsg2Serial("^Intrsct1stLght");
+  }
  
 }

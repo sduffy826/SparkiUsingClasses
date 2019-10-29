@@ -1,5 +1,11 @@
 #include "movementsClass.h"
 
+// MINWALLOPENINGDEPT is
+// actual distance we are from the wall + 1/2 our robot width (this brings us to the all)  (this is about 9 cm)
+// + robotLength + gripper length   (this is 14 cm)
+// + little fluff  (2cm)  that's how I came up with 25
+// Have method for this when u get time... also the same for the minwallwidth opening,
+//  that should be width of robot + some fluff :)
 #define MINWALLOPENINGDEPTH 25.0  // put in good values later
 #define MINWALLOPENINGWIDTH 15.5
 #define DEBUGWALL true
@@ -21,7 +27,7 @@ void MovementsClass::initMovements() {
   movementState.rightWall = true;  // Means want to follow wall with wall on the right
   
   movementState.startTime = 0;
-  movementState.elapsedStartOpening = 0;
+  movementState.elapsedStateChange = 0;
 }
 
 // Routine to return elapsed time... older version below in case you need it
@@ -48,7 +54,7 @@ void MovementsClass::startMoving(const bool &goForward) {
   if ( movementState.amMoving == false ) {
     movementState.amMoving = true;
     movementState.startTime = millis();
-    movementState.elapsedStartOpening = 0;
+    movementState.elapsedStateChange = 0;
     movementState.wallOpening = false;
     if (goForward) {
       sparki.moveForward();
@@ -151,7 +157,8 @@ int MovementsClass::getClosest90Angle() {
 }
 
 void MovementsClass::turnToAngle(const int &theAngle) {
-  int shortestPath = localizationObj.getShortestAngleDeltaToGetToOrientation(theAngle);
+  // We call getAngle on arg to make sure it's a positive angle we checking
+  int shortestPath = localizationObj.getShortestAngleDeltaToGetToOrientation(localizationObj.getAngle(theAngle));
   if (shortestPath < 0) {
     turnLeft(-shortestPath);
   }
@@ -247,7 +254,7 @@ float MovementsClass::wallOpeningDistance(int &distanceMovingForward, const int 
   if (currentWallDistance > MINWALLOPENINGDEPTH) {
     if (movementState.wallOpening == false) {
       movementState.wallOpening = true;
-      movementState.elapsedStartOpening = getElapsed();
+      movementState.elapsedStateChange = getElapsed();
     
       #if DEBUGWALL
         Serial.print("StartWallOpening");
@@ -264,17 +271,23 @@ float MovementsClass::wallOpeningDistance(int &distanceMovingForward, const int 
         Serial.println(currentWallDistance);
       }
     #endif      
-    movementState.wallOpening = false;
-    movementState.elapsedStartOpening = 0;
+    // If state was true and flipped then set indicator and new elapsed time
+    if ( movementState.wallOpening == true ) {
+      movementState.wallOpening = false;
+      movementState.elapsedStateChange = getElapsed();
+    }
   }
   
   if (movementState.wallOpening) {
     // if at wall opening see if we should handle it... i.e turn down it
-    return (getDistanceTraveledForTime(getElapsed() - movementState.elapsedStartOpening));
+    return (getDistanceTraveledForTime(getElapsed() - movementState.elapsedStateChange));
   }
   else 
     if (abs(currentWallDistance - lastWallDistance) > 1) {
-      distanceMovingForward = adjustDistanceToWall(startWallDistance, currentWallDistance);
+      // We only adjust if we've traveled at least 1/2 our length since the state changed
+      if (getDistanceTraveledForTime(getElapsed() - movementState.elapsedStateChange) > (OVERALL_LENGTH_LESS_GRIPPER / 2.0)) {
+        distanceMovingForward = adjustDistanceToWall(startWallDistance, currentWallDistance);
+      }
     }
   return 0.0;
 }
@@ -352,6 +365,23 @@ void MovementsClass::followWall() {
     }
   } 
 }
+
+// Crude, put in logic for obstacles
+void MovementsClass::moveToPose(const Pose &targetPose) {
+  
+  Pose currentPose = localizationObj.getPose();
+  
+  float targetAngle = localizationObj.calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
+  
+  // Turn to specific angle and return distance in front of you :)
+  int openSpace = getDistanceAtAngle(targetAngle);
+  float distance2Move = localizationObj.distanceBetweenPoses(currentPose, targetPose);
+  if ((float)openSpace < distance2Move) {
+    distance2Move = (float)openSpace;
+  }
+  while (moveForward(distance2Move, ULTRASONIC_MIN_SAFE_DISTANCE, true));
+}
+
 
 void MovementsClass::showTurnRadius() {
   // Write to the lcd or the serial device 

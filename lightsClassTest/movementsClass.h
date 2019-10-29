@@ -9,7 +9,7 @@
 
 struct MovementAttributes {
   unsigned int startTime;
-  unsigned int elapsedStartOpening;  // The elapsed time that we saw start of opening
+  unsigned int elapsedStateChange;  // Log what the elapsed time was when the state changed
   unsigned int amMoving : 1;
   unsigned int wallOpening : 1;
   unsigned int rightWall : 1;
@@ -46,6 +46,7 @@ class MovementsClass {
           float wallOpeningDistance(int &distanceToMoveForward, const int &startWallDistance, const int &lastWallDistance);
           
           void followWall();
+          void moveToPose(const Pose &targetPose);
           void showTurnRadius();
           void showWallMovements();
 };

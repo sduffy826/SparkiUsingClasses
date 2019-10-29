@@ -34,7 +34,7 @@ void loop() {
     // Make sure the servo isn't blocking a light
     ultrasonicObj.positionServo(0);
 
-    if (true == true) {
+    if (true == false) {
       // localizationObj.setPose(1.0, 2.0, 0);
       movementsObj.turnToZero();
       sparki.beep();
@@ -46,17 +46,20 @@ void loop() {
       delay(2000);
       localizationObj.writeMsg2Serial("End");
     }
-    if (true == false) {
-    // Calculate world
-    localizationObj.writeMsg2Serial("LightsOff");
-    determineWorldObj.calculateRectangularCoordinates();
     
-    lightsObj.sampleWorldLights();
-    sparki.beep();
-    localizationObj.writeMsg2Serial("LightsOn");
-    delay(5000);
+    if (true == true) {
+      // Calculate world
+      localizationObj.writeMsg2Serial("LightsOff");
+      determineWorldObj.calculateRectangularCoordinates();
+    
+      lightsObj.sampleWorldLights();
+      sparki.beep();
+      localizationObj.writeMsg2Serial("LightsOn");
+      delay(5000);
     }
-    if (true == false) {
+    
+    if (true == true) {
+      // This finds potential lights and will move to them... fix later
       lightsObj.setPotentialLightTargets();
     }
     

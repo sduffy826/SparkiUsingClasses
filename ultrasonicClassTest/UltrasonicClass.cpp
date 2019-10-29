@@ -40,6 +40,29 @@ int UltrasonicClass::distanceLeft() {
   return distanceAtAngle(ULTRASONIC_LEFT_ANGLE);
 }
 
+float UltrasonicClass::actualBodyDistanceFromFront(const int &reportedDistance) {
+  return (float)reportedDistance - 2.0;
+}
+
+float UltrasonicClass::actualGripperDistanceFromFront(const int &reportedDistance) {
+  return (float)reportedDistance - (2.0 + GRIPPER_LENGTH);
+}
+
+float UltrasonicClass::actualCenterOfBodyDistanceFromFront(const int &reportedDistance) {
+  return (actualBodyDistanceFromFront(reportedDistance) + (OVERALL_LENGTH_LESS_GRIPPER / 2.0));
+}
+
+float UltrasonicClass::actualBodyDistanceFromSide(const int &reportedSideDistance) {
+  return (float)reportedSideDistance - 1.825;
+}
+
+// This method should only be used when you want to take a reading and calculate what your distance to the wall
+// would be at your new orientation... this is mainly used when turning 90' and want to proceed thru an
+// opening (you can't read wall distance cause your past it).
+float UltrasonicClass::adjustedUltrasonicReadingAfterRotation(const int &reportedDistance, const bool &nowAtZeroAngle) {
+  return (float)(nowAtZeroAngle ? (reportedDistance - ULTRASONIC_SIDE_ADJUSTMENT) : (reportedDistance + ULTRASONIC_SIDE_ADJUSTMENT));
+}
+
 // For debugging we may want to show values on lcd screen
 void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance) {
    #if USE_LCD 
