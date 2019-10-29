@@ -17,6 +17,9 @@
 // Max effective range of ULTRASONIC 6 feet (~183cm)
 #define ULTRASONIC_MAX_RANGE 183
 
+// Ultrasonice error rate +- 1/8 inch or .3175 cm
+#define ULTRASONIC_TOLERANCE 0.3175
+
 // Min safe approach distance
 #define ULTRASONIC_MIN_SAFE_DISTANCE 7
 // Delta between front and side adjustment, the side reading will be 1.5 cm further then 

@@ -13,11 +13,12 @@ class UltrasonicClass {
           int distanceAtAngle(const int &angleOfServo);
           int distanceRight();
           int distanceLeft();
-          float actualBodyDistanceFromFront(const int &reportedDistance);
-          float actualGripperDistanceFromFront(const int &reportedDistance);
-          float actualCenterOfBodyDistanceFromFront(const int &reportedDistance);
-          float actualBodyDistanceFromSide(const int &reportedSideDistance);
-          float adjustedUltrasonicReadingAfterRotation(const int &reportedDistance, const bool &nowAtZeroAngle);
+          float getActualBodyDistanceFromFront(const int &reportedDistance);
+          float getActualGripperDistanceFromFront(const int &reportedDistance);
+          float getActualCenterOfBodyDistanceFromFront(const int &reportedDistance);
+          float getActualBodyDistanceFromSide(const int &reportedSideDistance);
+          float getActualCenterOfBodyDistanceFromSide(const int &reportedSideDistance);
+          float getAdjustedUltrasonicReadingAfterRotation(const int &reportedDistance, const bool &nowAtZeroAngle);
           void showUltrasonic(const int &theAngle, const int &theDistance);
 };
 #endif

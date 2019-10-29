@@ -62,3 +62,21 @@ For now most of the stuff is play :)
 - **LBD** Light brightness delta for all angles, this is only shown if DEBUGLIGHT is on
 - **LBIR** Light brightness ignore angle range (only when DEBUGLIGHT is on)
 - **LBI** Light brightness, angle that is ignored in calculation (when looking for second light we ignore the area that we found the first one) (also only when DEBUGLIGHT is on)
+- **US** Ultrasonic sensor
+
+# Class Definitions
+-- **UltrasonicClass** - interface for ultrasonic sensor
+  - **NOTE:** The ultrasonic sensor is with +/- the constant ULTRASONIC_TOLERANCE (.3175 cm at time of this writing (1/8 inch))
+  - **UltrasonicClass::UltrasonicClass()** Constructor
+  - **void UltrasonicClass::positionServo(int theAngle)** -Position the servo to the angle requested
+  - **int UltrasonicClass::distanceAtAngle(const int &angleOfServo)** - Get distance at a particular angle
+  - **int UltrasonicClass::distanceRight()** - Get distance at right angle
+  - **int UltrasonicClass::distanceLeft()** - Get distance at left angle
+  - **float UltrasonicClass::getActualBodyDistanceFromFront(const int &reportedDistance)** - Get the actual open space between front of robot and the object it reported
+  - **float UltrasonicClass::getActualGripperDistanceFromFront(const int &reportedDistance)** - Get distance between gripper tip and the object.
+  - **float UltrasonicClass::getActualCenterOfBodyDistanceFromFront(const int &reportedDistance)** - Get distance between the center of robot and the object it reported in front of it
+  - **float UltrasonicClass::getActualBodyDistanceFromSide(const int &reportedSideDistance)** - Get the distance between side of robot and the wall it's next to 
+  - **float UltrasonicClass::getActualCenterOfBodyDistanceFromSide(const int &reportedSideDistance)** - Get distance between the center of robot and the object it reported on it's side.
+  - **float UltrasonicClass::getAdjustedUltrasonicReadingAfterRotation(const int &reportedDistance, const bool &nowAtZeroAngle)** - This method should only be used when you want to take a reading and calculate what your distance to the wall would be at your new orientation... this is mainly used when turning 90' and want to proceed thru an opening (you can't read wall distance cause your past it).
+  - **void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance)** - Helper to show ultrasonic value
+ 
