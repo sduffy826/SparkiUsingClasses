@@ -42,6 +42,12 @@ void LightsClass::setLightAttributes() {
   
 }
 
+// Helper method to return the current light attributes
+LightAttributes LightsClass::getCurrentLightAttributes() {
+  setLightAttributes();
+  return lightSample[LIGHTSAMPLEVALUE2USE];
+}
+
 void LightsClass::showLightAttributes(const int &theAngle) {
   #if USE_LCD 
     sparki.print("Light angle");
@@ -78,7 +84,7 @@ void LightsClass::sampleWorldLights() {
     lightCalibration[i].flag2 = false;
     showLightAttributes(i*LIGHTSAMPLEANGLE);
  
-    movementsObj.turnLeft(LIGHTSAMPLEANGLE);
+    movementsObj.turnRight(LIGHTSAMPLEANGLE);
     delay(DELAY_AFTER_MOVEMENT);
   }
 }
@@ -103,17 +109,24 @@ void LightsClass::calculateLightDeltas() {
 
     deltaAmt = getDeltaPct(lightSample[LIGHTSAMPLEVALUE2USE].lightLeft, lightCalibration[i].lightLeft);
     lightDeltaPcts[i].leftPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].leftPos = (deltaAmt < 0 ? false : true); // Positive values have true
+    lightDeltaPcts[i].leftSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
 
     deltaAmt = getDeltaPct(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter, lightCalibration[i].lightCenter);
     lightDeltaPcts[i].centerPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].centerPos = (deltaAmt < 0 ? false : true); // Positive values have true
+    lightDeltaPcts[i].centerSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
+    #if DEBUGLIGHTS
+      Serial.print("LCD,<,");
+      Serial.print(i*LIGHTSAMPLEANGLE);
+      Serial.print(",");
+      Serial.println(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter);
+      delay(DELAY_FOR_SERIAL_COMM);
+    #endif
     
     deltaAmt = getDeltaPct(lightSample[LIGHTSAMPLEVALUE2USE].lightRight, lightCalibration[i].lightRight);
     lightDeltaPcts[i].rightPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].rightPos  = (deltaAmt < 0 ? false : true); // Positive values have true
+    lightDeltaPcts[i].rightSignBit  = (deltaAmt < 0 ? false : true); // Positive values have true
   
-    movementsObj.turnLeft(LIGHTSAMPLEANGLE);
+    movementsObj.turnRight(LIGHTSAMPLEANGLE);
     delay(DELAY_AFTER_MOVEMENT);
   }
   movementsObj.turnToAngle(holdAngle);
@@ -127,10 +140,10 @@ int LightsClass::deltaPctHelper(const int &deltaPct, const bool &isPositive) {
 // Helper method
 bool LightsClass::numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue) {
   if (lowValue > highValue) {   // It wraps around i.e 11 -> 1
-     return ((theNum >= highValue || theNum <= lowValue) ? true : false);
+     return ( ( (theNum >= lowValue) || (theNum <= highValue) ) ? true : false);
   }
   else {
-    return ((theNum >= lowValue && theNum <= highValue) ? true : false);
+    return ( ( (theNum >= lowValue) && (theNum <= highValue) ) ? true : false);
   }
 }
 
@@ -142,7 +155,7 @@ int LightsClass::getAngleWithBiggestLightDelta(const int &multFactor, const int 
   // We'll use the center light for now... may want to change but since we're rotating that should
   // be brightest when pointing directly at light
   if (angle2IgnoreStart >= 0) {
-    #if DEBUGLIGHTS
+    #if DEBUGLIGHTDELTA
       Serial.println("");
       Serial.print("LBIR,<,");
       Serial.print(angle2IgnoreStart);
@@ -153,14 +166,14 @@ int LightsClass::getAngleWithBiggestLightDelta(const int &multFactor, const int 
   }
  
   int indexPos  = -1;
-  int holdValue = -100 * multFactor; // Using a +1 or -1 mult factor will return largest + or largest - #
+  int holdValue = -100; 
 
   for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
     // Make sure it's not in the range to ignore
     if (numberBetweenRange(i * LIGHTSAMPLEANGLE, angle2IgnoreStart, angle2IgnoreEnd) == false) {
       if ((indexPos == -1) || 
-          ((deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerPos) * multFactor) > holdValue)) {
-        holdValue = deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerPos) * multFactor;
+          ((deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerSignBit) * multFactor) > holdValue)) {
+        holdValue = deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerSignBit) * multFactor;
         indexPos = i;
       }
     }
@@ -201,29 +214,61 @@ void LightsClass::showLightDirection(const int &theAngle) {
     Serial.print("LB,<,");
     Serial.print(theAngle);
     Serial.print(",l,");
-    Serial.print(deltaPctHelper(lightDeltaPcts[indexOfDelta].leftPct,  lightDeltaPcts[indexOfDelta].leftPos));
+    Serial.print(deltaPctHelper(lightDeltaPcts[indexOfDelta].leftPct,  lightDeltaPcts[indexOfDelta].leftSignBit));
     Serial.print(",c,");
-    Serial.print(deltaPctHelper(lightDeltaPcts[indexOfDelta].centerPct,  lightDeltaPcts[indexOfDelta].centerPos));
+    Serial.print(deltaPctHelper(lightDeltaPcts[indexOfDelta].centerPct,  lightDeltaPcts[indexOfDelta].centerSignBit));
     Serial.print(",r,");
-    Serial.println(deltaPctHelper(lightDeltaPcts[indexOfDelta].rightPct,  lightDeltaPcts[indexOfDelta].rightPos));
+    Serial.println(deltaPctHelper(lightDeltaPcts[indexOfDelta].rightPct,  lightDeltaPcts[indexOfDelta].rightSignBit));
     delay(DELAY_FOR_SERIAL_COMM);
     
     #if DEBUGLIGHTS
       for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
-        int quadrantOfAngle = getQuadrantAngleIsIn(i*LIGHTSAMPLEANGLE);
+        int quadrantOfAngle = localizationObj.getQuadrantAngleIsIn(i*LIGHTSAMPLEANGLE);
         Serial.print("LBD,<,");
         Serial.print(i*LIGHTSAMPLEANGLE);
         Serial.print(",l,");
-        Serial.print(deltaPctHelper(lightDeltaPcts[i].leftPct,  lightDeltaPcts[i].leftPos));
+        Serial.print(deltaPctHelper(lightDeltaPcts[i].leftPct,  lightDeltaPcts[i].leftSignBit));
         Serial.print(",c,");
-        Serial.print(deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerPos));
+        Serial.print(deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerSignBit));
         Serial.print(",r,");
-        Serial.println(deltaPctHelper(lightDeltaPcts[i].rightPct, lightDeltaPcts[i].rightPos));
+        Serial.println(deltaPctHelper(lightDeltaPcts[i].rightPct, lightDeltaPcts[i].rightSignBit));
         delay(DELAY_FOR_SERIAL_COMM);
       }     
     #endif
   #endif  
 };
+
+int LightsClass::getAngleWithHighestReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  int holdAngle = localizationObj.getCurrentAngle();  // Save current angle
+  int saveAngle = holdAngle;
+  int tempAngle   = 0;
+  int saveReading = 0;
+  int nextAngleIncrement = -angleIncrement;  // We don't want to turn on first one so this will make it zero on first pass thru
+  for (int i = 0; i < 360; i+=angleIncrement) {
+    nextAngleIncrement += angleIncrement;
+    tempAngle = (holdAngle + i) % 360;
+    if (numberBetweenRange(tempAngle, angle2IgnoreStart, angle2IgnoreEnd) == false) {
+      movementsObj.turnRight(nextAngleIncrement);
+      nextAngleIncrement = 0; 
+      delay(DELAY_AFTER_MOVEMENT);
+      
+      setLightAttributes();
+      if ((lightSample[LIGHTSAMPLEVALUE2USE].lightCenter * multFactor) > saveReading) {
+        saveReading = (lightSample[LIGHTSAMPLEVALUE2USE].lightCenter * multFactor);
+        saveAngle = tempAngle;
+      }
+    }
+  } 
+  movementsObj.turnToAngle(holdAngle); // Point back to the start
+  return saveAngle;  // Note if the angle to ignore is everything then we'll return the angle we were oriented at
+}
+
+int LightsClass::getAngleWithDimmestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  return getAngleWithHighestReading(-1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+}
+int LightsClass::getAngleWithBrightestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  return getAngleWithHighestReading(1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+}
 
 void LightsClass::setPotentialLightTargets() {
   // This routine has logic to calculate potential locations of the lights... the lights need to be a distance apart (if

@@ -8,7 +8,8 @@
 #include "localizationClass.h"
 #include "determineWorldClass.h"
 
-#define DEBUGLIGHTS false
+#define DEBUGLIGHTS true
+#define DEBUGLIGHTDELTA true
 
 struct LightAttributes {
   unsigned int lightLeft : 10;
@@ -23,9 +24,9 @@ struct LightDeltaPct {
   unsigned int leftPct : 7;
   unsigned int centerPct : 7;
   unsigned int rightPct : 7;
-  unsigned int leftPos : 1;
-  unsigned int centerPos : 1;
-  unsigned int rightPos : 1;
+  unsigned int leftSignBit : 1;
+  unsigned int centerSignBit : 1;
+  unsigned int rightSignBit : 1;
 };
 
 class LightsClass {
@@ -39,6 +40,7 @@ class LightsClass {
 
   public: LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, MovementsClass &movementsObject);
           void setLightAttributes();
+          LightAttributes getCurrentLightAttributes();
           void showLightAttributes(const int &theAngle);
           void sampleWorldLights();
           int getDeltaPct(const int &currentValue, const int &calibrationValue);
@@ -49,6 +51,9 @@ class LightsClass {
           int getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
           int getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
           void showLightDirection(const int &theAngle);
+          int getAngleWithHighestReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
+          int getAngleWithDimmestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
+          int getAngleWithBrightestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
           void setPotentialLightTargets();
 };
 #endif

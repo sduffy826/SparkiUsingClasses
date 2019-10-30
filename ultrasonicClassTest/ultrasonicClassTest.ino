@@ -10,84 +10,63 @@
 #include <Sparki.h> // include the robot library
 #include "ultrasonicClass.h"
 
-int counter;
-
- void setup() {
-  // put your setup code here, to run once:
-  #if USE_LCD 
-    sparki.clearLCD();
-    delay(500);
-  #else
-    Serial.begin(SERIAL_SPEED);
-    sparki.beep();
-    delay(DELAY_AFTER_SERIAL_STARTUP);  
-    sparki.beep();
-  #endif
-  counter = 0;
- }
- 
- void loop() {
-   if (counter == 0) {
-      counter++;
-      UltrasonicClass ultrasonicClass;
-      ultrasonicClass.positionServo(15);
-   }
- }
-
-/*
-int angleIncrement, angleDirection, currentAngle, minAngle, maxAngle;
 int distance, iterations, counter;
+int angleIncrement, angleDirection, currentAngle, minAngle, maxAngle;
+
 void setup() {
-  minAngle = -45;
-  maxAngle = 45;
+ // put your setup code here, to run once:
+ #if USE_LCD 
+   sparki.clearLCD();
+   delay(500); 
+ #else
+   Serial.begin(SERIAL_SPEED);
+   sparki.beep();
+   delay(DELAY_AFTER_SERIAL_STARTUP);  
+   sparki.beep();
+ #endif
+ minAngle = -45;
+ maxAngle = 45;
 
-  counter = iterations = 0;
+ counter = iterations = 0;
 
-  angleDirection = 1;
-  angleIncrement = 1;
-  currentAngle = minAngle;
-  #if USE_LCD 
-    sparki.clearLCD();
-    delay(500);
-  #else
-    Serial.begin(SERIAL_SPEED);
-    sparki.beep();
-    delay(DELAY_AFTER_SERIAL_STARTUP);  
-    sparki.beep();
-  #endif
+ angleDirection = 1;
+ angleIncrement = 1;
+ currentAngle = minAngle;
+
 }
-
+ 
 void loop() {
   if (counter == 0) {
     counter++;
-    positionServo(0);
+    UltrasonicClass ultrasonicObj;
+  
     if (true == false) {
-      showUltrasonic(90,distanceRight());
-      delay(1000);
+      ultrasonicObj.positionServo(15);
     }
-
+    
+    
     if (true == false) {
-      showUltrasonic(-90,distanceLeft());
+      ultrasonicObj.showUltrasonic(-90,ultrasonicObj.distanceLeft());
       delay(1000);
     }
-
     
-    if (true == true) {
-      showUltrasonic(0,distanceAtAngle(0));
+    if (true == false) {
+      ultrasonicObj.showUltrasonic(0,ultrasonicObj.distanceAtAngle(0));
       delay(1000);
     }
-
     
+   
     // Test positioning
     if (true == false) {
-      positionServo(ULTRASONIC_RIGHT_ANGLE);
+      ultrasonicObj.positionServo(ULTRASONIC_RIGHT_ANGLE);
       delay(3000);
-      positionServo(ULTRASONIC_LEFT_ANGLE);
+      ultrasonicObj.positionServo(ULTRASONIC_LEFT_ANGLE);
       delay(3000);
-      positionServo(0);
+      ultrasonicObj.positionServo(0);
       delay(5000);
     }
-
+    
+    
     if (true == false) {
       // Calculate angle between -90 and 90
       while (iterations < 2) {
@@ -100,12 +79,28 @@ void loop() {
             angleDirection = -1;
             iterations++;
           }
-        showUltrasonic(currentAngle,distanceAtAngle(currentAngle));
+        ultrasonicObj.showUltrasonic(currentAngle,ultrasonicObj.distanceAtAngle(currentAngle));
         //delay(100); // wait 0.1 seconds (100 milliseconds)
         currentAngle += ( angleIncrement * angleDirection);
       }
-      positionServo(0);
+      ultrasonicObj.positionServo(0);
     }
-  } 
+   }
+  
+ }
+
+/*
+int distance, iterations, counter;
+void setup() {
+  #if USE_LCD 
+    sparki.clearLCD();
+    delay(500);
+  #else
+    Serial.begin(SERIAL_SPEED);
+    sparki.beep();
+    delay(DELAY_AFTER_SERIAL_STARTUP);  
+    sparki.beep();
+  #endif
 }
+
 */

@@ -17,6 +17,7 @@ MovementsClass::MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationCl
   ultrasonicObj = ultrasonicObject;
   localizationObj = localizationObject;
   determineWorldObj = determineWorldObject;
+  initMovements();
 }
 
 

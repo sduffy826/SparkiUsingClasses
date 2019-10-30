@@ -87,7 +87,7 @@ void loop() {
       float mine = 1.24;
       memTestFunction(mine,mine);
 
-      if (true == false) {
+      if (true == true) {
         adjustDistanceToWall(movementObj, ultrasonicObj, 5);
       }
 
