@@ -18,13 +18,15 @@ WorldCoord DetermineWorldClass::getWorldCoordinates() {
 
 // This uses the localization objects current position and see's if we need to adjust the world coordinates.
 void  DetermineWorldClass::checkWorldCoordinates() {
-  float tempVar = localizationObject.getCurrentXPosition();
-  worldCoord.xMax = (worldCoord.xMax > tempVar ? worldCoord.xMax : tempVar);
-  worldCoord.xMin = (worldCoord.xMin < tempVar ? worldCoord.xMin : tempVar);
+  if (localizationObject.getCurrentAngle() == 0) {
+    float tempVar = localizationObject.getCurrentXPosition();
+    worldCoord.xMax = (worldCoord.xMax > tempVar ? worldCoord.xMax : tempVar);
+    worldCoord.xMin = (worldCoord.xMin < tempVar ? worldCoord.xMin : tempVar);
   
-  tempVar = localizationObject.getCurrentYPosition();
-  worldCoord.yMax = (worldCoord.yMax > tempVar ? worldCoord.yMax : tempVar);
-  worldCoord.yMin = (worldCoord.yMin < tempVar ? worldCoord.yMin : tempVar);
+    tempVar = localizationObject.getCurrentYPosition();
+    worldCoord.yMax = (worldCoord.yMax > tempVar ? worldCoord.yMax : tempVar);
+    worldCoord.yMin = (worldCoord.yMin < tempVar ? worldCoord.yMin : tempVar);
+  }
 }
 
 void DetermineWorldClass::showWorld() {
