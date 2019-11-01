@@ -35,7 +35,7 @@
 - **DW** Define world, world dimensions (x,y)
 - **DP** Define world, current position (x,y)
 - **LO** Localization, x position, y position, &lt; current angle
-- **LA** Light angle, has angle, brightness for left, center and right light sensor
+- **LA** Light angle, has description of what it is, it's angle, brightness for left, center and right light sensor
 - **LB** Light brightness delta, shows the angle that has largest increase in brightness over the sample; it will ignore the quadrant if requested
 - **LCD** Light sample, it shows the angle and the light brightness for the center light
 - **LBD** Light brightness delta for all angles, this is only shown if DEBUGLIGHT is on
@@ -43,7 +43,8 @@
 - **LBI** Light brightness, angle that is ignored in calculation (when looking for second light we ignore the area that we found the first one) (also only when DEBUGLIGHT is on)
 - **US** Ultrasonic sensor
 
-# Code/Class Definitions
+# Code/Class Definitions 
+I listed the classes alphabetically except for the first one... that has the constants so you should know about that one first.
 
 ## SparkiClass
 - **SparkiCommon**: this has the .h file to be included in code; it defines constants for the sparki like: it's speed, dimensions, etc... you should put constants here (used define instead of const) to save memory.  When you update this run ./syncClassFiles.sh 
@@ -56,6 +57,66 @@
 - **void checkWorldCoordinates()** - Call this periodically to check and adjust world coordinates based on current position; i.e. when you first called getWorldCoordinates some things may not have been visible; if you call this method periodically (i.e. when you stop) you can adjust the 'world' coordinates.
 - **void showWorld()** - This is just a helper to show your world... mainly for debugging.
 - **void calculateRectangularCoordinates()** - Calculates your 'world' space, right now it takes the direction at 90' angles and records them; it also calls localization methods that set's your current position within that world.
+
+
+## LightsClass
+**Provides attributes and routines related to the light sensors** Note it's common to call 'sampleWorldLights()' then turn the lights on (or move) and call 'calculateDeltaPcts()' which will calculate the deltas.  You can then use a method like 'getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)' to find the angle with brighest light (read more below).
+```
+// struct for light attributes... since we only have values from 0-1000 we use 10 bits... the flag1/flag2 are for future and to make the size of this align on the proper boundary.
+struct LightAttributes {
+  unsigned int lightLeft : 10;
+  unsigned int lightCenter : 10;
+  unsigned int lightRight : 10;
+  unsigned int flag1 : 1;
+  unsigned int flag2 : 1;
+};
+
+// Struct to hold the pct change 0-100 between the 'world sampled values' (lightCalibration array).  NOTE: we are very memory conscious that's why were doing 'bit' level definitions... if a percentage is positive the associated *SignBit will be on (1), if it's negative it will be off.  Note: use the deltaPctHelper... you pass it the *Pct value and the *SignBit... it'll return what the percentage for you.
+struct LightDeltaPct {
+  unsigned int leftPct : 7;
+  unsigned int centerPct : 7;
+  unsigned int rightPct : 7;
+  unsigned int leftSignBit : 1;
+  unsigned int centerSignBit : 1;
+  unsigned int rightSignBit : 1;
+};
+```
+
+- **private methods**
+  - **void setLightAttributesAtCurrentPose()** - Takes light samples at current pose and updates (private) lightSample array; the array is sorted so you can use media value
+  - **int getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - Routine that calculates the angle with the largest delta light percentage; if the multFactor is -1 then it'll return the biggest changes in negative direction, if 1 it'll give you +; the two ignore angles are so you can ignore a range of degrees.   The publicly exposed methods (that call this) are getAngleWithLowestLightDelta and getAngleWithHighestLightDelta.
+  - **int getAngleWithHighestCurrentReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - This routine will take samples of the light and return the brighest light (or dimmest); it does not compare to any prior values... it's just the angle with brighest or lowest intensity.  Note like others it has a range of angles that can be ignored.  NOTE: methods getAngleWithDimmestCurrentLight and getAngleWithBrightestCurrentLight are the publicly exposed methods.. they use this one (best way to encapsulate)
+
+- **public methods**
+  - **LightAttributes getLightAttributesAtCurrentPose()** - Returns the light attributes at the current pose you are at, this takes a sampling
+  - **void showLightAttributes(char *theStr, const LightAttributes &liteAttr, const int &theAngle)** - Good for debugging, msgStr can describe the attributes you're showing, you then give it the attributes and the angle they were taken at (we don't have angle as a light attribute (wouldn't make sense))
+  - **void showSampledLightAttributes(const int &theAngle)** - Just a helper method, can use this if you want to show the values that were last sampled
+  - **void LightsClass::showCalibrationLightAtAngle(const int &theAngle)** - Show the 'calibration' light attributes for a given angle
+  - **void sampleWorldLights()** - Takes a sample of the 'world lights' and stores values in the lightCalibration array (for respective angles)
+  - **int getLightDeltaPctBetween2Values(const int &currentValue, const int &calibrationValue)** - Gets the delta (as a pct 0-100) between two light values... note it only goes to 100%
+  - **void calculateLightDeltas()** - This updates the lightDeltaPcts array with the difference between the 'world' lights now and the original values taken, note, you should have called 'sampleWorldLights()' before using this one... 
+  - **int deltaPctHelper(const int &deltaPct, const bool &isPositive)** - Helper method to return the delta pct as an integer
+  - **bool numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue)** - Helper it's used to determine if a given number is between a range... it's needed because of angles... say our angle range is from 315' to 45' and we want to see if 30' is between that.  This handles it and will return true; but will return false for something like angle 60.
+  - **int getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - This returns the angle (in the world) where the largest light delta exists between the world (lightCalibration) and the values taken after calling 'calculateLightDeltas()'.  You can pass an angle range to ignore... this is useful when you know an area from your current position should be ignored (i.e. you already visited it).   IMPORANT - to include world pass in negative values for start/end angles to ignore so if you want to really ignore something like -45' to 30' make sure you pass in 315,30 instead (use getAngle(..) if you need to)
+  - **int getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - Similar to above but gets lowest or darkest change
+  - **showLightDeltaPctForAngle(const int &theAngle)** - Little helper (mainly for debugging), it will show what the light delta percentages are for a given angle
+  - **int getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - Gets the angle with the brighest light; it does not compare to any 'prior' light... it just gives you the angle with the brightest one.  Like other methods you can pass the angles to ignore.. remember all angles are 'world' angles (not related to your current orientation).
+  - **int getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - Similar to above but gives the dimmest light
+  - **void setPotentialLightTargets()** - This tries to triangulate your target position to lights... cool work but lights are not good for triangulation :(  The general logic used was (not handled edge tests... but this will give gist):
+      ```
+        Get the brightest light in world (L1), save your pose (P1)
+        Search for a second light (L2) that is (LIGHTANGLERANGETOIGNORE (const) away 
+          from that (both to left and right), save your pose (P2)
+        Find the midpoint between angles (A1) to L1 and L2
+        Travel a distance (LIGHTOPTIMALTRIANGULATION (const)) at angle (A1)
+        Get the brightest angle pointing toward light L1, save your pose (P1A)
+        You now triangulate where the light is using pose P1 and P1A (not trivial 
+          see LocalizationClass::setPointOfIntersection).
+        You do the same to triangulate L2
+        Knowing the pose of where L1 and L2 are you move to those locations, 
+          intent is use wall following and get to the closes point between 
+          yourself and the light (unobstructed) and then go to that spot.. 
+      ```
 
 
 ## LocalizationClass
@@ -77,7 +138,17 @@
 - **int calculateAngleBetweenPoints(const float &x1, const float &y1, const float &x2, const float &y2)** - Calculates the angle between two points
 - **float getSlopeOfAngle(const int &degrees)** - Returns the slope of an angle (same as tangent)
 - **float getYInterceptForPose(const Pose &thePose)** - Returns the y intercept for a given pose
-- **boolean setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update)** - Takes two poses and update the third pose passed in with the point of intersection.  
+- **boolean setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update)** - Takes two poses and update the third pose passed in with the point of intersection.  High level logic
+    ```
+      Calculate the slope for each pose (tangent)
+      Calculate the y intercept for the pose (solve yPos - (slope * xPos))
+      You do this for each pose... you know have their line equations (y = mx + b)
+      Set the two equations equal and solve x (i.x. x = (pose2 intercept - pose1 intercept) / (pose1 slope - pose2 slope) )
+      You have x intercept, use it in one of the equations and solve for y.
+      You have the point of intersection but you aren't done yet...
+      Calculate the angle for each of your poses to get to the point of intersection... 
+        the poses angle has to be the same as the angle you calculated... if not the intersection could be -180' from that pose
+    ```
 - **float degreesToRadians(const int &degrees)** - Converts degrees to radians
 - **int radiansToDegrees(const float &radians)** - Converts radians to degrees
 - **byte getQuadrantAngleIsIn(const int &degrees)** - Returns the quadrant a given angle is in

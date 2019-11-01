@@ -30,31 +30,35 @@ struct LightDeltaPct {
 };
 
 class LightsClass {
-  private: MovementsClass movementsObj;
-           UltrasonicClass ultrasonicObj;
-           LocalizationClass localizationObj;
+  private: MovementsClass *movementsObj;
+           UltrasonicClass *ultrasonicObj;
+           LocalizationClass *localizationObj;
            
            LightAttributes lightCalibration[LIGHTCALIBRATIONARRAYSIZE];  // Must coincide with sample angle
            LightDeltaPct lightDeltaPcts[LIGHTCALIBRATIONARRAYSIZE];     // Readings
            LightAttributes lightSample[4]; 
 
+           void setLightAttributesAtCurrentPose();  // Takes light samples at current pose and updates lightSample array; the array is sored so you can use media value
+           int getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd);  // Get largest/smallest delta 
+           int getAngleWithHighestCurrentReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement); // Get bright or dim angle
+
   public: LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, MovementsClass &movementsObject);
-          void setLightAttributes();
-          LightAttributes getCurrentLightAttributes();
-          void showLightAttributes(const int &theAngle);
-          void sampleWorldLights();
-          int getDeltaPct(const int &currentValue, const int &calibrationValue);
-          void calculateLightDeltas();
-          int deltaPctHelper(const int &deltaPct, const bool &isPositive);
-          bool numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue);
-          int getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
-          int getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
-          int getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);
-          void showLightDirection(const int &theAngle);
-          int getAngleWithHighestReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
-          int getAngleWithDimmestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
-          int getAngleWithBrightestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
-          void setPotentialLightTargets();
-          void showLightAttributes(char *theStr, const LightAttributes &liteAttr);
+          LightAttributes getLightAttributesAtCurrentPose();  // Returns light attributes for the current pose you are at (this takes a sample)
+          void showLightAttributes(char *msgStr, const LightAttributes &liteAttr, const int &theAngle);  // Good for debugging, shows light attributes for argument
+          void showSampledLightAttributes(const int &theAngle);    // Shows the value that was last 'sampled' 
+          void showCalibrationLightAtAngle(const int &theAngle);  // Show the calibration light attributes for the angle we want
+          void sampleWorldLights();  // Takes a sample of the 'world lights' and stores values in the lightCalibration array (for respective angles)
+          int getLightDeltaPctBetween2Values(const int &currentValue, const int &calibrationValue);
+          void calculateLightDeltas();  // This updates the lightDeltaPcts array with the difference between the 'world' lights now and the original values taken
+          int deltaPctHelper(const int &deltaPct, const bool &isPositive);  // Helper method to return the delta pct as an integer
+          bool numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue);  // Helper to ensure a number is between a given range
+          
+          int getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);  // Gets the angle that is, note the angle returns is in the world coordinate
+          int getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd); // Similar to above but gets lowest or darkest change
+          void showLightDeltaPctForAngle(const int &theAngle); // Little helper
+          
+          int getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);  // Gets dimmest 'current' light
+          int getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);  // Gets brightest light
+          void setPotentialLightTargets();  // This tries to triangulate your target position to lights... cool work but lights are not good for triangulation :(
 };
 #endif

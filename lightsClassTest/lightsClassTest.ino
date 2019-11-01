@@ -1,9 +1,9 @@
 #include "lightsClass.h"
 
-#define TESTLIGHTDELTAS false
-#define TESTLIGHTS false
-#define TESTLIGHTTURN false
-#define TESTFINDLIGHTS false
+#define TESTLIGHTDELTAS true
+#define TESTLIGHTS true
+#define TESTLIGHTTURN true
+#define TESTFINDLIGHTS true
 
 #define LIGHTDELTAS2ACTON 3  // We want three positive or negative delta's before we take action
 #define LIGHTDELTAANGLE2TURN 5
@@ -36,6 +36,7 @@ void setup() {
 
 
 void clearDeltaAmounts(LightDeltaAmounts &amts) {
+  showDeltaAmounts(amts);
   amts.lightLeft = 0;
   amts.leftIncCnt = 0;
   amts.lightCenter = 0;
@@ -163,18 +164,20 @@ void loop() {
       
       lightsObj.calculateLightDeltas();
       int theAngle = lightsObj.getAngleWithHighestLightDelta(-1,-1);  // Use invalid angle to not ignore
-      lightsObj.showLightDirection(theAngle);
+      lightsObj.showCalibrationLightAtAngle(theAngle);
+      // put in line above instead of this.. LOOK INTO if that's what was wanted lightsObj.showLightDirection(theAngle);
 
       // Get the next brightest
       theAngle = lightsObj.getAngleWithHighestLightDelta(localizationObj.getAngle(theAngle-90),localizationObj.getAngle(theAngle+90));
-      lightsObj.showLightDirection(theAngle);
+      // Had this, I changed it to method below... not sure if that's what was wanted... LOOK INTO lightsObj.showLightDirection(theAngle);
+      lightsObj.showCalibrationLightAtAngle(theAngle);
       localizationObj.writeMsg2Serial("dun");
     #endif
 
     #define TESTL10 false
     #if TESTL10
       localizationObj.writeMsg2Serial("Delta pct between 116 and 65");
-      Serial.println(lightsObj.getDeltaPct(116,65));
+      Serial.println(lightsObj.getLightDeltaPctBetween2Values(116,65));
     #endif
 
     #define TESTL20 false
@@ -188,15 +191,14 @@ void loop() {
       }
     #endif
 
-    #define TESTL30 true
+    #define TESTL30 false
     #if TESTL30
       Pose robotPose = localizationObj.getPose();
-      movementsObj.turnToAngle(10);
+      movementsObj.turnLeft(45);
       while (movementsObj.moveForward(10.0,5,false));
       determineWorldObj.showWorld();
-      localizationObj.showPose(robotPose);
-      Pose anotherP = localizationObj.getPose();
-      localizationObj.showPose(anotherP);
+      localizationObj.showPose(robotPose);  // Show original pose
+      localizationObj.showPose(localizationObj.getPose());  // Show ending pose
     #endif
 
 
@@ -219,7 +221,7 @@ void loop() {
       Pose robotPose = localizationObj.getPose();
       for (int iteration = 0; iteration < 2; iteration++) {
         
-        int angle2GoTo = lightsObj.getAngleWithBrightestLight(angleVar1, angleVar2, 5);
+        int angle2GoTo = lightsObj.getAngleWithBrightestCurrentLight(angleVar1, angleVar2, 5);
         
         #if LIGHTLOG
           Serial.print("<Ig1,");
@@ -232,12 +234,12 @@ void loop() {
         
         movementsObj.turnToAngle(angle2GoTo);
         // Save the original light attributes
-        LightAttributes originalLightAttributes = lightsObj.getCurrentLightAttributes();
+        LightAttributes originalLightAttributes = lightsObj.getLightAttributesAtCurrentPose();
         // Clear all your delta's
         clearDeltaAmounts(deltaAmts);
                 
         #if LIGHTLOG
-          lightsObj.showLightAttributes("Orig",originalLightAttributes);
+          lightsObj.showLightAttributes("Orig",originalLightAttributes,angle2GoTo);
         #endif
         
         LightAttributes currentLightAttributes;
@@ -246,9 +248,9 @@ void loop() {
         while ( (movementsObj.moveForward(999,ULTRASONIC_MIN_SAFE_DISTANCE,true) == true) && (done == false) ) {
           delay(100);
           
-          currentLightAttributes = lightsObj.getCurrentLightAttributes();
+          currentLightAttributes = lightsObj.getLightAttributesAtCurrentPose();
           #if LIGHTLOG
-            lightsObj.showLightAttributes("Curr",currentLightAttributes);
+            lightsObj.showLightAttributes("Curr",currentLightAttributes,localizationObj.getCurrentAngle());
           #endif
  
           if (currentLightAttributes.lightCenter >= MAXAMOUNT) {
@@ -298,7 +300,7 @@ void loop() {
               }
               delay(100);
               // Use the current light settings as your new originals
-              // dont want this, originalLightAttributes = lightsObj.getCurrentLightAttributes();
+              // dont want this, originalLightAttributes = lightsObj.getLightAttributesAtCurrentPose();
             }
             else {
               // We're done

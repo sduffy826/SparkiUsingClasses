@@ -19,9 +19,9 @@ struct MovementAttributes {
 
 class MovementsClass {
   private: MovementAttributes movementState;
-           UltrasonicClass ultrasonicObj;
-           LocalizationClass localizationObj;
-           DetermineWorldClass determineWorldObj;
+           UltrasonicClass *ultrasonicObj;
+           LocalizationClass *localizationObj;
+           DetermineWorldClass *determineWorldObj;
            void handleWallChange(int startWallDistance, int currWallDistance, bool rightWall);
 
   public: MovementsClass::MovementsClass();

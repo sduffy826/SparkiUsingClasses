@@ -18,8 +18,6 @@ int LocalizationClass::convertCoordinateSystemAngle(const int &angle) {
 }
 
 void LocalizationClass::setCurrentAngle(const int &angle) {
-  Serial.print("set<InPose");
-  Serial.println(angle);
   pose.angle = angle;
 }
 

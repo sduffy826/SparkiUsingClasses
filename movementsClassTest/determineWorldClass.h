@@ -14,8 +14,8 @@ struct WorldCoord {
 };
 
 class DetermineWorldClass {
-  private: UltrasonicClass ultrasonicObject;
-           LocalizationClass localizationObject;
+  private: UltrasonicClass *ultrasonicObject;
+           LocalizationClass *localizationObject;
            WorldCoord worldCoord;
 
   public: DetermineWorldClass();

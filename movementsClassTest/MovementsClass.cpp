@@ -14,15 +14,15 @@ MovementsClass::MovementsClass() { }
 
 // Constructor pass in the objects needed 
 MovementsClass::MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, DetermineWorldClass &determineWorldObject) {
-  ultrasonicObj = ultrasonicObject;
-  localizationObj = localizationObject;
-  determineWorldObj = determineWorldObject;
+  ultrasonicObj = &ultrasonicObject;
+  localizationObj = &localizationObject;
+  determineWorldObj = &determineWorldObject;
   initMovements();
 }
 
 
 void MovementsClass::initMovements() {
-  ultrasonicObj.positionServo(0);
+  ultrasonicObj->positionServo(0);
   movementState.amMoving  = false;
   movementState.wallOpening = false;  // indicator for when there's an opening in the wall
   movementState.rightWall = true;  // Means want to follow wall with wall on the right
@@ -85,12 +85,12 @@ float MovementsClass::getDistanceTraveledSoFar() {
 void MovementsClass::stopMoving() {
   // Set your position, the angle delta is 0 since we're going in a straight line
   if (movementState.inReverse) 
-    localizationObj.setNewPosition(-getDistanceTraveledSoFar(), 0.0);
+    localizationObj->setNewPosition(-getDistanceTraveledSoFar(), 0.0);
   else
-    localizationObj.setNewPosition(getDistanceTraveledSoFar(), 0.0);
+    localizationObj->setNewPosition(getDistanceTraveledSoFar(), 0.0);
   sparki.moveStop();
   movementState.amMoving = false;
-  determineWorldObj.checkWorldCoordinates(); // We may have found new world positions, check em
+  determineWorldObj->checkWorldCoordinates(); // We may have found new world positions, check em
 }
 
 // Handles moving backward a given distance, second parm is the min distance you can be within of a wall
@@ -102,13 +102,13 @@ boolean MovementsClass::moveBackward(const float &distanceToTravel, const float 
       stopMoving();
     }
     else {
-      if (checkFrontDistance && (ultrasonicObj.distanceAtAngle(0) >= minAllowedDistanceToObstacle)) {  // done moving
+      if (checkFrontDistance && (ultrasonicObj->distanceAtAngle(0) >= minAllowedDistanceToObstacle)) {  // done moving
         stopMoving();
       }
     }
   }
   else {
-    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && (ultrasonicObj.distanceAtAngle(0) >= minAllowedDistanceToObstacle))) {  // cant move
+    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && (ultrasonicObj->distanceAtAngle(0) >= minAllowedDistanceToObstacle))) {  // cant move
       sparki.beep();
     }
     else {
@@ -126,13 +126,13 @@ boolean MovementsClass::moveForward(const float &distanceToTravel, const float &
       stopMoving();
     }
     else {
-      if (checkFrontDistance && (ultrasonicObj.distanceAtAngle(0) <= minAllowedDistanceToObstacle)) {  // done moving
+      if (checkFrontDistance && (ultrasonicObj->distanceAtAngle(0) <= minAllowedDistanceToObstacle)) {  // done moving
         stopMoving();
       }
     }
   }
   else {
-    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && ultrasonicObj.distanceAtAngle(0) <= minAllowedDistanceToObstacle)) {  // cant move
+    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && ultrasonicObj->distanceAtAngle(0) <= minAllowedDistanceToObstacle)) {  // cant move
       sparki.beep();
     }
     else {
@@ -145,21 +145,21 @@ boolean MovementsClass::moveForward(const float &distanceToTravel, const float &
 // Turn left or right byt certain degrees and set your current orientation angle
 void MovementsClass::turnLeft(const int &degrees) {
   sparki.moveLeft(degrees);
-  localizationObj.setCurrentAngle(localizationObj.calculateRealAngleWithAdjustment(-degrees));
+  localizationObj->setCurrentAngle(localizationObj->calculateRealAngleWithAdjustment(-degrees));
 }
   
 void MovementsClass::turnRight(const int &degrees) {
   sparki.moveRight(degrees);
-  localizationObj.setCurrentAngle(localizationObj.calculateRealAngleWithAdjustment(degrees));
+  localizationObj->setCurrentAngle(localizationObj->calculateRealAngleWithAdjustment(degrees));
 }
 
 int MovementsClass::getClosest90Angle() {
-  return (( ((localizationObj.getCurrentAngle()+44)/90) * 90) % 360);
+  return (( ((localizationObj->getCurrentAngle()+44)/90) * 90) % 360);
 }
 
 void MovementsClass::turnToAngle(const int &theAngle) {
   // We call getAngle on arg to make sure it's a positive angle we checking
-  int shortestPath = localizationObj.getShortestAngleDeltaToGetToOrientation(localizationObj.getAngle(theAngle));
+  int shortestPath = localizationObj->getShortestAngleDeltaToGetToOrientation(localizationObj->getAngle(theAngle));
   if (shortestPath < 0) {
     turnLeft(-shortestPath);
   }
@@ -172,7 +172,7 @@ void MovementsClass::turnToAngle(const int &theAngle) {
 // Turn to specific angle and return distance in front of you :)
 int MovementsClass::getDistanceAtAngle(const int &angle) {
   turnToAngle(angle);
-  return ultrasonicObj.distanceAtAngle(0);
+  return ultrasonicObj->distanceAtAngle(0);
 }
 
 // Convenience routine
@@ -216,7 +216,7 @@ int MovementsClass::adjustDistanceToWall(const int &desiredDistance, const int &
     while (moveForward(currentWallDistance-desiredDistance, ULTRASONIC_MIN_SAFE_DISTANCE, true));
   }
   turnLeft(90);
-  int newDistanceForward = ultrasonicObj.distanceAtAngle(0);
+  int newDistanceForward = ultrasonicObj->distanceAtAngle(0);
   
   #if DEBUGWALL
     Serial.print("In adjustDistanceToWall");
@@ -250,7 +250,7 @@ int MovementsClass::adjustDistanceToWall(const int &desiredDistance, const int &
 //     goThruOpening
 float MovementsClass::wallOpeningDistance(int &distanceMovingForward, const int &startWallDistance, const int &lastWallDistance) {
 
-  int currentWallDistance = ultrasonicObj.distanceAtAngle(90);  // turnLogic
+  int currentWallDistance = ultrasonicObj->distanceAtAngle(90);  // turnLogic
 
   if (currentWallDistance > MINWALLOPENINGDEPTH) {
     if (movementState.wallOpening == false) {
@@ -305,7 +305,7 @@ void MovementsClass::followWall() {
   byte numTurns;
   // Face the wall to the right
   turnRight(90);  // turnLogic
-  theDistance = ultrasonicObj.distanceAtAngle(0);
+  theDistance = ultrasonicObj->distanceAtAngle(0);
 
   #if DEBUGWALL
     Serial.print("D1 ");
@@ -314,8 +314,8 @@ void MovementsClass::followWall() {
   // Move forward distance to wall, less turn radius, second parm is min distance
   // to stay away from wall.
   while (moveForward(theDistance-ULTRASONIC_MIN_SAFE_DISTANCE, ULTRASONIC_MIN_SAFE_DISTANCE, true));
-  saveX = localizationObj.getCurrentXPositionInCM();
-  saveY = localizationObj.getCurrentYPositionInCM();
+  saveX = localizationObj->getCurrentXPositionInCM();
+  saveY = localizationObj->getCurrentYPositionInCM();
 
   #if DEBUGWALL
     Serial.print("S1 ");
@@ -328,12 +328,12 @@ void MovementsClass::followWall() {
   numTurns = 0;
   while ((numTurns < 5) || 
          (numTurns < 20 &&  
-          saveX != localizationObj.getCurrentXPositionInCM() &&
-          saveY != localizationObj.getCurrentYPositionInCM())) {
+          saveX != localizationObj->getCurrentXPositionInCM() &&
+          saveY != localizationObj->getCurrentYPositionInCM())) {
     turnLeft(90);  // turnLogic
     numTurns++;
-    theDistance = ultrasonicObj.distanceAtAngle(0);
-    startWallDistance = lastWallDistance = ultrasonicObj.distanceAtAngle(90);    // turnLogic
+    theDistance = ultrasonicObj->distanceAtAngle(0);
+    startWallDistance = lastWallDistance = ultrasonicObj->distanceAtAngle(90);    // turnLogic
     #if DEBUGWALL
       Serial.print("D2 ");
       Serial.print(theDistance);
@@ -356,11 +356,11 @@ void MovementsClass::followWall() {
         #endif      
         // We can fit thru the opening, backup 1/2 the distance of the opening, turn right and move forward again :)
         stopMoving();
-        localizationObj.showLocation();  // For debugging show the location
+        localizationObj->showLocation();  // For debugging show the location
       
         while (moveBackward((widthOfOpening / 2.0), 0.0, false));  // backup 1/2 distance, don't care about min distance (2,3 args)
         turnRight(90);                                             // turn right
-        theDistance = ultrasonicObj.distanceAtAngle(0);
+        theDistance = ultrasonicObj->distanceAtAngle(0);
       }
       // had delay(100) but removed it... see how it works.
     }
@@ -370,13 +370,13 @@ void MovementsClass::followWall() {
 // Crude, put in logic for obstacles
 void MovementsClass::moveToPose(const Pose &targetPose) {
   
-  Pose currentPose = localizationObj.getPose();
+  Pose currentPose = localizationObj->getPose();
   
-  float targetAngle = localizationObj.calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
+  float targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
   
   // Turn to specific angle and return distance in front of you :)
   int openSpace = getDistanceAtAngle(targetAngle);
-  float distance2Move = localizationObj.distanceBetweenPoses(currentPose, targetPose);
+  float distance2Move = localizationObj->distanceBetweenPoses(currentPose, targetPose);
   if ((float)openSpace < distance2Move) {
     distance2Move = (float)openSpace;
   }
