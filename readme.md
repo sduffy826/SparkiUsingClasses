@@ -37,6 +37,7 @@
 - **LO** Localization, x position, y position, &lt; current angle
 - **LA** Light angle, has angle, brightness for left, center and right light sensor
 - **LB** Light brightness delta, shows the angle that has largest increase in brightness over the sample; it will ignore the quadrant if requested
+- **LCD** Light sample, it shows the angle and the light brightness for the center light
 - **LBD** Light brightness delta for all angles, this is only shown if DEBUGLIGHT is on
 - **LBIR** Light brightness ignore angle range (only when DEBUGLIGHT is on)
 - **LBI** Light brightness, angle that is ignored in calculation (when looking for second light we ignore the area that we found the first one) (also only when DEBUGLIGHT is on)

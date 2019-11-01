@@ -8,8 +8,8 @@
 #include "localizationClass.h"
 #include "determineWorldClass.h"
 
-#define DEBUGLIGHTS true
-#define DEBUGLIGHTDELTA true
+#define DEBUGLIGHTS false
+#define DEBUGLIGHTDELTA false
 
 struct LightAttributes {
   unsigned int lightLeft : 10;
@@ -55,5 +55,6 @@ class LightsClass {
           int getAngleWithDimmestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
           int getAngleWithBrightestLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement);
           void setPotentialLightTargets();
+          void showLightAttributes(char *theStr, const LightAttributes &liteAttr);
 };
 #endif

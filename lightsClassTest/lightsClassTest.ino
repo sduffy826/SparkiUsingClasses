@@ -3,9 +3,12 @@
 #define TESTLIGHTDELTAS false
 #define TESTLIGHTS false
 #define TESTLIGHTTURN false
+#define TESTFINDLIGHTS false
 
 #define LIGHTDELTAS2ACTON 3  // We want three positive or negative delta's before we take action
 #define LIGHTDELTAANGLE2TURN 5
+
+#define LIGHTLOG true
 
 byte counter = 0;
 struct LightDeltaAmounts {
@@ -39,6 +42,21 @@ void clearDeltaAmounts(LightDeltaAmounts &amts) {
   amts.centerIncCnt = 0;
   amts.lightRight = 0;
   amts.rightIncCnt = 0;
+}
+
+void showDeltaAmounts(const LightDeltaAmounts &amts) {
+  Serial.print("LDA,l");
+  Serial.print(amts.lightLeft);
+  Serial.print(",li,");
+  Serial.print(amts.leftIncCnt);
+  Serial.print(",c,");
+  Serial.print(amts.lightCenter);
+  Serial.print(",ci,");
+  Serial.print(amts.centerIncCnt);
+  Serial.print(",r,");
+  Serial.print(amts.lightRight);
+  Serial.print(",ri,");
+  Serial.println(amts.rightIncCnt);
 }
 
 void setDeltaAmounts(LightDeltaAmounts &amts, const LightAttributes &original, const LightAttributes &current) {
@@ -94,12 +112,14 @@ void loop() {
 
     UltrasonicClass ultrasonicObj;
     LocalizationClass localizationObj;
-    localizationObj.setPose(1.0, 2.0, 3);
+    localizationObj.setPose(10.0, 20.0, 0);
     
     DetermineWorldClass determineWorldObj(ultrasonicObj, localizationObj);
     MovementsClass movementsObj(ultrasonicObj, localizationObj, determineWorldObj);
 
     LightsClass lightsObj(ultrasonicObj, localizationObj, movementsObj);
+    determineWorldObj.calculateRectangularCoordinates();
+    determineWorldObj.showWorld();
     
     // Make sure the servo isn't blocking a light
     ultrasonicObj.positionServo(0);
@@ -151,12 +171,14 @@ void loop() {
       localizationObj.writeMsg2Serial("dun");
     #endif
 
-    if (true == false) {
+    #define TESTL10 false
+    #if TESTL10
       localizationObj.writeMsg2Serial("Delta pct between 116 and 65");
       Serial.println(lightsObj.getDeltaPct(116,65));
-    }
+    #endif
 
-    if (true == false) {
+    #define TESTL20 false
+    #if TESTL20
       // Helper method
       if (lightsObj.numberBetweenRange(30,210,30)) {
         localizationObj.writeMsg2Serial("0 is between 210 and 30");
@@ -164,49 +186,71 @@ void loop() {
       else {
         localizationObj.writeMsg2Serial("0 is NOT between 210 and 30");
       }
-    }
+    #endif
 
-    if (true == true) {
+    #define TESTL30 true
+    #if TESTL30
+      Pose robotPose = localizationObj.getPose();
+      movementsObj.turnToAngle(10);
+      while (movementsObj.moveForward(10.0,5,false));
+      determineWorldObj.showWorld();
+      localizationObj.showPose(robotPose);
+      Pose anotherP = localizationObj.getPose();
+      localizationObj.showPose(anotherP);
+    #endif
+
+
+    #if TESTFINDLIGHTS
       LightDeltaAmounts deltaAmts;
+      lightsObj.sampleWorldLights();
+
+      sparki.beep();
+      localizationObj.writeMsg2Serial("LiteOn");
+      delay(5000);
+
+      localizationObj.writeMsg2Serial("calcDlta");
+      lightsObj.calculateLightDeltas();
       
       int angleVar1 = -1;
       int angleVar2 = -1;
-      int MAXAMOUNT = 950;
-      int MAXDELTA = 10;
+      int MAXAMOUNT = 999;
+      int MAXDELTA = 4;
+      int lastAngleTurned = 360;
       Pose robotPose = localizationObj.getPose();
       for (int iteration = 0; iteration < 2; iteration++) {
+        
         int angle2GoTo = lightsObj.getAngleWithBrightestLight(angleVar1, angleVar2, 5);
-
-        localizationObj.writeMsg2Serial("angle2GoTo");
-        Serial.println(angle2GoTo);
+        
+        #if LIGHTLOG
+          Serial.print("<Ig1,");
+          Serial.print(angleVar1);
+          Serial.print(",<Ig2,");
+          Serial.print(angleVar2);
+          Serial.print(",Lght<2GoTo,");
+          Serial.println(angle2GoTo);
+        #endif
         
         movementsObj.turnToAngle(angle2GoTo);
         // Save the original light attributes
         LightAttributes originalLightAttributes = lightsObj.getCurrentLightAttributes();
         // Clear all your delta's
         clearDeltaAmounts(deltaAmts);
-        
-        localizationObj.writeMsg2Serial("OrgLitAtt,l,");
-        Serial.print(originalLightAttributes.lightLeft);
-        Serial.print(",c,");
-        Serial.print(originalLightAttributes.lightCenter);
-        Serial.print(",r,");
-        Serial.println(originalLightAttributes.lightRight);
+                
+        #if LIGHTLOG
+          lightsObj.showLightAttributes("Orig",originalLightAttributes);
+        #endif
         
         LightAttributes currentLightAttributes;
         bool stopMoving = false;
         bool done = false;
-        while (movementsObj.moveForward(999, ULTRASONIC_MIN_SAFE_DISTANCE, true) && done == false) {
-          delay(200);
+        while ( (movementsObj.moveForward(999,ULTRASONIC_MIN_SAFE_DISTANCE,true) == true) && (done == false) ) {
+          delay(100);
           
           currentLightAttributes = lightsObj.getCurrentLightAttributes();
-          localizationObj.writeMsg2Serial("Current light attributes");
-          Serial.print(currentLightAttributes.lightLeft);
-          Serial.print(",c,");
-          Serial.print(currentLightAttributes.lightCenter);
-          Serial.print(",r,");
-          Serial.println(currentLightAttributes.lightRight);
-
+          #if LIGHTLOG
+            lightsObj.showLightAttributes("Curr",currentLightAttributes);
+          #endif
+ 
           if (currentLightAttributes.lightCenter >= MAXAMOUNT) {
             // At target turn and go other way
             done = true;
@@ -218,13 +262,22 @@ void loop() {
             if (angleVar1 != 0) {
               // We have an angle to turn to, so set stopMoving to true, we'll do the turning down there
               stopMoving = true;
-              localizationObj.writeMsg2Serial("< Change");
-              Serial.println(angleVar1);
+              if (lastAngleTurned == angleVar1) {
+                angleVar1 *= 2; // If it's same angle to turn as last time then move twice the amount in that direction.
+              }
+              else {
+                lastAngleTurned = angleVar1;
+              }
+              
+              #if LIGHTLOG
+                Serial.print("<Chg");
+                Serial.println(angleVar1);
+              #endif
             }
             else {
               if ( ((deltaAmts.lightCenter) < 0) && (deltaAmts.centerIncCnt <= -LIGHTDELTAS2ACTON) ) {
                 // It's consistently getting darker, stop and go other way.
-                localizationObj.writeMsg2Serial("Lights went -");
+                localizationObj.writeMsg2Serial("LghtWent-");
                 done = true;
               }
             }
@@ -233,6 +286,7 @@ void loop() {
           if ((stopMoving == true) || (done == true)) {
             movementsObj.stopMoving();
             delay(200);
+            
             if (stopMoving == true) {
               // We need to turn
               stopMoving = false;
@@ -244,14 +298,18 @@ void loop() {
               }
               delay(100);
               // Use the current light settings as your new originals
-              originalLightAttributes = lightsObj.getCurrentLightAttributes();
+              // dont want this, originalLightAttributes = lightsObj.getCurrentLightAttributes();
             }
             else {
               // We're done
               // Calculate the angle we traveled to get from start to our current position
+              localizationObj.showPose(robotPose);
+              localizationObj.showPose(localizationObj.getPose());
               angleVar1 = localizationObj.calculateAngleBetweenPoints(robotPose.xPos, robotPose.yPos, localizationObj.getCurrentXPosition(), localizationObj.getCurrentYPosition());
-              localizationObj.writeMsg2Serial("< Traveled");
-              Serial.println(angleVar1);
+              #if LIGHTLOG
+                Serial.print("< Traveled");
+                Serial.println(angleVar1);
+              #endif
               
               // set angleVar values that will be ignored on next iteration
               angleVar2 = localizationObj.getAngle(angleVar1+60);
@@ -259,13 +317,24 @@ void loop() {
  
                // Go back to the original spot
               movementsObj.moveToPose(robotPose);
+              #if LIGHTLOG
+                Serial.print("BackAtStrg");
+                localizationObj.showLocation();
+              #endif
+           
               delay(500);
               sparki.beep();
             }
+            
             clearDeltaAmounts(deltaAmts); 
+
+            #if LIGHTLOG
+              showDeltaAmounts(deltaAmts);
+            #endif
+            
           }
         }
       }
-    }
+    #endif
   }
 }

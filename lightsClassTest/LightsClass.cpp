@@ -375,5 +375,15 @@ void LightsClass::setPotentialLightTargets() {
   else {
     localizationObj.writeMsg2Serial("^Intrsct1stLght");
   }
- 
 }
+
+void LightsClass::showLightAttributes(char *theStr, const LightAttributes &liteAttr) {
+  Serial.print(theStr);    
+  Serial.print(" LA,l,");  
+  Serial.print(liteAttr.lightLeft);
+  Serial.print(",c,");
+  Serial.print(liteAttr.lightCenter);
+  Serial.print(",r,");
+  Serial.println(liteAttr.lightRight);
+}
+
