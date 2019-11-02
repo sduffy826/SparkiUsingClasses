@@ -61,7 +61,7 @@ class LightsClass {
            void setLightsDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current); 
            // Helper method to compare two LightDeltas and return the id associated with the record that's most significant, the last argument is a multiplication
            // factor... a -1 value means you want the light that decreased more
-           int lightDeltaAmountHelper(const LightDelta &lightDelta1, const LightDelta &llightDelta2, const byte &lightId1, const byte &lightId2, const int &multFactor);
+           int lightDeltaAmountHelper(const LightDelta &lightDelta1, const byte &lightId1, const LightDelta &llightDelta2, const byte &lightId2, const int &multFactor);
 
 
   public: LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, MovementsClass &movementsObject);
@@ -77,7 +77,7 @@ class LightsClass {
           void clearLightsDeltaSum(LightsDeltaSum &lightDeltaSum);
 
           // Helper, gets the total delta associated with the a specific light
-          int getLightsDeltaSum(const LightDelta &lightDelta);
+          int getLightDeltaSum(const LightDelta &lightDelta);
 
           // Helper to get frequence of a particular light
           int getLightDeltaCounter(const LightDelta &lightDelta);

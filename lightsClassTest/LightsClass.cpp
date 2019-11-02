@@ -135,7 +135,7 @@ void LightsClass::clearLightDelta(LightDelta &lightDelta) {
 // stored as a byte so we use a base as 100 meaning 0 and we decrement that value when we
 // are passed in a negative amount and increase when we have a positive value, the 
 // getLightDeltaCounter method returns a 'user' friendly value so code should be using that
-// They should also use getLightsDeltaSum in case we have some 'internal' representation for
+// They should also use getLightDeltaSum in case we have some 'internal' representation for
 // that (currently we don't but who knows)
 void LightsClass::setLightDelta(LightDelta &amt, const int &delta) {
   amt.deltaSum += delta;
@@ -160,12 +160,12 @@ void LightsClass::setLightsDeltaSum(LightsDeltaSum &amts, const LightAttributes 
 // Helper method to compare two LightDeltas and return the id associated with the record that's 
 // most significant, the last argument is a multiplication factor... a -1 value means you want 
 // the light that decreased more; note you pass the id you want to use to signify the lights; see 
-int LightsClass::lightDeltaAmountHelper(const LightDelta &lightDelta1, const LightDelta &llightDelta2, const byte &lightId1, const byte &lightId2, const int &multFactor) {
+int LightsClass::lightDeltaAmountHelper(const LightDelta &lightDelta1, const byte &lightId1, const LightDelta &lightDelta2, const byte &lightId2, const int &multFactor) {
   // Make sure that our delta counter is above the threshold we want
   if ( ((getLightDeltaCounter(lightDelta1) * multFactor) >= LIGHTDELTAS2ACTON) || ((getLightDeltaCounter(lightDelta2) * multFactor) >= LIGHTDELTAS2ACTON) ) {
     if (getLightDeltaCounter(lightDelta1) == getLightDeltaCounter(lightDelta2)) {
       // Both lights have increased or decreased the same amount of times, use the one with most signifcant light
-      return ( (getLightsDeltaSum(light1)*multFactor) > (getLightsDeltaSum(light2)*multFactor) ? lightId1 : lightId2);
+      return ( (getLightDeltaSum(lightDelta1)*multFactor) > (getLightDeltaSum(lightDelta2)*multFactor) ? lightId1 : lightId2);
     }
     else {
       // Return the one that has increased (or decreased) more frequently
@@ -252,14 +252,14 @@ void LightsClass::clearLightsDeltaSum(LightsDeltaSum &lightsDeltaSum) {
 
 // -----------------------------------------------------------------------------------------
 // Helper method to get the total light delta amount
-int LightsClass::getLightsDeltaSum(const LightDelta &lightDelta) {
+int LightsClass::getLightDeltaSum(const LightDelta &lightDelta) {
   return lightDelta.deltaSum;
 }
 
 // -----------------------------------------------------------------------------------------
 // Helper to get the frequency that the light has changed (- means it's decreased that many times)
 int LightsClass::getLightDeltaCounter(const LightDelta &lightDelta) {
-  return 100-lightDeltaCounter;
+  return 100-lightDelta.deltaCounter;
 }
 
 // -----------------------------------------------------------------------------------------
@@ -268,15 +268,18 @@ int LightsClass::getLightDeltaCounter(const LightDelta &lightDelta) {
 // It then calls method 'lightDeltaAmountsHelper' to determine which light source is the most significant... it does this by 
 // seeing which one has changed more frequently (not the light change value, it's frequency).  If two lights have the same 
 // frequency of change then it'll return the one with the most significan change.
+// Note you need to use a unique id for the lights when calling helper... it returns the id associated with the one that's 
+// significant (-1) if neither... I used 1 for left, 2 for center and 3 for right light.  The last argument in helper is a multfactor
+// so if you gave it -1 you'd get the light that had the biggest decrease
 int LightsClass::getLightAngleToTurnToBasedOnDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current) {
   setLightsDeltaSum(amts, original, current);
   // Get id of lights that are more significant (the last parm (1) means want increasing values... if want decreasing then pass -1)
-  int idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightLeft, amts.leftIncCnt, 1, amts.lightCenter, amts.centerIncCnt, 2, 1);
+  int idOfLight2Point2 = lightDeltaAmountHelper(amts.leftLight, 1, amts.centerLight, 2, 1);
   if (idOfLight2Point2 = 1) { // Left is significant, compare it to the right light
-    idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightLeft, amts.leftIncCnt, 1, amts.lightRight, amts.rightIncCnt, 3, 1);
+    idOfLight2Point2 = lightDeltaAmountHelper(amts.leftLight, 1, amts.rightLight, 3, 1);
   }
   else { // Center is more significant of the left light, compare it to the right.
-    idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightCenter, amts.centerIncCnt, 2,amts.lightRight, amts.rightIncCnt, 3, 1);
+    idOfLight2Point2 = lightDeltaAmountHelper(amts.centerLight, 2, amts.rightLight, 3, 1);
   }
   if (idOfLight2Point2 > 0) {
     // One is signifcant
@@ -542,15 +545,15 @@ void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
 // that's + and a delta count that's - (that'd occur if you had a big jump or decline in light values)
 void LightsClass::showLightsDeltaSum(const LightsDeltaSum &amts) {
   Serial.print("LDA,l");
-  Serial.print(getLightsDeltaSum(amts.leftLight));
+  Serial.print(getLightDeltaSum(amts.leftLight));
   Serial.print(",/");
   Serial.print(getLightDeltaCounter(amts.leftLight));
   Serial.print(",c,");
-  Serial.print(getLightsDeltaSum(amts.centerLight));
+  Serial.print(getLightDeltaSum(amts.centerLight));
   Serial.print(",/");
   Serial.print(getLightDeltaCounter(amts.centerLight));
   Serial.print(",r,");
-  Serial.print(getLightsDeltaSum(amts.rightLight));
+  Serial.print(getLightDeltaSum(amts.rightLight));
   Serial.print(",/");
   Serial.println(getLightDeltaCounter(amts.rightLight));
 }

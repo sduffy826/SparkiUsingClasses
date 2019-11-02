@@ -23,10 +23,6 @@ void setup() {
   counter = 0;
 }
 
-
-
-
-
 void loop() {
   // Just want to test once :)
   if (counter == 0) {
@@ -100,12 +96,12 @@ void loop() {
       localizationObj->writeMsg2Serial("calcDlta");
       
       lightsObj->calculateWorldLightDeltas();
-      int theAngle = lightsObj->getAngleWithHighestLightDelta(-1,-1);  // Use invalid angle to not ignore
+      int theAngle = lightsObj->getAngleWithHighestLightDeltaPct(-1,-1);  // Use invalid angle to not ignore
       lightsObj->showCalibrationLightAtAngle(theAngle);
       // put in line above instead of this.. LOOK INTO if that's what was wanted lightsObj->showLightDirection(theAngle);
 
       // Get the next brightest
-      theAngle = lightsObj->getAngleWithHighestLightDelta(localizationObj->getAngle(theAngle-90),localizationObj->getAngle(theAngle+90));
+      theAngle = lightsObj->getAngleWithHighestLightDeltaPct(localizationObj->getAngle(theAngle-90),localizationObj->getAngle(theAngle+90));
       // Had this, I changed it to method below... not sure if that's what was wanted... LOOK INTO lightsObj->showLightDirection(theAngle);
       lightsObj->showCalibrationLightAtAngle(theAngle);
       localizationObj->writeMsg2Serial("dun");
@@ -140,7 +136,7 @@ void loop() {
 
 
     #if TESTFINDLIGHTS
-      LightDeltaAmounts deltaAmts;
+      LightsDeltaSum deltaAmts;
       lightsObj->sampleWorldLights();
 
       sparki.beep();
@@ -197,7 +193,7 @@ void loop() {
           }
           else {
             // Calculate to see if we should adjust our angle
-            angleVar1 = lightsObj->getLightAngleToTurnTo(deltaAmts, originalLightAttributes, currentLightAttributes);
+            angleVar1 = lightsObj->getLightAngleToTurnToBasedOnDeltaSum(deltaAmts, originalLightAttributes, currentLightAttributes);
             if (angleVar1 != 0) {
               // We have an angle to turn to, so set stopMoving to true, we'll do the turning down there
               stopMoving = true;
@@ -214,7 +210,7 @@ void loop() {
               #endif
             }
             else {
-              if ( ((deltaAmts.lightCenter) < 0) && (deltaAmts.centerIncCnt <= -LIGHTDELTAS2ACTON) ) {
+              if ( (lightsObj->getLightDeltaSum(deltaAmts.centerLight) < 0) && (lightsObj->getLightDeltaCounter(deltaAmts.centerLight) <= -LIGHTDELTAS2ACTON) ) {
                 // It's consistently getting darker, stop and go other way.
                 localizationObj->writeMsg2Serial("LghtWent-");
                 done = true;

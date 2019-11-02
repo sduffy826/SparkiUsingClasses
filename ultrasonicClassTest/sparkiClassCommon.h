@@ -71,7 +71,10 @@
 #define LIGHTANGLERANGETOIGNORE 90 // Degrees to ignore of an existing light source, this is ignore left and right (so it's double)
 #define LIGHTSINWORKSPACE 2 // Can't be more than 2 for now
 #define LIGHTMINTRIANGULATION 6 // Min cm to be able to triangulate angle
-#define LIGHTOPTIMALTRIANGULATION 10  // CM for best triangulation
+#define LIGHTOPTIMALTRIANGULATION 20  // CM for best triangulation
+#define LIGHTDELTAS2ACTON 3  // How many delta's required before we act... i.e. want 3 samples going up before we act... note this is at the
+                             // each light source... if the left light has 3 deltas (we'll turn lett by degrees below)  
+#define LIGHTDELTAANGLE2TURN 5  // The number of degrees to turn toward the most significant light delta... if center is most significant we don't turn :)
 
 
 //class SparkiClassCommon {
