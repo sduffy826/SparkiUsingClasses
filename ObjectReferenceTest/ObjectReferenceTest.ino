@@ -16,6 +16,7 @@ class Point{
   void setPoint(const int &x1, const int &y1) {
     x = x1;
     y = y1;
+    showPoint();  // Just to test forward call
   }
   int getPointX() { return x; }
   int getPointY() { return y; }
@@ -25,7 +26,7 @@ class Point{
     Serial.println("Point below");
     Serial.print("x,");
     Serial.print(x);
-    Serial.print("y,");
+    Serial.print(",y,");
     Serial.println(y);
     delay(500);
   }
@@ -68,6 +69,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   if (counter == 0) {
     counter++;
+    
     Point myPoint(2,2);
     Serial.println("pt.showPoint()");
     myPoint.showPoint();
@@ -88,7 +90,12 @@ void loop() {
     Serial.println("circle showCircle()");
     myCircle.showCircle();
 
-
+    callLater();
     
   }
 }
+
+void callLater() {
+  Serial.println("foo");
+}
+
