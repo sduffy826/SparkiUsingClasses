@@ -76,7 +76,7 @@ int LightsClass::getAngleWithBiggestLightDeltaPct(const int &multFactor, const i
 
   for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
     // Make sure it's not in the range to ignore
-    if (numberBetweenRange(i * LIGHTSAMPLEANGLE, angle2IgnoreStart, angle2IgnoreEnd) == false) {
+    if (numberBetweenRange((i * LIGHTSAMPLEANGLE), angle2IgnoreStart, angle2IgnoreEnd) == false) {
       if ((indexPos == -1) || 
           ((deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerSignBit) * multFactor) > holdValue)) {
         holdValue = deltaPctHelper(lightDeltaPcts[i].centerPct, lightDeltaPcts[i].centerSignBit) * multFactor;
@@ -123,6 +123,58 @@ int LightsClass::getAngleWithHighestCurrentReading(const int &multFactor, const 
   return saveAngle;  // Note if the angle to ignore is everything then we'll return the angle we were oriented at
 }
 
+// -----------------------------------------------------------------------------------------
+// Clears a specific LightDelta variable; this is called from clearLightsDeltaSum
+void LightsClass::clearLightDelta(LightDelta &lightDelta) {
+  lightDelta.deltaSum = 0;
+  lightDelta.deltaCounter = 100;  // We don't have sign so we'll use 100 as base
+}
+
+// -----------------------------------------------------------------------------------------
+// Sets the LightDelta values based on the delta amount passed in, note the deltaCounter is
+// stored as a byte so we use a base as 100 meaning 0 and we decrement that value when we
+// are passed in a negative amount and increase when we have a positive value, the 
+// getLightDeltaCounter method returns a 'user' friendly value so code should be using that
+// They should also use getLightsDeltaSum in case we have some 'internal' representation for
+// that (currently we don't but who knows)
+void LightsClass::setLightDelta(LightDelta &amt, const int &delta) {
+  amt.deltaSum += delta;
+  if (delta > 0) {
+    amt.deltaCounter += (amt.deltaCounter < 200 ? 1 : 0);
+  }
+  else if (delta < 0) {
+    amt.deltaCounter -= (amt.deltaCounter > 0 ? 1 : 0);
+  }
+}
+
+// -----------------------------------------------------------------------------------------
+// This routine takes two LightAttributes and updates the LightsDeltaSum variable, it's really 
+// a wrapper for the method that does the work :)
+void LightsClass::setLightsDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current) {
+  setLightDelta(amts.leftLight,(current.lightLeft - original.lightLeft));
+  setLightDelta(amts.centerLight,(current.lightCenter - original.lightCenter));
+  setLightDelta(amts.rightLight,(current.lightRight - original.lightRight));
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper method to compare two LightDeltas and return the id associated with the record that's 
+// most significant, the last argument is a multiplication factor... a -1 value means you want 
+// the light that decreased more; note you pass the id you want to use to signify the lights; see 
+int LightsClass::lightDeltaAmountHelper(const LightDelta &lightDelta1, const LightDelta &llightDelta2, const byte &lightId1, const byte &lightId2, const int &multFactor) {
+  // Make sure that our delta counter is above the threshold we want
+  if ( ((getLightDeltaCounter(lightDelta1) * multFactor) >= LIGHTDELTAS2ACTON) || ((getLightDeltaCounter(lightDelta2) * multFactor) >= LIGHTDELTAS2ACTON) ) {
+    if (getLightDeltaCounter(lightDelta1) == getLightDeltaCounter(lightDelta2)) {
+      // Both lights have increased or decreased the same amount of times, use the one with most signifcant light
+      return ( (getLightsDeltaSum(light1)*multFactor) > (getLightsDeltaSum(light2)*multFactor) ? lightId1 : lightId2);
+    }
+    else {
+      // Return the one that has increased (or decreased) more frequently
+      return ( (getLightDeltaCounter(lightDelta1) * multFactor) > (getLightDeltaCounter(lightDelta2) * multFactor) ? lightId1 : lightId2 );
+    }
+  }
+  else 
+    return -1;
+}
 // =========================================================================================
 //      Public methods
 // =========================================================================================
@@ -188,6 +240,49 @@ void LightsClass::calculateWorldLightDeltas() {
 LightAttributes LightsClass::getLightAttributesAtCurrentPose() {
   setLightSampleAttributesAtCurrentPose();
   return lightSample[LIGHTSAMPLEVALUE2USE];
+}
+
+// -----------------------------------------------------------------------------------------
+// Routine to clear the variable that holds the LightsDeltaSum... you call this to reset the delta counters and sums (maybe after you took some action)
+void LightsClass::clearLightsDeltaSum(LightsDeltaSum &lightsDeltaSum) {
+  clearLightDelta(lightsDeltaSum.leftLight);
+  clearLightDelta(lightsDeltaSum.centerLight);
+  clearLightDelta(lightsDeltaSum.rightLight);
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper method to get the total light delta amount
+int LightsClass::getLightsDeltaSum(const LightDelta &lightDelta) {
+  return lightDelta.deltaSum;
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper to get the frequency that the light has changed (- means it's decreased that many times)
+int LightsClass::getLightDeltaCounter(const LightDelta &lightDelta) {
+  return 100-lightDeltaCounter;
+}
+
+// -----------------------------------------------------------------------------------------
+// This routine calls method 'setLightsDeltaSum' to set the LightsDeltaSum variable, it keeps track of the delta amounts between two
+// LightAttributes which are the other args passed in.
+// It then calls method 'lightDeltaAmountsHelper' to determine which light source is the most significant... it does this by 
+// seeing which one has changed more frequently (not the light change value, it's frequency).  If two lights have the same 
+// frequency of change then it'll return the one with the most significan change.
+int LightsClass::getLightAngleToTurnToBasedOnDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current) {
+  setLightsDeltaSum(amts, original, current);
+  // Get id of lights that are more significant (the last parm (1) means want increasing values... if want decreasing then pass -1)
+  int idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightLeft, amts.leftIncCnt, 1, amts.lightCenter, amts.centerIncCnt, 2, 1);
+  if (idOfLight2Point2 = 1) { // Left is significant, compare it to the right light
+    idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightLeft, amts.leftIncCnt, 1, amts.lightRight, amts.rightIncCnt, 3, 1);
+  }
+  else { // Center is more significant of the left light, compare it to the right.
+    idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightCenter, amts.centerIncCnt, 2,amts.lightRight, amts.rightIncCnt, 3, 1);
+  }
+  if (idOfLight2Point2 > 0) {
+    // One is signifcant
+    return ((idOfLight2Point2 - 2) * LIGHTDELTAANGLE2TURN);  // so this will return -LIGHTDELTAANGLE2TURN, 0 or LIGHTDELTAANGLETOTURN (for left, center, right)
+  }
+  return 0;
 }
 
 // -----------------------------------------------------------------------------------------
@@ -441,3 +536,21 @@ void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
     #endif
   #endif  
 };
+
+// Helper to show the light deltas (these are not percentage of change), the first number in the set is the total delta for that light, the second
+// number is the count of increases we've seen (a + number); if that is negative it represents decreases in light... note you could have a sum amount
+// that's + and a delta count that's - (that'd occur if you had a big jump or decline in light values)
+void LightsClass::showLightsDeltaSum(const LightsDeltaSum &amts) {
+  Serial.print("LDA,l");
+  Serial.print(getLightsDeltaSum(amts.leftLight));
+  Serial.print(",/");
+  Serial.print(getLightDeltaCounter(amts.leftLight));
+  Serial.print(",c,");
+  Serial.print(getLightsDeltaSum(amts.centerLight));
+  Serial.print(",/");
+  Serial.print(getLightDeltaCounter(amts.centerLight));
+  Serial.print(",r,");
+  Serial.print(getLightsDeltaSum(amts.rightLight));
+  Serial.print(",/");
+  Serial.println(getLightDeltaCounter(amts.rightLight));
+}

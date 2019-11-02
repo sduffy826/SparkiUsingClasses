@@ -29,6 +29,19 @@ struct LightDeltaPct {
   unsigned int rightSignBit : 1;
 };
 
+// Struct to hold the delta between light samples... note max 
+struct LightDelta {
+  int deltaSum;
+  byte deltaCounter;
+};
+
+struct LightsDeltaSum {
+  LightDelta leftLight;
+  LightDelta centerLight;
+  LightDelta rightLight;
+};
+
+
 class LightsClass {
   private: MovementsClass *movementsObj;
            UltrasonicClass *ultrasonicObj;
@@ -41,6 +54,15 @@ class LightsClass {
            void setLightSampleAttributesAtCurrentPose();  // Takes light samples at current pose and updates lightSample array; the array is sored so you can use media value
            int getAngleWithBiggestLightDeltaPct(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd);  // Get largest/smallest delta 
            int getAngleWithHighestCurrentReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement); // Get bright or dim angle
+           void clearLightDelta(LightDelta &lightDelta); // Clear a LightDelta variable (this is called from clearLightsDeltaSum)
+           void setLightDelta(LightDelta &amt, const int &delta); // Sets a LightDelta variable, this handles the 'internal' representation we use, called from setLightsDeltaSum
+
+           // Uses the two light attributes and updates the variable amts with sum of light deltas and frequence of change
+           void setLightsDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current); 
+           // Helper method to compare two LightDeltas and return the id associated with the record that's most significant, the last argument is a multiplication
+           // factor... a -1 value means you want the light that decreased more
+           int lightDeltaAmountHelper(const LightDelta &lightDelta1, const LightDelta &llightDelta2, const byte &lightId1, const byte &lightId2, const int &multFactor);
+
 
   public: LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, MovementsClass &movementsObject);
           
@@ -51,6 +73,18 @@ class LightsClass {
           // Get light attributes at the current pose
           LightAttributes getLightAttributesAtCurrentPose();  // Returns light attributes for the current pose you are at (this takes a sample)
           
+          // Clear the values in a LightsDeltaSum variable (i.e. you want to reset it back to original state)
+          void clearLightsDeltaSum(LightsDeltaSum &lightDeltaSum);
+
+          // Helper, gets the total delta associated with the a specific light
+          int getLightsDeltaSum(const LightDelta &lightDelta);
+
+          // Helper to get frequence of a particular light
+          int getLightDeltaCounter(const LightDelta &lightDelta);
+
+          // This returns the angle offset to turn from our current direction (the angle is LIGHTDELTAANGLE2TURN)
+          int getLightAngleToTurnToBasedOnDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current);
+
           // Gets the brightest/dimmest light when compared to the original 'world' sample
           int getAngleWithHighestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd);  // Gets the angle that is, note the angle returns is in the world coordinate
           int getAngleWithLowestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd); // Similar to above but gets lowest or darkest change
@@ -72,6 +106,7 @@ class LightsClass {
           void showSampledLightAttributes(const int &theAngle);    // Shows the value that was last 'sampled' 
           void showCalibrationLightAtAngle(const int &theAngle);  // Show the calibration light attributes for the angle we want
           void showLightDeltaPctForAngle(const int &theAngle); // Little helper
+          void showLightsDeltaSum(const LightsDeltaSum &amts); // Helper to output light delta values
           
 };
 #endif

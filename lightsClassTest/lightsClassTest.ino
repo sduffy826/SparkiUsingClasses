@@ -3,22 +3,11 @@
 #define TESTLIGHTDELTAS false
 #define TESTLIGHTS false
 #define TESTLIGHTTURN false
-#define TESTFINDLIGHTS true
-
-#define LIGHTDELTAS2ACTON 3  // We want three positive or negative delta's before we take action
-#define LIGHTDELTAANGLE2TURN 5
+#define TESTFINDLIGHTS false
 
 #define LIGHTLOG true
 
 byte counter = 0;
-struct LightDeltaAmounts {
-  unsigned int lightLeft : 12;
-  unsigned int leftIncCnt : 4;  // Counter of how many times this value increased
-  unsigned int lightCenter : 12;
-  unsigned int centerIncCnt : 4;
-  unsigned int lightRight : 12;
-  unsigned int rightIncCnt : 4;
-};
      
 void setup() {
   // put your setup code here, to run once:
@@ -35,75 +24,7 @@ void setup() {
 }
 
 
-void clearDeltaAmounts(LightDeltaAmounts &amts) {
-  showDeltaAmounts(amts);
-  amts.lightLeft = 0;
-  amts.leftIncCnt = 0;
-  amts.lightCenter = 0;
-  amts.centerIncCnt = 0;
-  amts.lightRight = 0;
-  amts.rightIncCnt = 0;
-}
 
-void showDeltaAmounts(const LightDeltaAmounts &amts) {
-  Serial.print("LDA,l");
-  Serial.print(amts.lightLeft);
-  Serial.print(",li,");
-  Serial.print(amts.leftIncCnt);
-  Serial.print(",c,");
-  Serial.print(amts.lightCenter);
-  Serial.print(",ci,");
-  Serial.print(amts.centerIncCnt);
-  Serial.print(",r,");
-  Serial.print(amts.lightRight);
-  Serial.print(",ri,");
-  Serial.println(amts.rightIncCnt);
-}
-
-void setDeltaAmounts(LightDeltaAmounts &amts, const LightAttributes &original, const LightAttributes &current) {
-  amts.lightLeft += (current.lightLeft - original.lightLeft);
-  amts.leftIncCnt += (current.lightLeft > original.lightLeft ? 1 : (current.lightLeft < original.lightLeft ? -1 : 0));
-  
-  amts.lightCenter += (current.lightCenter - original.lightCenter);
-  amts.centerIncCnt += (current.lightCenter > original.lightCenter ? 1 : (current.lightCenter < original.lightCenter ? -1 : 0));
-  
-  amts.lightRight += (current.lightRight - original.lightRight);
-  amts.rightIncCnt += (current.lightRight > original.lightRight ? 1 : (current.lightRight < original.lightRight ? -1 : 0));
-}
-
-// This returns the id of the light that has the larger count (has delta counts), if they match it'll return the one with the highest delta value, if 
-// we don't find a light to look at we'll return -1 (don't use that as a light id).
-int lightDeltaAmountsHelper(const int &lightDelta1, const int &lightCnt1, const byte &lightId1, const int &lightDelta2, const int &lightCnt2, const byte &lightId2 ) {
-  if ((lightCnt1 >= LIGHTDELTAS2ACTON) || (lightCnt2 >= LIGHTDELTAS2ACTON)) {  // At least one of the lights is above threshold
-    if ((lightCnt1 - lightCnt2) == 0) {
-      // Same delta count return id of the larger delta
-      return (lightDelta1 > lightDelta2 ? lightId1 : lightId2);
-    }
-    else {
-      return (lightCnt1 > lightCnt2 ? lightId1 : lightId2);
-    }
-  }
-  else
-    return -1;
-}
-
-// Little helper to compare left, center and right lights and return
-int getAngleToTurn(LightDeltaAmounts &amts, const LightAttributes &original, const LightAttributes &current) {
-  setDeltaAmounts(amts, original, current);
-  // Get id of lights that are more significant
-  int idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightLeft, amts.leftIncCnt, 1, amts.lightCenter, amts.centerIncCnt, 2);
-  if (idOfLight2Point2 = 1) { // Left is significant, compare it to the right light
-    idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightLeft, amts.leftIncCnt, 1, amts.lightRight, amts.rightIncCnt, 3);
-  }
-  else { // Center is more significant of the left light, compare it to the right.
-    idOfLight2Point2 = lightDeltaAmountsHelper(amts.lightCenter, amts.centerIncCnt, 2,amts.lightRight, amts.rightIncCnt, 3);
-  }
-  if (idOfLight2Point2 > 0) {
-    // One is signifcant
-    return ((idOfLight2Point2 - 2) * LIGHTDELTAANGLE2TURN);  // so this will return -LIGHTDELTAANGLE2TURN, 0 or LIGHTDELTAANGLETOTURN (for left, center, right)
-  }
-  return 0;
-}
 
 
 void loop() {
@@ -252,7 +173,7 @@ void loop() {
         // Save the original light attributes
         LightAttributes originalLightAttributes = lightsObj->getLightAttributesAtCurrentPose();
         // Clear all your delta's
-        clearDeltaAmounts(deltaAmts);
+        lightsObj->clearLightsDeltaSum(deltaAmts);
                 
         #if LIGHTLOG
           lightsObj->showLightAttributes("Orig",originalLightAttributes,angle2GoTo);
@@ -276,7 +197,7 @@ void loop() {
           }
           else {
             // Calculate to see if we should adjust our angle
-            angleVar1 = getAngleToTurn(deltaAmts, originalLightAttributes, currentLightAttributes);
+            angleVar1 = lightsObj->getLightAngleToTurnTo(deltaAmts, originalLightAttributes, currentLightAttributes);
             if (angleVar1 != 0) {
               // We have an angle to turn to, so set stopMoving to true, we'll do the turning down there
               stopMoving = true;
@@ -344,10 +265,10 @@ void loop() {
               sparki.beep();
             }
             
-            clearDeltaAmounts(deltaAmts); 
+            lightsObj->clearLightsDeltaSum(deltaAmts); 
 
             #if LIGHTLOG
-              showDeltaAmounts(deltaAmts);
+              lightsObj->showLightsDeltaSum(deltaAmts);
             #endif
             
           }
