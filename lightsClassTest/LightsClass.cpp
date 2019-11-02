@@ -1,14 +1,23 @@
 #include "lightsClass.h"
 
+// =========================================================================================
+//      Constructor(s)
+// =========================================================================================
 LightsClass::LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, MovementsClass &movementsObject) {
   ultrasonicObj = &ultrasonicObject;
   localizationObj = &localizationObject;
   movementsObj  = &movementsObject;
 }
 
-// Gets the light attributes, we take samples and will sort them at the end, the program will use
-// a constant (LIGHTSAMPLEVALUE2USE) to determine the value to use (median at time of this writing).
-void LightsClass::setLightAttributesAtCurrentPose() {
+// =========================================================================================
+//      Private methods
+// =========================================================================================
+
+// -----------------------------------------------------------------------------------------
+// Gets the light attributes, and populates the lightSample array.  The array is sorted that 
+// way we can take the value we want, currently the program will use a constant (LIGHTSAMPLEVALUE2USE); 
+// that number is the median (at time of this writing).
+void LightsClass::setLightSampleAttributesAtCurrentPose() {
   for (byte i = 0; i < LIGHTSAMPLESIZE; i++) {
     lightSample[i].lightLeft = sparki.lightLeft();
     lightSample[i].lightCenter = sparki.lightCenter();
@@ -40,137 +49,15 @@ void LightsClass::setLightAttributesAtCurrentPose() {
   // Note if want average you could put that in the last position... but don't think we need
 }
 
-//  Method to return the current light attributes, this is public method
-LightAttributes LightsClass::getLightAttributesAtCurrentPose() {
-  setLightAttributesAtCurrentPose();
-  return lightSample[LIGHTSAMPLEVALUE2USE];
-}
-
-
-// Helper method to show light attributes, since I don't know the angle the light attributes where taken you should pass that in
-void LightsClass::showLightAttributes(char *msgStr, const LightAttributes &liteAttr, const int &theAngle) {
-  #if USE_LCD 
-    sparki.print("LghtAttr,");
-    sparki.print(msgStr);
-    sparki.print(",<,");
-    sparki.print(theAngle);
-    sparki.print(",lft,");
-    sparki.print(liteAttr.lightLeft);
-    sparki.print(",cntr,");
-    sparki.print(liteAttr.lightCenter);
-    sparki.print(",rt,");
-    sparki.println(liteAttr.lightRight);
-    sparki.updateLCD();
-  #else
-    Serial.print("LA,");
-    sparki.print(msgStr);
-    sparki.print(",<,");
-    Serial.print(theAngle);
-    Serial.print(",l,");
-    Serial.print(liteAttr.lightLeft);
-    Serial.print(",c,");
-    Serial.print(liteAttr.lightCenter);
-    Serial.print(",r,");
-    Serial.println(liteAttr.lightRight);
-    delay(DELAY_FOR_SERIAL_COMM);
-  #endif  
-}
-
-// Helper to show the light values in the 'lightSample' array; we use the LIGHTSAMPLEVALUE2USE to specify which one
-void LightsClass::showSampledLightAttributes(const int &theAngle) {
-  showLightAttributes("Sam",lightSample[LIGHTSAMPLEVALUE2USE],theAngle);
-}
-
-// Little helper to show the 'base' calibration light for an angle
-void LightsClass::showCalibrationLightAtAngle(const int &theAngle) {
-  showLightAttributes("Cal",lightCalibration[theAngle/LIGHTSAMPLEANGLE], theAngle);
-}
-
-
-// This takes a sample of the 'world' lights, the values are stored in the lightCalibration array for the respective angles
-void LightsClass::sampleWorldLights() {
-  movementsObj->turnToZero();
-  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
-    setLightAttributesAtCurrentPose();
-
-    lightCalibration[i].lightLeft = lightSample[LIGHTSAMPLEVALUE2USE].lightLeft;
-    lightCalibration[i].lightCenter = lightSample[LIGHTSAMPLEVALUE2USE].lightCenter;
-    lightCalibration[i].lightRight = lightSample[LIGHTSAMPLEVALUE2USE].lightRight;
-    lightCalibration[i].flag1 = false;
-    lightCalibration[i].flag2 = false;
-    showSampledLightAttributes(i*LIGHTSAMPLEANGLE);
- 
-    movementsObj->turnRight(LIGHTSAMPLEANGLE);
-    delay(DELAY_AFTER_MOVEMENT);
-  }
-}
-
-// Return the delta pct between current value and calibration one, note it can be negative
-int LightsClass::getLightDeltaPctBetween2Values(const int &currentValue, const int &calibrationValue) {
-  int deltaAmt = currentValue - calibrationValue; // Delta
-  if (deltaAmt > calibrationValue) {
-    // Delta is greater than base (meaning more than twice it's original value), return 100 as %
-    return 100;
-  }
-  else
-    return (deltaAmt * 100)/calibrationValue;
-}
-
-// Calculate the light deltas... this takes samples of the world from the position you are at and compares it with the calibration values... it updates
-// the lightDeltaPcts array with the net change between them
-void LightsClass::calculateLightDeltas() {
-  int deltaAmt, holdAngle;
-  holdAngle = localizationObj->getCurrentAngle();
-  movementsObj->turnToZero();
-  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
-    setLightAttributesAtCurrentPose();
-
-    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightLeft, lightCalibration[i].lightLeft);
-    lightDeltaPcts[i].leftPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].leftSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
-
-    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter, lightCalibration[i].lightCenter);
-    lightDeltaPcts[i].centerPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].centerSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
-    #if DEBUGLIGHTS
-      Serial.print("LCD,<,");
-      Serial.print(i*LIGHTSAMPLEANGLE);
-      Serial.print(",");
-      Serial.println(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter);
-      delay(DELAY_FOR_SERIAL_COMM);
-    #endif
-    
-    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightRight, lightCalibration[i].lightRight);
-    lightDeltaPcts[i].rightPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].rightSignBit  = (deltaAmt < 0 ? false : true); // Positive values have true
-  
-    movementsObj->turnRight(LIGHTSAMPLEANGLE);
-    delay(DELAY_AFTER_MOVEMENT);
-  }
-  movementsObj->turnToAngle(holdAngle);
-}
-
-// Little help routine, just returns an integer representing the delta pct (with the correct sign)
-int LightsClass::deltaPctHelper(const int &deltaPct, const bool &isPositive) {
-  return (isPositive ? deltaPct : -deltaPct);
-}
-
-// Helper method
-bool LightsClass::numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue) {
-  if (lowValue > highValue) {   // It wraps around i.e 11 -> 1
-     return ( ( (theNum >= lowValue) || (theNum <= highValue) ) ? true : false);
-  }
-  else {
-    return ( ( (theNum >= lowValue) && (theNum <= highValue) ) ? true : false);
-  }
-}
-
+// -----------------------------------------------------------------------------------------
 // Return angle with highest brightness (or lowest) depending on arg.
-// The multFactor passed in should be 1 for highest and -1 for lowest delta, we also have args to ignore
-// a range of angles... idea to ignore range that has a light we're not interested in
-// NOTE!!! if you don't want to ignore any angles then pass in -1 and -1 (so if you really want to ignore a range like -45 to 45 then
-// make sure you pass in 315 and 45 (you can call localizationObj->getAngle(...) to do that for you)
-int LightsClass::getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
+// The multFactor passed in should be 1 for highest and -1 for lowest delta, we also have 
+// args to ignore a range of angles... idea to ignore range that has a light we're not 
+// interested in
+// NOTE!!! if you don't want to ignore any angles then pass in -1 and -1 (so if you really want
+// to ignore a range like -45 to 45 then make sure you pass in 315 and 45 (you can call 
+// localizationObj->getAngle(...) to do that for you)
+int LightsClass::getAngleWithBiggestLightDeltaPct(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
   // We'll use the center light for now... may want to change but since we're rotating that should
   // be brightest when pointing directly at light
   if (angle2IgnoreStart >= 0) {
@@ -207,16 +94,313 @@ int LightsClass::getAngleWithBiggestLightDelta(const int &multFactor, const int 
   return indexPos*LIGHTSAMPLEANGLE;
 }
 
+// -----------------------------------------------------------------------------------------
+// This takes current readings in the world and returns the brightest or dimmest light (does 
+// not compare to calibration values... it's just the angle with highest/lowest) intensity  
+// NOTE: this is private... use the methods below as public interface
+int LightsClass::getAngleWithHighestCurrentReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  int holdAngle = localizationObj->getCurrentAngle();  // Save current angle
+  int saveAngle = holdAngle;
+  int tempAngle   = 0;
+  int saveReading = 0;
+  int nextAngleIncrement = -angleIncrement;  // We don't want to turn on first one so this will make it zero on first pass thru
+  for (int i = 0; i < 360; i+=angleIncrement) {
+    nextAngleIncrement += angleIncrement;
+    tempAngle = (holdAngle + i) % 360;
+    if (numberBetweenRange(tempAngle, angle2IgnoreStart, angle2IgnoreEnd) == false) {
+      movementsObj->turnRight(nextAngleIncrement);
+      nextAngleIncrement = 0; 
+      delay(DELAY_AFTER_MOVEMENT);
+      
+      setLightSampleAttributesAtCurrentPose();
+      if ((lightSample[LIGHTSAMPLEVALUE2USE].lightCenter * multFactor) > saveReading) {
+        saveReading = (lightSample[LIGHTSAMPLEVALUE2USE].lightCenter * multFactor);
+        saveAngle = tempAngle;
+      }
+    }
+  } 
+  movementsObj->turnToAngle(holdAngle); // Point back to the start
+  return saveAngle;  // Note if the angle to ignore is everything then we'll return the angle we were oriented at
+}
+
+// =========================================================================================
+//      Public methods
+// =========================================================================================
+
+// -----------------------------------------------------------------------------------------
+// This takes a sample of the 'world' lights, the values are stored in the lightCalibration 
+// array for the respective angles
+void LightsClass::sampleWorldLights() {
+  movementsObj->turnToZero();
+  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
+    setLightSampleAttributesAtCurrentPose();
+
+    lightCalibration[i].lightLeft = lightSample[LIGHTSAMPLEVALUE2USE].lightLeft;
+    lightCalibration[i].lightCenter = lightSample[LIGHTSAMPLEVALUE2USE].lightCenter;
+    lightCalibration[i].lightRight = lightSample[LIGHTSAMPLEVALUE2USE].lightRight;
+    lightCalibration[i].flag1 = false;
+    lightCalibration[i].flag2 = false;
+    showSampledLightAttributes(i*LIGHTSAMPLEANGLE);
+ 
+    movementsObj->turnRight(LIGHTSAMPLEANGLE);
+    delay(DELAY_AFTER_MOVEMENT);
+  }
+}
+
+// -----------------------------------------------------------------------------------------
+// Calculate the light deltas... this takes samples of 360' from the position you are at and
+// compares it with the calibration values... it updates the lightDeltaPcts array with the 
+//net change between them
+void LightsClass::calculateWorldLightDeltas() {
+  int deltaAmt, holdAngle;
+  holdAngle = localizationObj->getCurrentAngle();
+  movementsObj->turnToZero();
+  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
+    setLightSampleAttributesAtCurrentPose();
+
+    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightLeft, lightCalibration[i].lightLeft);
+    lightDeltaPcts[i].leftPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
+    lightDeltaPcts[i].leftSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
+
+    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter, lightCalibration[i].lightCenter);
+    lightDeltaPcts[i].centerPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
+    lightDeltaPcts[i].centerSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
+    #if DEBUGLIGHTS
+      Serial.print("LCD,<,");
+      Serial.print(i*LIGHTSAMPLEANGLE);
+      Serial.print(",");
+      Serial.println(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter);
+      delay(DELAY_FOR_SERIAL_COMM);
+    #endif
+    
+    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightRight, lightCalibration[i].lightRight);
+    lightDeltaPcts[i].rightPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
+    lightDeltaPcts[i].rightSignBit  = (deltaAmt < 0 ? false : true); // Positive values have true
+  
+    movementsObj->turnRight(LIGHTSAMPLEANGLE);
+    delay(DELAY_AFTER_MOVEMENT);
+  }
+  movementsObj->turnToAngle(holdAngle);
+}
+
+// -----------------------------------------------------------------------------------------
+//  Method to return the current light attributes, this is public method
+LightAttributes LightsClass::getLightAttributesAtCurrentPose() {
+  setLightSampleAttributesAtCurrentPose();
+  return lightSample[LIGHTSAMPLEVALUE2USE];
+}
+
+// -----------------------------------------------------------------------------------------
 // Helper method, will return highest delta, if don't want to ignore angle range pass in -1 and -1 
-int LightsClass::getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
-  return getAngleWithBiggestLightDelta(1, angle2IgnoreStart, angle2IgnoreEnd);
+int LightsClass::getAngleWithHighestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
+  return getAngleWithBiggestLightDeltaPct(1, angle2IgnoreStart, angle2IgnoreEnd);
 }
 
+// -----------------------------------------------------------------------------------------
 // Helper method, will return smallest delta (good if want to find shadows)
-int LightsClass::getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
-  return getAngleWithBiggestLightDelta(-1, angle2IgnoreStart, angle2IgnoreEnd);
+int LightsClass::getAngleWithLowestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
+  return getAngleWithBiggestLightDeltaPct(-1, angle2IgnoreStart, angle2IgnoreEnd);
 }
 
+// -----------------------------------------------------------------------------------------
+// Get the angle that has the highest current light (ignores calibation)
+int LightsClass::getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  return getAngleWithHighestCurrentReading(1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+}
+
+// -----------------------------------------------------------------------------------------
+// Get the angle with the dimmest current light
+int LightsClass::getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  return getAngleWithHighestCurrentReading(-1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+}
+
+// -----------------------------------------------------------------------------------------
+// Utility method, return the delta pct between current value and calibration one, note it can be negative
+int LightsClass::getLightDeltaPctBetween2Values(const int &currentValue, const int &calibrationValue) {
+  int deltaAmt = currentValue - calibrationValue; // Delta
+  if (deltaAmt > calibrationValue) {
+    // Delta is greater than base (meaning more than twice it's original value), return 100 as %
+    return 100;
+  }
+  else
+    return (deltaAmt * 100)/calibrationValue;
+}
+
+// -----------------------------------------------------------------------------------------
+// Little helper routine, just returns an integer representing the delta pct (with the correct sign)
+int LightsClass::deltaPctHelper(const int &deltaPct, const bool &isPositive) {
+  return (isPositive ? deltaPct : -deltaPct);
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper method, checks that a number is between a range
+bool LightsClass::numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue) {
+  if (lowValue > highValue) {   // It wraps around i.e 11 -> 1
+     return ( ( (theNum >= lowValue) || (theNum <= highValue) ) ? true : false);
+  }
+  else {
+    return ( ( (theNum >= lowValue) && (theNum <= highValue) ) ? true : false);
+  }
+}
+
+// -----------------------------------------------------------------------------------------
+// Routine to triangulate light sources
+
+void LightsClass::setPotentialLightTargets() {
+  // This routine has logic to calculate potential locations of the lights... the lights need to be a distance apart (if
+  // we're searching for more thane one).  The array lights2Review has the following when this is done
+  //    lights2Review[0] has x,y coordinate of starting
+  //    lights2Review[1] has the x,y coordinate of the brightest light (calc'd via triangulation)
+  //    lights2Review[2] also has the x,y coordinate starting with
+  //    lights2Review[3] has the position of the next brightest light (calc'd via triangulation)
+  // Logic
+  //    Save current position in pos 0, 2 of lights2Review
+  //    Calculate the light deltas
+  //      lights2Review[0].angle <- angle to the brightest light
+  //      lights2Review[2].angle <- angle of brightest light but ignores angle that first light is at, and angles between LIGHTANGLERANGETOIGNORE
+  //    Get the midpoint between angles[0] and [2] (we want to split it and move toward that direction if we can)
+  //      we store the angle between them in [1].angle
+  //      we store alternate angle at [3].angle (alternate is 180 away from [1].angle)
+  //    We want to find angle that we can move toward ([1].angle is preferred)
+  //      Get distance available at angle [1].angle
+  //      if it's less than minimum triangulation distance then try [3].angle
+  //      Use best angle we can
+  //    Move forward at that angle a MINTRIANGULATION distance
+  //    Calculate light deltas
+  //       lights2Review[1].angle <- angle brightest light, it ingores lights2Review[2].angle
+  //       lights2Review[3].angle <- angle of brightest light, it ignores lights2Review[0].angle
+  //    Triangulate positions [0] with [1] and [2] with [3]
+  //
+  
+  Pose lights2Review[4];  // 0,1 is for first light, 2,3 is for second  
+  lights2Review[0] = localizationObj->getPose();
+  lights2Review[2] = localizationObj->getPose();
+  int angleMoved;
+
+  // Test this it aint working as expected
+  // Calculate the light deltas from the 
+  localizationObj->writeMsg2Serial("CalcDelta");
+  calculateWorldLightDeltas();
+  lights2Review[0].angle = getAngleWithHighestLightDeltaPct(-1,-1);  // Use invalid angle to not ignore
+  showLightDeltaPctForAngle(lights2Review[0].angle);
+
+  if (LIGHTSINWORKSPACE > 1) {
+    // Get the next brightest, pass in the angle from the first one... we want to ignore that
+    lights2Review[2].angle = getAngleWithHighestLightDeltaPct(localizationObj->getAngle(lights2Review[0].angle-LIGHTANGLERANGETOIGNORE),
+                                                              localizationObj->getAngle(lights2Review[0].angle+LIGHTANGLERANGETOIGNORE));
+    showLightDeltaPctForAngle(lights2Review[2].angle);
+  }
+  else {
+    // We'll use 180 apart
+    lights2Review[2].angle = localizationObj->getAngle(lights2Review[1].angle + 180.0);
+  }
+  // We are going to try and triangulate the position of the lights
+  // I'm reusing positions 1 and 3 as work area's... these values won't persist
+  // Calculate the angle between the two angles we have, we'll move there to try and triangulate.
+  lights2Review[1].angle = localizationObj->getMidpointBetweenTwoAngles(lights2Review[0].angle, lights2Review[2].angle);
+  lights2Review[3].angle = localizationObj->getAngle(lights2Review[1].angle + 180); // and calculate 180' away, may need
+  
+  lights2Review[1].xPos = movementsObj->getDistanceAtAngle(lights2Review[1].angle);
+  angleMoved = lights2Review[1].angle; // Save this, want it for the triangulation routine
+  if (lights2Review[1].xPos < LIGHTMINTRIANGULATION) {
+    // It's less than what we want to triangulate, try 180' away
+    lights2Review[3].xPos = movementsObj->getDistanceAtAngle(lights2Review[3].angle);
+    if (lights2Review[3].xPos < lights2Review[1].xPos) {
+      // Go back to original, it's less than we want but more than at 180'
+      movementsObj->turnToAngle(lights2Review[1].angle);
+    }
+    else
+      angleMoved = lights2Review[3].angle;  // We used alternate angle so replace the angleMoved value
+  }
+
+  localizationObj->writeMsg2Serial("Triangulating");
+  Serial.print(angleMoved);
+  localizationObj->writeMsg2Serial(" am");
+
+  // Move forward, we'll try and move the optimal triangulation distance
+  while (movementsObj->moveForward(LIGHTOPTIMALTRIANGULATION, ULTRASONIC_MIN_SAFE_DISTANCE, true));
+
+  // Calculate the delta's at a distance
+  localizationObj->writeMsg2Serial("CalcNewDelta");
+  calculateWorldLightDeltas();
+  lights2Review[1].angle = getAngleWithHighestLightDeltaPct(localizationObj->getAngle(lights2Review[2].angle-LIGHTANGLERANGETOIGNORE),
+                                                            localizationObj->getAngle(lights2Review[2].angle+LIGHTANGLERANGETOIGNORE));
+    
+  showLightDeltaPctForAngle(lights2Review[1].angle);
+
+  if (LIGHTSINWORKSPACE > 1) {
+    // Get the next brightest, pass in the angle from the first one... we want to ignore that
+    lights2Review[3].angle = getAngleWithHighestLightDeltaPct(localizationObj->getAngle(lights2Review[0].angle-LIGHTANGLERANGETOIGNORE),
+                                                              localizationObj->getAngle(lights2Review[0].angle+LIGHTANGLERANGETOIGNORE));
+    showLightDeltaPctForAngle(lights2Review[3].angle);
+  }
+
+  // Calculate the triangulation
+  Pose lightPose;
+  if (localizationObj->setPointOfIntersection(lights2Review[0], lights2Review[1], lightPose) == true) {
+    localizationObj->showPose(lightPose);
+    movementsObj->moveToPose(lightPose);
+  }
+  else {
+    localizationObj->writeMsg2Serial("^Intrsct1stLght");
+  }
+  if (localizationObj->setPointOfIntersection(lights2Review[2], lights2Review[3], lightPose) == true) {
+    localizationObj->showPose(lightPose);
+    movementsObj->moveToPose(lightPose);
+  }
+  else {
+    localizationObj->writeMsg2Serial("^Intrsct1stLght");
+  }
+}
+
+// ==========================================================================================
+// Methods predominantly for debugging... they show values 
+// ==========================================================================================
+
+// -----------------------------------------------------------------------------------------
+// Helper method to show light attributes, since I don't know the angle the light attributes 
+// where taken you should pass that in
+void LightsClass::showLightAttributes(char *msgStr, const LightAttributes &liteAttr, const int &theAngle) {
+  #if USE_LCD 
+    sparki.print("LghtAttr,");
+    sparki.print(msgStr);
+    sparki.print(",<,");
+    sparki.print(theAngle);
+    sparki.print(",lft,");
+    sparki.print(liteAttr.lightLeft);
+    sparki.print(",cntr,");
+    sparki.print(liteAttr.lightCenter);
+    sparki.print(",rt,");
+    sparki.println(liteAttr.lightRight);
+    sparki.updateLCD();
+  #else
+    Serial.print("LA,");
+    sparki.print(msgStr);
+    sparki.print(",<,");
+    Serial.print(theAngle);
+    Serial.print(",l,");
+    Serial.print(liteAttr.lightLeft);
+    Serial.print(",c,");
+    Serial.print(liteAttr.lightCenter);
+    Serial.print(",r,");
+    Serial.println(liteAttr.lightRight);
+    delay(DELAY_FOR_SERIAL_COMM);
+  #endif  
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper to show the light values in the 'lightSample' array; we use the LIGHTSAMPLEVALUE2USE to specify which one
+void LightsClass::showSampledLightAttributes(const int &theAngle) {
+  showLightAttributes("Sam",lightSample[LIGHTSAMPLEVALUE2USE],theAngle);
+}
+
+// -----------------------------------------------------------------------------------------
+// Little helper to show the 'base' calibration light for an angle
+void LightsClass::showCalibrationLightAtAngle(const int &theAngle) {
+  showLightAttributes("Cal",lightCalibration[theAngle/LIGHTSAMPLEANGLE], theAngle);
+}
+
+// -----------------------------------------------------------------------------------------
 // Little helper to show what light values are for a given 'world' angle; it'll show
 void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
   int indexOfDelta = theAngle/LIGHTSAMPLEANGLE;
@@ -257,147 +441,3 @@ void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
     #endif
   #endif  
 };
-
-// This takes current readings in the world and returns the brightest or dimmest light (does not compare to calibration values... it's just the angle with
-// highest/lowest) intensity  NOTE: this is private... use the methods below as public interface
-int LightsClass::getAngleWithHighestCurrentReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
-  int holdAngle = localizationObj->getCurrentAngle();  // Save current angle
-  int saveAngle = holdAngle;
-  int tempAngle   = 0;
-  int saveReading = 0;
-  int nextAngleIncrement = -angleIncrement;  // We don't want to turn on first one so this will make it zero on first pass thru
-  for (int i = 0; i < 360; i+=angleIncrement) {
-    nextAngleIncrement += angleIncrement;
-    tempAngle = (holdAngle + i) % 360;
-    if (numberBetweenRange(tempAngle, angle2IgnoreStart, angle2IgnoreEnd) == false) {
-      movementsObj->turnRight(nextAngleIncrement);
-      nextAngleIncrement = 0; 
-      delay(DELAY_AFTER_MOVEMENT);
-      
-      setLightAttributesAtCurrentPose();
-      if ((lightSample[LIGHTSAMPLEVALUE2USE].lightCenter * multFactor) > saveReading) {
-        saveReading = (lightSample[LIGHTSAMPLEVALUE2USE].lightCenter * multFactor);
-        saveAngle = tempAngle;
-      }
-    }
-  } 
-  movementsObj->turnToAngle(holdAngle); // Point back to the start
-  return saveAngle;  // Note if the angle to ignore is everything then we'll return the angle we were oriented at
-}
-
-int LightsClass::getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
-  return getAngleWithHighestCurrentReading(-1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
-}
-int LightsClass::getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
-  return getAngleWithHighestCurrentReading(1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
-}
-
-void LightsClass::setPotentialLightTargets() {
-  // This routine has logic to calculate potential locations of the lights... the lights need to be a distance apart (if
-  // we're searching for more thane one).  The array lights2Review has the following when this is done
-  //    lights2Review[0] has x,y coordinate of starting
-  //    lights2Review[1] has the x,y coordinate of the brightest light (calc'd via triangulation)
-  //    lights2Review[2] also has the x,y coordinate starting with
-  //    lights2Review[3] has the position of the next brightest light (calc'd via triangulation)
-  // Logic
-  //    Save current position in pos 0, 2 of lights2Review
-  //    Calculate the light deltas
-  //      lights2Review[0].angle <- angle to the brightest light
-  //      lights2Review[2].angle <- angle of brightest light but ignores angle that first light is at, and angles between LIGHTANGLERANGETOIGNORE
-  //    Get the midpoint between angles[0] and [2] (we want to split it and move toward that direction if we can)
-  //      we store the angle between them in [1].angle
-  //      we store alternate angle at [3].angle (alternate is 180 away from [1].angle)
-  //    We want to find angle that we can move toward ([1].angle is preferred)
-  //      Get distance available at angle [1].angle
-  //      if it's less than minimum triangulation distance then try [3].angle
-  //      Use best angle we can
-  //    Move forward at that angle a MINTRIANGULATION distance
-  //    Calculate light deltas
-  //       lights2Review[1].angle <- angle brightest light, it ingores lights2Review[2].angle
-  //       lights2Review[3].angle <- angle of brightest light, it ignores lights2Review[0].angle
-  //    Triangulate positions [0] with [1] and [2] with [3]
-  //
-  
-  Pose lights2Review[4];  // 0,1 is for first light, 2,3 is for second  
-  lights2Review[0] = localizationObj->getPose();
-  lights2Review[2] = localizationObj->getPose();
-  int angleMoved;
-
-  // Test this it aint working as expected
-  // Calculate the light deltas from the 
-  localizationObj->writeMsg2Serial("CalcDelta");
-  calculateLightDeltas();
-  lights2Review[0].angle = getAngleWithHighestLightDelta(-1,-1);  // Use invalid angle to not ignore
-  showLightDeltaPctForAngle(lights2Review[0].angle);
-
-  if (LIGHTSINWORKSPACE > 1) {
-    // Get the next brightest, pass in the angle from the first one... we want to ignore that
-    lights2Review[2].angle = getAngleWithHighestLightDelta(localizationObj->getAngle(lights2Review[0].angle-LIGHTANGLERANGETOIGNORE),
-                                                           localizationObj->getAngle(lights2Review[0].angle+LIGHTANGLERANGETOIGNORE));
-    showLightDeltaPctForAngle(lights2Review[2].angle);
-  }
-  else {
-    // We'll use 180 apart
-    lights2Review[2].angle = localizationObj->getAngle(lights2Review[1].angle + 180.0);
-  }
-  // We are going to try and triangulate the position of the lights
-  // I'm reusing positions 1 and 3 as work area's... these values won't persist
-  // Calculate the angle between the two angles we have, we'll move there to try and triangulate.
-  lights2Review[1].angle = localizationObj->getMidpointBetweenTwoAngles(lights2Review[0].angle, lights2Review[2].angle);
-  lights2Review[3].angle = localizationObj->getAngle(lights2Review[1].angle + 180); // and calculate 180' away, may need
-  
-  lights2Review[1].xPos = movementsObj->getDistanceAtAngle(lights2Review[1].angle);
-  angleMoved = lights2Review[1].angle; // Save this, want it for the triangulation routine
-  if (lights2Review[1].xPos < LIGHTMINTRIANGULATION) {
-    // It's less than what we want to triangulate, try 180' away
-    lights2Review[3].xPos = movementsObj->getDistanceAtAngle(lights2Review[3].angle);
-    if (lights2Review[3].xPos < lights2Review[1].xPos) {
-      // Go back to original, it's less than we want but more than at 180'
-      movementsObj->turnToAngle(lights2Review[1].angle);
-    }
-    else
-      angleMoved = lights2Review[3].angle;  // We used alternate angle so replace the angleMoved value
-  }
-
-  localizationObj->writeMsg2Serial("Triangulating");
-  Serial.print(angleMoved);
-  localizationObj->writeMsg2Serial(" am");
-
-  // Move forward, we'll try and move the optimal triangulation distance
-  while (movementsObj->moveForward(LIGHTOPTIMALTRIANGULATION, ULTRASONIC_MIN_SAFE_DISTANCE, true));
-
-  // Calculate the delta's at a distance
-  localizationObj->writeMsg2Serial("CalcNewDelta");
-  calculateLightDeltas();
-  lights2Review[1].angle = getAngleWithHighestLightDelta(localizationObj->getAngle(lights2Review[2].angle-LIGHTANGLERANGETOIGNORE),
-                                                         localizationObj->getAngle(lights2Review[2].angle+LIGHTANGLERANGETOIGNORE));
-    
-  showLightDeltaPctForAngle(lights2Review[1].angle);
-
-  if (LIGHTSINWORKSPACE > 1) {
-    // Get the next brightest, pass in the angle from the first one... we want to ignore that
-    lights2Review[3].angle = getAngleWithHighestLightDelta(localizationObj->getAngle(lights2Review[0].angle-LIGHTANGLERANGETOIGNORE),
-                                                           localizationObj->getAngle(lights2Review[0].angle+LIGHTANGLERANGETOIGNORE));
-    showLightDeltaPctForAngle(lights2Review[3].angle);
-  }
-
-  // Calculate the triangulation
-  Pose lightPose;
-  if (localizationObj->setPointOfIntersection(lights2Review[0], lights2Review[1], lightPose) == true) {
-    localizationObj->showPose(lightPose);
-    movementsObj->moveToPose(lightPose);
-  }
-  else {
-    localizationObj->writeMsg2Serial("^Intrsct1stLght");
-  }
-  if (localizationObj->setPointOfIntersection(lights2Review[2], lights2Review[3], lightPose) == true) {
-    localizationObj->showPose(lightPose);
-    movementsObj->moveToPose(lightPose);
-  }
-  else {
-    localizationObj->writeMsg2Serial("^Intrsct1stLght");
-  }
-}
-
-
-

@@ -60,7 +60,7 @@ I listed the classes alphabetically except for the first one... that has the con
 
 
 ## LightsClass
-**Provides attributes and routines related to the light sensors** Note it's common to call 'sampleWorldLights()' then turn the lights on (or move) and call 'calculateDeltaPcts()' which will calculate the deltas.  You can then use a method like 'getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)' to find the angle with brighest light (read more below).
+**Provides attributes and routines related to the light sensors** Note it's common to call 'sampleWorldLights()' then turn the lights on (or move) and call 'calculateWorldDeltaPcts()' which will calculate the deltas.  You can then use a method like 'getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)' to find the angle with brighest light (read more below).
 ```
 // struct for light attributes... since we only have values from 0-1000 we use 10 bits... the flag1/flag2 are for future and to make the size of this align on the proper boundary.
 struct LightAttributes {
@@ -83,26 +83,33 @@ struct LightDeltaPct {
 ```
 
 - **private methods**
-  - **void setLightAttributesAtCurrentPose()** - Takes light samples at current pose and updates (private) lightSample array; the array is sorted so you can use media value
-  - **int getAngleWithBiggestLightDelta(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - Routine that calculates the angle with the largest delta light percentage; if the multFactor is -1 then it'll return the biggest changes in negative direction, if 1 it'll give you +; the two ignore angles are so you can ignore a range of degrees.   The publicly exposed methods (that call this) are getAngleWithLowestLightDelta and getAngleWithHighestLightDelta.
+  - **void setLightSampleAttributesAtCurrentPose()** - Takes light samples at current pose and updates (private) lightSample array; the array is sorted so you can use whatever value we want.  The #define of LIGHTSAMPLEVALUE2USE is the one we use... at the time of this writing it's the median value.
+  - **int getAngleWithBiggestLightDeltaPct(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - Routine that calculates the angle with the largest delta light percentage; if the multFactor is -1 then it'll return the biggest changes in negative direction, if 1 it'll give you +; the two ignore angles are so you can ignore a range of degrees.   The publicly exposed methods (that call this) are getAngleWithLowestLightDelta and getAngleWithHighestLightDelta.
   - **int getAngleWithHighestCurrentReading(const int &multFactor, const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - This routine will take samples of the light and return the brighest light (or dimmest); it does not compare to any prior values... it's just the angle with brighest or lowest intensity.  Note like others it has a range of angles that can be ignored.  NOTE: methods getAngleWithDimmestCurrentLight and getAngleWithBrightestCurrentLight are the publicly exposed methods.. they use this one (best way to encapsulate)
 
 - **public methods**
-  - **LightAttributes getLightAttributesAtCurrentPose()** - Returns the light attributes at the current pose you are at, this takes a sampling
-  - **void showLightAttributes(char *theStr, const LightAttributes &liteAttr, const int &theAngle)** - Good for debugging, msgStr can describe the attributes you're showing, you then give it the attributes and the angle they were taken at (we don't have angle as a light attribute (wouldn't make sense))
-  - **void showSampledLightAttributes(const int &theAngle)** - Just a helper method, can use this if you want to show the values that were last sampled
-  - **void LightsClass::showCalibrationLightAtAngle(const int &theAngle)** - Show the 'calibration' light attributes for a given angle
-  - **void sampleWorldLights()** - Takes a sample of the 'world lights' and stores values in the lightCalibration array (for respective angles)
-  - **int getLightDeltaPctBetween2Values(const int &currentValue, const int &calibrationValue)** - Gets the delta (as a pct 0-100) between two light values... note it only goes to 100%
-  - **void calculateLightDeltas()** - This updates the lightDeltaPcts array with the difference between the 'world' lights now and the original values taken, note, you should have called 'sampleWorldLights()' before using this one... 
-  - **int deltaPctHelper(const int &deltaPct, const bool &isPositive)** - Helper method to return the delta pct as an integer
-  - **bool numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue)** - Helper it's used to determine if a given number is between a range... it's needed because of angles... say our angle range is from 315' to 45' and we want to see if 30' is between that.  This handles it and will return true; but will return false for something like angle 60.
-  - **int getAngleWithHighestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - This returns the angle (in the world) where the largest light delta exists between the world (lightCalibration) and the values taken after calling 'calculateLightDeltas()'.  You can pass an angle range to ignore... this is useful when you know an area from your current position should be ignored (i.e. you already visited it).   IMPORANT - to include world pass in negative values for start/end angles to ignore so if you want to really ignore something like -45' to 30' make sure you pass in 315,30 instead (use getAngle(..) if you need to)
-  - **int getAngleWithLowestLightDelta(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - Similar to above but gets lowest or darkest change
-  - **showLightDeltaPctForAngle(const int &theAngle)** - Little helper (mainly for debugging), it will show what the light delta percentages are for a given angle
-  - **int getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - Gets the angle with the brighest light; it does not compare to any 'prior' light... it just gives you the angle with the brightest one.  Like other methods you can pass the angles to ignore.. remember all angles are 'world' angles (not related to your current orientation).
-  - **int getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - Similar to above but gives the dimmest light
-  - **void setPotentialLightTargets()** - This tries to triangulate your target position to lights... cool work but lights are not good for triangulation :(  The general logic used was (not handled edge tests... but this will give gist):
+  - Routines to sample (calibrate) lights and then determine current lights and updates the pct differences for each angle
+    - **void sampleWorldLights()** - Takes a sample of the 'world lights' and stores values in the lightCalibration array (for respective angles)
+    - **void calculateWorldLightDeltas()** - This updates the lightDeltaPcts array with the difference between the 'world' lights now and the original values taken, note, you should have called 'sampleWorldLights()' before using this one... 
+    
+  - Routine to get current light attributes (where you currently are and your current pose only)
+    - **LightAttributes getLightAttributesAtCurrentPose()** - Returns the light attributes at the current pose you are at, this takes a sampling (calls setLightSampleAttributesAtCurrentPose) and returns those values to the caller.
+  
+  - Routines to get the biggest pct change between the calibration amount and the lights after calling 'calculateWorldLightDeltas'
+    - **int getAngleWithHighestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - This returns the angle (in the world) where the largest light delta exists between the world (lightCalibration) and the values taken after calling 'calculateLightDeltas()'.  You can pass an angle range to ignore... this is useful when you know an area from your current position should be ignored (i.e. you already visited it).   IMPORANT - to include world pass in negative values for start/end angles to ignore so if you want to really ignore something like -45' to 30' make sure you pass in 315,30 instead (use getAngle(..) if you need to)
+    - **int getAngleWithLowestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd)** - Similar to above but gets lowest or darkest change
+
+  - Routines to get the brightest or dimmest light from whereever you are, this doesn't take into account the 'calibration' values, it just finds the brightest/dimmest light based on your surroundings
+    - **int getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - Gets the angle with the brighest light; it does not compare to any 'prior' light... it just gives you the angle with the brightest one.  Like other methods you can pass the angles to ignore.. remember all angles are 'world' angles (not related to your current orientation).
+    - **int getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement)** - Similar to above but gives the dimmest light
+  
+  - Utility methods
+    - **int getLightDeltaPctBetween2Values(const int &currentValue, const int &calibrationValue)** - Gets the delta (as a pct 0-100) between two light values... note it only goes to 100%
+    - **int deltaPctHelper(const int &deltaPct, const bool &isPositive)** - Helper method to return the delta pct as an integer
+    - **bool numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue)** - Helper it's used to determine if a given number is between a range... it's needed because of angles... say our angle range is from 315' to 45' and we want to see if 30' is between that.  This handles it and will return true; but will return false for something like angle 60.
+  
+  - Try to triangulate light sources
+    - **void setPotentialLightTargets()** - This tries to triangulate your target position to lights... cool work but lights are not good for triangulation :(  The general logic used was (not handled edge tests... but this will give gist):
       ```
         Get the brightest light in world (L1), save your pose (P1)
         Search for a second light (L2) that is (LIGHTANGLERANGETOIGNORE (const) away 
@@ -116,7 +123,14 @@ struct LightDeltaPct {
         Knowing the pose of where L1 and L2 are you move to those locations, 
           intent is use wall following and get to the closes point between 
           yourself and the light (unobstructed) and then go to that spot.. 
-      ```
+      ```  
+  
+  - Output/debugging helping methods
+    - **showLightDeltaPctForAngle(const int &theAngle)** - Little helper (mainly for debugging), it will show what the light delta percentages are for a given angle.  
+    - **void showLightAttributes(char \*theStr, const LightAttributes &liteAttr, const int &theAngle)** - Good for debugging, msgStr can describe the attributes you're showing, you then give it the attributes and the angle they were taken at (we don't have angle as a light attribute (wouldn't make sense to have it))
+    - **void showSampledLightAttributes(const int &theAngle)** - Just a helper method, can use this if you want to show the values that were last sampled
+    - **void LightsClass::showCalibrationLightAtAngle(const int &theAngle)** - Show the 'calibration' light attributes for a given angle
+
 
 
 ## LocalizationClass

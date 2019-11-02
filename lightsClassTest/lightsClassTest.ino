@@ -178,7 +178,7 @@ void loop() {
 
       localizationObj->writeMsg2Serial("calcDlta");
       
-      lightsObj->calculateLightDeltas();
+      lightsObj->calculateWorldLightDeltas();
       int theAngle = lightsObj->getAngleWithHighestLightDelta(-1,-1);  // Use invalid angle to not ignore
       lightsObj->showCalibrationLightAtAngle(theAngle);
       // put in line above instead of this.. LOOK INTO if that's what was wanted lightsObj->showLightDirection(theAngle);
@@ -227,7 +227,7 @@ void loop() {
       delay(5000);
 
       localizationObj->writeMsg2Serial("calcDlta");
-      lightsObj->calculateLightDeltas();
+      lightsObj->calculateWorldLightDeltas();
       
       int angleVar1 = -1;
       int angleVar2 = -1;
