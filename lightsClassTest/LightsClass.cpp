@@ -10,43 +10,93 @@ LightsClass::LightsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &l
 }
 
 // =========================================================================================
-//      Private methods
-// =========================================================================================
+//      Methods 
+// -----------------------------------------------------------------------------------------
+// Calculate the light deltas... this takes samples of 360' from the position you are at and
+// compares it with the calibration values... it updates the lightDeltaPcts array with the 
+//net change between them
+void LightsClass::calculateWorldLightDeltas() {
+  int deltaAmt, holdAngle;
+  holdAngle = localizationObj->getCurrentAngle();
+  movementsObj->turnToZero();
+  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
+    setLightSampleAttributesAtCurrentPose();
+
+    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightLeft, lightCalibration[i].lightLeft);
+    lightDeltaPcts[i].leftPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
+    lightDeltaPcts[i].leftSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
+
+    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter, lightCalibration[i].lightCenter);
+    lightDeltaPcts[i].centerPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
+    lightDeltaPcts[i].centerSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
+    #if DEBUGLIGHTS
+      Serial.print("LCD,<,");
+      Serial.print(i*LIGHTSAMPLEANGLE);
+      Serial.print(",");
+      Serial.println(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter);
+      delay(DELAY_FOR_SERIAL_COMM);
+    #endif
+    
+    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightRight, lightCalibration[i].lightRight);
+    lightDeltaPcts[i].rightPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
+    lightDeltaPcts[i].rightSignBit  = (deltaAmt < 0 ? false : true); // Positive values have true
+  
+    movementsObj->turnRight(LIGHTSAMPLEANGLE);
+    delay(DELAY_AFTER_MOVEMENT);
+  }
+  movementsObj->turnToAngle(holdAngle);
+}
 
 // -----------------------------------------------------------------------------------------
-// Gets the light attributes, and populates the lightSample array.  The array is sorted that 
-// way we can take the value we want, currently the program will use a constant (LIGHTSAMPLEVALUE2USE); 
-// that number is the median (at time of this writing).
-void LightsClass::setLightSampleAttributesAtCurrentPose() {
-  for (byte i = 0; i < LIGHTSAMPLESIZE; i++) {
-    lightSample[i].lightLeft = sparki.lightLeft();
-    lightSample[i].lightCenter = sparki.lightCenter();
-    lightSample[i].lightRight = sparki.lightRight();
-    delay(LIGHTSAMPLEDELAY);
-  }
-  // Sort arrays, simple bubble sort
-  for (byte i = 0; i < LIGHTSAMPLESIZE-1; i++) {
-    for (byte j = i + 1; j < LIGHTSAMPLESIZE; j++) {
-      if (lightSample[i].lightLeft > lightSample[j].lightLeft) {
-        // Swap values... our array is one larger than needed so use index LIGHTSAMPLESIZE as hold area
-        lightSample[LIGHTSAMPLESIZE].lightLeft = lightSample[i].lightLeft;
-        lightSample[i].lightLeft = lightSample[j].lightLeft;
-        lightSample[j].lightLeft = lightSample[LIGHTSAMPLESIZE].lightLeft;
-      }
-      if (lightSample[i].lightCenter > lightSample[j].lightCenter) {
-        lightSample[LIGHTSAMPLESIZE].lightCenter = lightSample[i].lightCenter;
-        lightSample[i].lightCenter = lightSample[j].lightCenter;
-        lightSample[j].lightCenter = lightSample[LIGHTSAMPLESIZE].lightCenter;
-      }
-      if (lightSample[i].lightRight > lightSample[j].lightRight) {
-        // Swap values... our array is one larger than needed so use index LIGHTSAMPLESIZE as hold area
-        lightSample[LIGHTSAMPLESIZE].lightRight = lightSample[i].lightRight;
-        lightSample[i].lightRight = lightSample[j].lightRight;
-        lightSample[j].lightRight = lightSample[LIGHTSAMPLESIZE].lightRight;
-      }    
+// Clears a specific LightDelta variable; this is called from clearLightsDeltaSum
+void LightsClass::clearLightDelta(LightDelta &lightDelta) {
+  lightDelta.deltaSum = 0;
+  lightDelta.deltaCounter = 100;  // We don't have sign so we'll use 100 as base
+}
+
+// -----------------------------------------------------------------------------------------
+// Routine to clear the variable that holds the LightsDeltaSum... you call this to reset the delta counters and sums (maybe after you took some action)
+void LightsClass::clearLightsDeltaSum(LightsDeltaSum &lightsDeltaSum) {
+  clearLightDelta(lightsDeltaSum.leftLight);
+  clearLightDelta(lightsDeltaSum.centerLight);
+  clearLightDelta(lightsDeltaSum.rightLight);
+}
+
+// -----------------------------------------------------------------------------------------
+// Little helper routine, just returns an integer representing the delta pct (with the correct sign)
+int LightsClass::deltaPctHelper(const int &deltaPct, const bool &isPositive) {
+  return (isPositive ? deltaPct : -deltaPct);
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper method to compare two LightDeltas and return the id associated with the record that's 
+// most significant, the last argument is a multiplication factor... a -1 value means you want 
+// the light that decreased more; note you pass the id you want to use to signify the lights; see 
+int LightsClass::lightDeltaAmountHelper(const LightDelta &lightDelta1, const byte &lightId1, const LightDelta &lightDelta2, const byte &lightId2, const int &multFactor) {
+  // Make sure that our delta counter is above the threshold we want
+  if ( ((getLightDeltaCounter(lightDelta1) * multFactor) >= LIGHTDELTAS2ACTON) || ((getLightDeltaCounter(lightDelta2) * multFactor) >= LIGHTDELTAS2ACTON) ) {
+    if (getLightDeltaCounter(lightDelta1) == getLightDeltaCounter(lightDelta2)) {
+      // Both lights have increased or decreased the same amount of times, use the one with most signifcant light
+      return ( (getLightDeltaSum(lightDelta1)*multFactor) > (getLightDeltaSum(lightDelta2)*multFactor) ? lightId1 : lightId2);
+    }
+    else {
+      // Return the one that has increased (or decreased) more frequently
+      return ( (getLightDeltaCounter(lightDelta1) * multFactor) > (getLightDeltaCounter(lightDelta2) * multFactor) ? lightId1 : lightId2 );
     }
   }
-  // Note if want average you could put that in the last position... but don't think we need
+  else 
+    return -1;
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper method, checks that a number is between a range
+bool LightsClass::numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue) {
+  if (lowValue > highValue) {   // It wraps around i.e 11 -> 1
+     return ( ( (theNum >= lowValue) || (theNum <= highValue) ) ? true : false);
+  }
+  else {
+    return ( ( (theNum >= lowValue) && (theNum <= highValue) ) ? true : false);
+  }
 }
 
 // -----------------------------------------------------------------------------------------
@@ -95,6 +145,18 @@ int LightsClass::getAngleWithBiggestLightDeltaPct(const int &multFactor, const i
 }
 
 // -----------------------------------------------------------------------------------------
+// Get the angle that has the highest current light (ignores calibation)
+int LightsClass::getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  return getAngleWithHighestCurrentReading(1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+}
+
+// -----------------------------------------------------------------------------------------
+// Get the angle with the dimmest current light
+int LightsClass::getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
+  return getAngleWithHighestCurrentReading(-1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+}
+
+// -----------------------------------------------------------------------------------------
 // This takes current readings in the world and returns the brightest or dimmest light (does 
 // not compare to calibration values... it's just the angle with highest/lowest) intensity  
 // NOTE: this is private... use the methods below as public interface
@@ -124,142 +186,15 @@ int LightsClass::getAngleWithHighestCurrentReading(const int &multFactor, const 
 }
 
 // -----------------------------------------------------------------------------------------
-// Clears a specific LightDelta variable; this is called from clearLightsDeltaSum
-void LightsClass::clearLightDelta(LightDelta &lightDelta) {
-  lightDelta.deltaSum = 0;
-  lightDelta.deltaCounter = 100;  // We don't have sign so we'll use 100 as base
+// Helper method, will return highest delta, if don't want to ignore angle range pass in -1 and -1 
+int LightsClass::getAngleWithHighestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
+  return getAngleWithBiggestLightDeltaPct(1, angle2IgnoreStart, angle2IgnoreEnd);
 }
 
 // -----------------------------------------------------------------------------------------
-// Sets the LightDelta values based on the delta amount passed in, note the deltaCounter is
-// stored as a byte so we use a base as 100 meaning 0 and we decrement that value when we
-// are passed in a negative amount and increase when we have a positive value, the 
-// getLightDeltaCounter method returns a 'user' friendly value so code should be using that
-// They should also use getLightDeltaSum in case we have some 'internal' representation for
-// that (currently we don't but who knows)
-void LightsClass::setLightDelta(LightDelta &amt, const int &delta) {
-  amt.deltaSum += delta;
-  if (delta > 0) {
-    amt.deltaCounter += (amt.deltaCounter < 200 ? 1 : 0);
-  }
-  else if (delta < 0) {
-    amt.deltaCounter -= (amt.deltaCounter > 0 ? 1 : 0);
-  }
-}
-
-// -----------------------------------------------------------------------------------------
-// This routine takes two LightAttributes and updates the LightsDeltaSum variable, it's really 
-// a wrapper for the method that does the work :)
-void LightsClass::setLightsDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current) {
-  setLightDelta(amts.leftLight,(current.lightLeft - original.lightLeft));
-  setLightDelta(amts.centerLight,(current.lightCenter - original.lightCenter));
-  setLightDelta(amts.rightLight,(current.lightRight - original.lightRight));
-}
-
-// -----------------------------------------------------------------------------------------
-// Helper method to compare two LightDeltas and return the id associated with the record that's 
-// most significant, the last argument is a multiplication factor... a -1 value means you want 
-// the light that decreased more; note you pass the id you want to use to signify the lights; see 
-int LightsClass::lightDeltaAmountHelper(const LightDelta &lightDelta1, const byte &lightId1, const LightDelta &lightDelta2, const byte &lightId2, const int &multFactor) {
-  // Make sure that our delta counter is above the threshold we want
-  if ( ((getLightDeltaCounter(lightDelta1) * multFactor) >= LIGHTDELTAS2ACTON) || ((getLightDeltaCounter(lightDelta2) * multFactor) >= LIGHTDELTAS2ACTON) ) {
-    if (getLightDeltaCounter(lightDelta1) == getLightDeltaCounter(lightDelta2)) {
-      // Both lights have increased or decreased the same amount of times, use the one with most signifcant light
-      return ( (getLightDeltaSum(lightDelta1)*multFactor) > (getLightDeltaSum(lightDelta2)*multFactor) ? lightId1 : lightId2);
-    }
-    else {
-      // Return the one that has increased (or decreased) more frequently
-      return ( (getLightDeltaCounter(lightDelta1) * multFactor) > (getLightDeltaCounter(lightDelta2) * multFactor) ? lightId1 : lightId2 );
-    }
-  }
-  else 
-    return -1;
-}
-// =========================================================================================
-//      Public methods
-// =========================================================================================
-
-// -----------------------------------------------------------------------------------------
-// This takes a sample of the 'world' lights, the values are stored in the lightCalibration 
-// array for the respective angles
-void LightsClass::sampleWorldLights() {
-  movementsObj->turnToZero();
-  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
-    setLightSampleAttributesAtCurrentPose();
-
-    lightCalibration[i].lightLeft = lightSample[LIGHTSAMPLEVALUE2USE].lightLeft;
-    lightCalibration[i].lightCenter = lightSample[LIGHTSAMPLEVALUE2USE].lightCenter;
-    lightCalibration[i].lightRight = lightSample[LIGHTSAMPLEVALUE2USE].lightRight;
-    lightCalibration[i].flag1 = false;
-    lightCalibration[i].flag2 = false;
-    showSampledLightAttributes(i*LIGHTSAMPLEANGLE);
- 
-    movementsObj->turnRight(LIGHTSAMPLEANGLE);
-    delay(DELAY_AFTER_MOVEMENT);
-  }
-}
-
-// -----------------------------------------------------------------------------------------
-// Calculate the light deltas... this takes samples of 360' from the position you are at and
-// compares it with the calibration values... it updates the lightDeltaPcts array with the 
-//net change between them
-void LightsClass::calculateWorldLightDeltas() {
-  int deltaAmt, holdAngle;
-  holdAngle = localizationObj->getCurrentAngle();
-  movementsObj->turnToZero();
-  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
-    setLightSampleAttributesAtCurrentPose();
-
-    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightLeft, lightCalibration[i].lightLeft);
-    lightDeltaPcts[i].leftPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].leftSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
-
-    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter, lightCalibration[i].lightCenter);
-    lightDeltaPcts[i].centerPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].centerSignBit = (deltaAmt < 0 ? false : true); // Positive values have true
-    #if DEBUGLIGHTS
-      Serial.print("LCD,<,");
-      Serial.print(i*LIGHTSAMPLEANGLE);
-      Serial.print(",");
-      Serial.println(lightSample[LIGHTSAMPLEVALUE2USE].lightCenter);
-      delay(DELAY_FOR_SERIAL_COMM);
-    #endif
-    
-    deltaAmt = getLightDeltaPctBetween2Values(lightSample[LIGHTSAMPLEVALUE2USE].lightRight, lightCalibration[i].lightRight);
-    lightDeltaPcts[i].rightPct = (deltaAmt < 0 ? -deltaAmt : deltaAmt);
-    lightDeltaPcts[i].rightSignBit  = (deltaAmt < 0 ? false : true); // Positive values have true
-  
-    movementsObj->turnRight(LIGHTSAMPLEANGLE);
-    delay(DELAY_AFTER_MOVEMENT);
-  }
-  movementsObj->turnToAngle(holdAngle);
-}
-
-// -----------------------------------------------------------------------------------------
-//  Method to return the current light attributes, this is public method
-LightAttributes LightsClass::getLightAttributesAtCurrentPose() {
-  setLightSampleAttributesAtCurrentPose();
-  return lightSample[LIGHTSAMPLEVALUE2USE];
-}
-
-// -----------------------------------------------------------------------------------------
-// Routine to clear the variable that holds the LightsDeltaSum... you call this to reset the delta counters and sums (maybe after you took some action)
-void LightsClass::clearLightsDeltaSum(LightsDeltaSum &lightsDeltaSum) {
-  clearLightDelta(lightsDeltaSum.leftLight);
-  clearLightDelta(lightsDeltaSum.centerLight);
-  clearLightDelta(lightsDeltaSum.rightLight);
-}
-
-// -----------------------------------------------------------------------------------------
-// Helper method to get the total light delta amount
-int LightsClass::getLightDeltaSum(const LightDelta &lightDelta) {
-  return lightDelta.deltaSum;
-}
-
-// -----------------------------------------------------------------------------------------
-// Helper to get the frequency that the light has changed (- means it's decreased that many times)
-int LightsClass::getLightDeltaCounter(const LightDelta &lightDelta) {
-  return 100-lightDelta.deltaCounter;
+// Helper method, will return smallest delta (good if want to find shadows)
+int LightsClass::getAngleWithLowestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
+  return getAngleWithBiggestLightDeltaPct(-1, angle2IgnoreStart, angle2IgnoreEnd);
 }
 
 // -----------------------------------------------------------------------------------------
@@ -289,27 +224,16 @@ int LightsClass::getLightAngleToTurnToBasedOnDeltaSum(LightsDeltaSum &amts, cons
 }
 
 // -----------------------------------------------------------------------------------------
-// Helper method, will return highest delta, if don't want to ignore angle range pass in -1 and -1 
-int LightsClass::getAngleWithHighestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
-  return getAngleWithBiggestLightDeltaPct(1, angle2IgnoreStart, angle2IgnoreEnd);
+//  Method to return the current light attributes, this is public method
+LightAttributes LightsClass::getLightAttributesAtCurrentPose() {
+  setLightSampleAttributesAtCurrentPose();
+  return lightSample[LIGHTSAMPLEVALUE2USE];
 }
 
 // -----------------------------------------------------------------------------------------
-// Helper method, will return smallest delta (good if want to find shadows)
-int LightsClass::getAngleWithLowestLightDeltaPct(const int &angle2IgnoreStart, const int &angle2IgnoreEnd) {
-  return getAngleWithBiggestLightDeltaPct(-1, angle2IgnoreStart, angle2IgnoreEnd);
-}
-
-// -----------------------------------------------------------------------------------------
-// Get the angle that has the highest current light (ignores calibation)
-int LightsClass::getAngleWithBrightestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
-  return getAngleWithHighestCurrentReading(1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
-}
-
-// -----------------------------------------------------------------------------------------
-// Get the angle with the dimmest current light
-int LightsClass::getAngleWithDimmestCurrentLight(const int &angle2IgnoreStart, const int &angle2IgnoreEnd, const int &angleIncrement) {
-  return getAngleWithHighestCurrentReading(-1, angle2IgnoreStart, angle2IgnoreEnd, angleIncrement);
+// Helper to get the frequency that the light has changed (- means it's decreased that many times)
+int LightsClass::getLightDeltaCounter(const LightDelta &lightDelta) {
+  return 100-lightDelta.deltaCounter;
 }
 
 // -----------------------------------------------------------------------------------------
@@ -325,20 +249,91 @@ int LightsClass::getLightDeltaPctBetween2Values(const int &currentValue, const i
 }
 
 // -----------------------------------------------------------------------------------------
-// Little helper routine, just returns an integer representing the delta pct (with the correct sign)
-int LightsClass::deltaPctHelper(const int &deltaPct, const bool &isPositive) {
-  return (isPositive ? deltaPct : -deltaPct);
+// Helper method to get the total light delta amount
+int LightsClass::getLightDeltaSum(const LightDelta &lightDelta) {
+  return lightDelta.deltaSum;
 }
 
 // -----------------------------------------------------------------------------------------
-// Helper method, checks that a number is between a range
-bool LightsClass::numberBetweenRange(const int &theNum, const int &lowValue, const int &highValue) {
-  if (lowValue > highValue) {   // It wraps around i.e 11 -> 1
-     return ( ( (theNum >= lowValue) || (theNum <= highValue) ) ? true : false);
+// This takes a sample of the 'world' lights, the values are stored in the lightCalibration 
+// array for the respective angles
+void LightsClass::sampleWorldLights() {
+  movementsObj->turnToZero();
+  for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
+    setLightSampleAttributesAtCurrentPose();
+
+    lightCalibration[i].lightLeft = lightSample[LIGHTSAMPLEVALUE2USE].lightLeft;
+    lightCalibration[i].lightCenter = lightSample[LIGHTSAMPLEVALUE2USE].lightCenter;
+    lightCalibration[i].lightRight = lightSample[LIGHTSAMPLEVALUE2USE].lightRight;
+    lightCalibration[i].flag1 = false;
+    lightCalibration[i].flag2 = false;
+    showSampledLightAttributes(i*LIGHTSAMPLEANGLE);
+ 
+    movementsObj->turnRight(LIGHTSAMPLEANGLE);
+    delay(DELAY_AFTER_MOVEMENT);
   }
-  else {
-    return ( ( (theNum >= lowValue) && (theNum <= highValue) ) ? true : false);
+}
+
+// -----------------------------------------------------------------------------------------
+// Sets the LightDelta values based on the delta amount passed in, note the deltaCounter is
+// stored as a byte so we use a base as 100 meaning 0 and we decrement that value when we
+// are passed in a negative amount and increase when we have a positive value, the 
+// getLightDeltaCounter method returns a 'user' friendly value so code should be using that
+// They should also use getLightDeltaSum in case we have some 'internal' representation for
+// that (currently we don't but who knows)
+void LightsClass::setLightDelta(LightDelta &amt, const int &delta) {
+  amt.deltaSum += delta;
+  if (delta > 0) {
+    amt.deltaCounter += (amt.deltaCounter < 200 ? 1 : 0);
   }
+  else if (delta < 0) {
+    amt.deltaCounter -= (amt.deltaCounter > 0 ? 1 : 0);
+  }
+}
+
+// -----------------------------------------------------------------------------------------
+// This routine takes two LightAttributes and updates the LightsDeltaSum variable, it's really 
+// a wrapper for the method that does the work :)
+void LightsClass::setLightsDeltaSum(LightsDeltaSum &amts, const LightAttributes &original, const LightAttributes &current) {
+  setLightDelta(amts.leftLight,(current.lightLeft - original.lightLeft));
+  setLightDelta(amts.centerLight,(current.lightCenter - original.lightCenter));
+  setLightDelta(amts.rightLight,(current.lightRight - original.lightRight));
+}
+
+// -----------------------------------------------------------------------------------------
+// Gets the light attributes, and populates the lightSample array.  The array is sorted that 
+// way we can take the value we want, currently the program will use a constant (LIGHTSAMPLEVALUE2USE); 
+// that number is the median (at time of this writing).
+void LightsClass::setLightSampleAttributesAtCurrentPose() {
+  for (byte i = 0; i < LIGHTSAMPLESIZE; i++) {
+    lightSample[i].lightLeft = sparki.lightLeft();
+    lightSample[i].lightCenter = sparki.lightCenter();
+    lightSample[i].lightRight = sparki.lightRight();
+    delay(LIGHTSAMPLEDELAY);
+  }
+  // Sort arrays, simple bubble sort
+  for (byte i = 0; i < LIGHTSAMPLESIZE-1; i++) {
+    for (byte j = i + 1; j < LIGHTSAMPLESIZE; j++) {
+      if (lightSample[i].lightLeft > lightSample[j].lightLeft) {
+        // Swap values... our array is one larger than needed so use index LIGHTSAMPLESIZE as hold area
+        lightSample[LIGHTSAMPLESIZE].lightLeft = lightSample[i].lightLeft;
+        lightSample[i].lightLeft = lightSample[j].lightLeft;
+        lightSample[j].lightLeft = lightSample[LIGHTSAMPLESIZE].lightLeft;
+      }
+      if (lightSample[i].lightCenter > lightSample[j].lightCenter) {
+        lightSample[LIGHTSAMPLESIZE].lightCenter = lightSample[i].lightCenter;
+        lightSample[i].lightCenter = lightSample[j].lightCenter;
+        lightSample[j].lightCenter = lightSample[LIGHTSAMPLESIZE].lightCenter;
+      }
+      if (lightSample[i].lightRight > lightSample[j].lightRight) {
+        // Swap values... our array is one larger than needed so use index LIGHTSAMPLESIZE as hold area
+        lightSample[LIGHTSAMPLESIZE].lightRight = lightSample[i].lightRight;
+        lightSample[i].lightRight = lightSample[j].lightRight;
+        lightSample[j].lightRight = lightSample[LIGHTSAMPLESIZE].lightRight;
+      }    
+    }
+  }
+  // Note if want average you could put that in the last position... but don't think we need
 }
 
 // -----------------------------------------------------------------------------------------
@@ -487,18 +482,6 @@ void LightsClass::showLightAttributes(char *msgStr, const LightAttributes &liteA
 }
 
 // -----------------------------------------------------------------------------------------
-// Helper to show the light values in the 'lightSample' array; we use the LIGHTSAMPLEVALUE2USE to specify which one
-void LightsClass::showSampledLightAttributes(const int &theAngle) {
-  showLightAttributes("Sam",lightSample[LIGHTSAMPLEVALUE2USE],theAngle);
-}
-
-// -----------------------------------------------------------------------------------------
-// Little helper to show the 'base' calibration light for an angle
-void LightsClass::showCalibrationLightAtAngle(const int &theAngle) {
-  showLightAttributes("Cal",lightCalibration[theAngle/LIGHTSAMPLEANGLE], theAngle);
-}
-
-// -----------------------------------------------------------------------------------------
 // Little helper to show what light values are for a given 'world' angle; it'll show
 void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
   int indexOfDelta = theAngle/LIGHTSAMPLEANGLE;
@@ -538,22 +521,55 @@ void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
       }     
     #endif
   #endif  
-};
+}
 
-// Helper to show the light deltas (these are not percentage of change), the first number in the set is the total delta for that light, the second
-// number is the count of increases we've seen (a + number); if that is negative it represents decreases in light... note you could have a sum amount
+// -----------------------------------------------------------------------------------------
+// Helper to show the light deltas (these are not percentage of change), the first number in the 
+// set is the total delta for that light, the second number is the count of increases we've seen 
+// (a + number); if that is negative it represents decreases in light... note you could have a sum amount
 // that's + and a delta count that's - (that'd occur if you had a big jump or decline in light values)
 void LightsClass::showLightsDeltaSum(const LightsDeltaSum &amts) {
-  Serial.print("LDA,l");
-  Serial.print(getLightDeltaSum(amts.leftLight));
-  Serial.print(",/");
-  Serial.print(getLightDeltaCounter(amts.leftLight));
-  Serial.print(",c,");
-  Serial.print(getLightDeltaSum(amts.centerLight));
-  Serial.print(",/");
-  Serial.print(getLightDeltaCounter(amts.centerLight));
-  Serial.print(",r,");
-  Serial.print(getLightDeltaSum(amts.rightLight));
-  Serial.print(",/");
-  Serial.println(getLightDeltaCounter(amts.rightLight));
+  #if USE_LCD 
+    sparki.println("LightDeltaSum"
+    sparki.print("  Left:");
+    sparki.print(getLightDeltaSum(amts.leftLight));
+    sparki.print(",/");
+    sparki.println(getLightDeltaCounter(amts.leftLight));
+
+    sparki.print("  Center,");
+    sparki.print(getLightDeltaSum(amts.centerLight));
+    sparki.print(",/");
+    sparki.println(getLightDeltaCounter(amts.centerLight));
+
+    sparki.print("  Right,");
+    sparki.print(getLightDeltaSum(amts.rightLight));
+    sparki.print(",/");
+    sparki.println(getLightDeltaCounter(amts.rightLight));
+    sparki.updateLCD();
+  #else
+    Serial.print("LDA,l");
+    Serial.print(getLightDeltaSum(amts.leftLight));
+    Serial.print(",/");
+    Serial.print(getLightDeltaCounter(amts.leftLight));
+    Serial.print(",c,");
+    Serial.print(getLightDeltaSum(amts.centerLight));
+    Serial.print(",/");
+    Serial.print(getLightDeltaCounter(amts.centerLight));
+    Serial.print(",r,");
+    Serial.print(getLightDeltaSum(amts.rightLight));
+    Serial.print(",/");
+    Serial.println(getLightDeltaCounter(amts.rightLight));
+  #endif
+}
+
+// -----------------------------------------------------------------------------------------
+// Little helper to show the 'base' calibration light for an angle
+void LightsClass::showCalibrationLightAtAngle(const int &theAngle) {
+  showLightAttributes("Cal",lightCalibration[theAngle/LIGHTSAMPLEANGLE], theAngle);
+}
+
+// -----------------------------------------------------------------------------------------
+// Helper to show the light values in the 'lightSample' array; we use the LIGHTSAMPLEVALUE2USE to specify which one
+void LightsClass::showSampledLightAttributes(const int &theAngle) {
+  showLightAttributes("Sam",lightSample[LIGHTSAMPLEVALUE2USE],theAngle);
 }

@@ -1,80 +1,9 @@
 #include "localizationClass.h"
 #define DEBUGTRIAN false 
 
-void LocalizationClass::setPose(const float &x, const float &y, const int &angle) {
-  pose.xPos = x;
-  pose.yPos = y;
-  pose.angle = angle;
-}
 
-Pose LocalizationClass::getPose() {
-  return pose;
-}
-
-// This will convert an angle from one coordinate system to another, i.e. from
-// compass system to cartesian or vica versa.
-int LocalizationClass::convertCoordinateSystemAngle(const int &angle) {
-  return (450-angle)%360;
-}
-
-void LocalizationClass::setCurrentAngle(const int &angle) {
-  pose.angle = angle;
-}
-
-int LocalizationClass::getCurrentAngle() {
-  return pose.angle;
-}
-
-void LocalizationClass::setCurrentXPosition(const float &x) {
-  pose.xPos = x;
-}
-
-float LocalizationClass::getCurrentXPosition() {
-  return pose.xPos;
-}
-
-int LocalizationClass::getCurrentXPositionInMM() {
-  return (int)(pose.xPos*10);
-}
-
-int LocalizationClass::getCurrentXPositionInCM() {
-  return (int)(pose.xPos+.5);
-}
-
-void LocalizationClass::setCurrentYPosition(const float &y) {
-  pose.yPos = y;
-}
-
-float LocalizationClass::getCurrentYPosition() {
-  return pose.yPos;
-}
-
-int LocalizationClass::getCurrentYPositionInMM() {
-  return (int)(pose.yPos*10);
-}
-
-int LocalizationClass::getCurrentYPositionInCM() {
-  return (int)(pose.yPos+.5);
-}
-
-// Little helper to determine if two float values are within an allowable range 
-boolean LocalizationClass::closeEnuf(const float &value1, const float &value2, const float &allowedDelta, const boolean &areAngles) {
-  if (areAngles == true) {
-     // Call myself with angles converted and say we're not doing angles
-     return closeEnuf(getAngle(value1),getAngle(value2),allowedDelta,false); 
-  }
-  else {
-    if ((value1 - value2) > allowedDelta) {
-      return false;  
-    }
-    else
-      if ((value1 - value2) < -allowedDelta) {
-        return false;
-      }
-    return true;
-  }
-}
-
+// ---------------------------------------------------------------------------------------------------------
+// Calculates the angle between two points
 int LocalizationClass::calculateAngleBetweenPoints(const float &x1, const float &y1, const float &x2, const float &y2) {
   #if DEBUGTRIAN
     Serial.print("< between points ");
@@ -95,7 +24,185 @@ int LocalizationClass::calculateAngleBetweenPoints(const float &x1, const float 
   return atan2(y2-y1,x2-x1)*(180.0/PI);
 }
 
-// Get slop of pose
+// ---------------------------------------------------------------------------------------------------------
+// Return a pose that's based on an existing on, and an angle of movement and distance
+Pose LocalizationClass::calculatePose(const Pose &thePos, const int &angleOfMovement, const int &distanceMoved) {
+  // Will return a pose give an existing pose that's moved an angle and movement; note we don't use the angle in the pose
+  // since the movement could be a different angle, yet the pose of that object remains the same.
+  Pose rtnPos;
+  rtnPos.xPos = thePos.xPos + (distanceMoved * cos(degreesToRadians(angleOfMovement)));
+  rtnPos.yPos = thePos.yPos + (distanceMoved * sin(degreesToRadians(angleOfMovement)));
+  rtnPos.angle = thePos.angle;
+  return rtnPos;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// This calculates the new position based on distance and angle 
+float LocalizationClass::calculateNewX(const float &distance, const int &angleDelta) {
+  // Angle delta is the angle relative to the last position, the real angle is that
+  // value plus the pose.angle (the angle it was at when we started).
+  // remember cos is adjacent/hypotenuse
+  // xValue is calculated by 
+  // .   calculate the x alone (it's cos(angle)*distanceTraveled
+  //     add the x alone to the lastRobot x position
+  return ((cos(degreesToRadians(calculateRealAngleWithAdjustment(angleDelta))) * distance) + pose.xPos);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Calculate what the y position would be if you traveled a distance and deltaAngle from your current pose
+float LocalizationClass::calculateNewY(const float &distance, const int &angleDelta) {
+  // Similar to the logic for x, but we use sin here (remember sin is Opposite/Hypotenuse)
+  // Angle delta is the angle relative to the last position, the real angle is that
+  // value plus the currentAngle (the angle it was at when we started).
+  return ((sin(degreesToRadians(calculateRealAngleWithAdjustment(angleDelta))) * distance) + pose.yPos);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Common function to return our 'real angle'; it's the angleDelta + prior orientation (it's degrees)
+int LocalizationClass::calculateRealAngleWithAdjustment(const int &angleDelta) {
+  return getAngle(angleDelta + pose.angle);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Little helper to determine if two float values are within an allowable range 
+boolean LocalizationClass::closeEnuf(const float &value1, const float &value2, const float &allowedDelta, const boolean &areAngles) {
+  if (areAngles == true) {
+     // Call myself with angles converted and say we're not doing angles
+     return closeEnuf(getAngle(value1),getAngle(value2),allowedDelta,false); 
+  }
+  else {
+    if ((value1 - value2) > allowedDelta) {
+      return false;  
+    }
+    else
+      if ((value1 - value2) < -allowedDelta) {
+        return false;
+      }
+    return true;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// This will convert an angle from one coordinate system to another, i.e. from
+// compass system to cartesian or vica versa.
+int LocalizationClass::convertCoordinateSystemAngle(const int &angle) {
+  return (450-angle)%360;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+float LocalizationClass::degreesToRadians(const int &degrees) {
+  return (degrees * (PI / 180.0));
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Calculate the distance between two poses
+float LocalizationClass::distanceBetweenPoses(const Pose &firstPose, const Pose &secondPose) {
+  return sqrt(sq(secondPose.xPos - firstPose.xPos) + sq(secondPose.yPos - firstPose.yPos));
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// This is basically mod(angle,360.0), couldn't do it with % and float args so wrote my own
+int LocalizationClass::getAngle(int angleInDegrees) {
+  if (angleInDegrees >= 360)
+    return getAngle(angleInDegrees - 360);
+  else
+    if (angleInDegrees < 0) 
+      return getAngle(angleInDegrees + 360);
+    else
+      return angleInDegrees;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Get your current angle
+int LocalizationClass::getCurrentAngle() {
+  return pose.angle;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Get your current x position
+float LocalizationClass::getCurrentXPosition() {
+  return pose.xPos;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Get your current x position in terms of CM (cm is our base of measurements
+// so it's called CM but this is really just in terms of what the base of 
+// measure is (rounded)).
+int LocalizationClass::getCurrentXPositionInCM() {
+  return (int)(pose.xPos+.5);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Get your current x position in terms of millimeters, (note this is really just 
+// 10X of the poses x position, we used cm in measurements but it doesn't really
+// matter what scale we use... this is 10x that amount)
+int LocalizationClass::getCurrentXPositionInMM() {
+  return (int)(pose.xPos*10);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Returns y position
+float LocalizationClass::getCurrentYPosition() {
+  return pose.yPos;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Returns (rounded) y position
+int LocalizationClass::getCurrentYPositionInCM() {
+  return (int)(pose.yPos+.5);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Returns the y position multiplied by 10 (our base of measure was CM that's why
+// it's named this) but think of it as 10x base.
+int LocalizationClass::getCurrentYPositionInMM() {
+  return (int)(pose.yPos*10);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Calculate the midpoint angle between two angles
+int LocalizationClass::getMidpointBetweenTwoAngles(const int &angle1, const int &angle2) {
+  return ((angle1-angle2)/2)+angle2;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Get current pose
+Pose LocalizationClass::getPose() {
+  return pose;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Returns the quadrant the angle is in
+byte LocalizationClass::getQuadrantAngleIsIn(const int &degrees) {
+  return (getAngle(degrees) / 90) + 1;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Returns the shortest angle to get from current pose to a target angle (world)
+int LocalizationClass::getShortestAngleDeltaToGetToOrientation(const int &targetOrientation) {
+  // This returns the shortest angle to get from currentAngleOrientation to a target orientation
+  // The value returned will be + for normal rotation (left/ccw), it'll be negative for 
+  // right/ccw rotation.
+
+  // Note I didn't save the delta because I'm trying to preserver memory
+
+  // The delta of targetOrientation - currentAngle is the degrees moving in right rotation (cw)
+  if (targetOrientation - getCurrentAngle() < -180) {
+    // if less than -180.0 then add 360' to it, this will be + angles
+    return (360 + (targetOrientation - getCurrentAngle()));
+  }
+  else if (targetOrientation - getCurrentAngle() > 180) {
+    // if more than 180' then subtract 360 from it, we'll move in negative direction (ccw)
+    return -(360 - (targetOrientation - getCurrentAngle()));
+  }
+  else {
+    // Return difference, if target larger than current it'll be a positive value (cw) and vica versa if neg :)
+    return (targetOrientation - getCurrentAngle()); 
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Get slope of pose
 float LocalizationClass::getSlopeOfAngle(const int &theAngle) {
   if ((theAngle % 180) == 0) {  
     return 0;  // Slope is 0 at 0 and 180'
@@ -111,12 +218,49 @@ float LocalizationClass::getSlopeOfAngle(const int &theAngle) {
     }
 }
 
+// ---------------------------------------------------------------------------------------------------------
 // Return the y intercept for the pose
 float LocalizationClass::getYInterceptForPose(const Pose &thePose) {
   return (thePose.yPos - (getSlopeOfAngle(thePose.angle) * thePose.xPos));
 }
 
-// Sets point of intersection between two poses
+// ---------------------------------------------------------------------------------------------------------
+// Converts from radians to degrees
+int LocalizationClass::radiansToDegrees(const float &radians) {
+  return (int)(radians * (180.0 / PI));
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Set your angle
+void LocalizationClass::setCurrentAngle(const int &angle) {
+  pose.angle = angle;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Set x position (be careful changing robots pose)
+void LocalizationClass::setCurrentXPosition(const float &x) {
+  pose.xPos = x;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Set y position (be careful changing robots pose)
+void LocalizationClass::setCurrentYPosition(const float &y) {
+  pose.yPos = y;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Sets your new position based on some distance traveled and delta angle from your current pose
+void LocalizationClass::setNewPosition(const float &distance, const int &angleDelta) {
+  float newX = calculateNewX(distance, angleDelta);
+  float newY = calculateNewY(distance, angleDelta);
+  // Set new location
+  setPose(newX, newY, calculateRealAngleWithAdjustment(angleDelta));
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Sets point of intersection between two poses, it returns a boolean true if successful.  The last argument
+// pose2Update has the x,y point of intersection.... it doesn't have the pose angle cause this know which
+// pose you'll be moving from
 boolean LocalizationClass::setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update) {
   pose2Update.xPos = 0.0;
   pose2Update.yPos = 0.0;
@@ -181,105 +325,50 @@ boolean LocalizationClass::setPointOfIntersection(const Pose &pose1, const Pose 
   return false;
 }
 
-
-float LocalizationClass::degreesToRadians(const int &degrees) {
-  return (degrees * (PI / 180.0));
+// ---------------------------------------------------------------------------------------------------------
+// Set your pose
+void LocalizationClass::setPose(const float &x, const float &y, const int &angle) {
+  pose.xPos = x;
+  pose.yPos = y;
+  pose.angle = angle;
 }
 
-int LocalizationClass::radiansToDegrees(const float &radians) {
-  return (int)(radians * (180.0 / PI));
+// ---------------------------------------------------------------------------------------------------------
+// For debugging we may want to show values on lcd screen
+void LocalizationClass::showPose(const Pose &pos2Show) {
+   #if USE_LCD 
+    sparki.clearLCD(); // wipe the LCD clear
+    sparki.print("x: ");
+    sparki.print(pos2Show.xPos);
+    sparki.print(" y: ");
+    sparki.print(pos2Show.yPos);
+    sparki.print(" angle: ");
+    sparki.println(pos2Show.angle);
+    sparki.updateLCD(); // put the drawings on the screen
+  #else
+    Serial.print("PO,x,");
+    Serial.print(pos2Show.xPos);
+    Serial.print(",y,");
+    Serial.print(pos2Show.yPos);
+    Serial.print(",<,");
+    Serial.println(pos2Show.angle);
+    delay(DELAY_FOR_SERIAL_COMM);
+  #endif
 }
 
-byte LocalizationClass::getQuadrantAngleIsIn(const int &degrees) {
-  return (getAngle(degrees) / 90) + 1;
+// --------------------------------------------------------------------------------------------------------- 
+// Call routine to show my pose, just calls method above and passes current pose in
+void LocalizationClass::showLocation() {
+   showPose(pose);
 }
 
-// This is basically mod(angle,360.0), couldn't do it with % and float args so wrote my own
-int LocalizationClass::getAngle(int angleInDegrees) {
-  if (angleInDegrees >= 360)
-    return getAngle(angleInDegrees - 360);
-  else
-    if (angleInDegrees < 0) 
-      return getAngle(angleInDegrees + 360);
-    else
-      return angleInDegrees;
-}
 
-// Common function to return our 'real angle'; it's the angleDelta + prior orientation (it's degrees)
-int LocalizationClass::calculateRealAngleWithAdjustment(const int &angleDelta) {
-  return getAngle(angleDelta + pose.angle);
-}
-
-// Calculate the midpoint between two angles
-int LocalizationClass::getMidpointBetweenTwoAngles(const int &angle1, const int &angle2) {
-  return ((angle1-angle2)/2)+angle2;
-}
-
-// This calculates the new position based on distance and angle 
-float LocalizationClass::calculateNewX(const float &distance, const int &angleDelta) {
-  // Angle delta is the angle relative to the last position, the real angle is that
-  // value plus the pose.angle (the angle it was at when we started).
-  // remember cos is adjacent/hypotenuse
-  // xValue is calculated by 
-  // .   calculate the x alone (it's cos(angle)*distanceTraveled
-  //     add the x alone to the lastRobot x position
-  return ((cos(degreesToRadians(calculateRealAngleWithAdjustment(angleDelta))) * distance) + pose.xPos);
-}
-
-float LocalizationClass::calculateNewY(const float &distance, const int &angleDelta) {
-  // Similar to the logic for x, but we use sin here (remember sin is Opposite/Hypotenuse)
-  // Angle delta is the angle relative to the last position, the real angle is that
-  // value plus the currentAngle (the angle it was at when we started).
-  return ((sin(degreesToRadians(calculateRealAngleWithAdjustment(angleDelta))) * distance) + pose.yPos);
-}
-
-void LocalizationClass::setNewPosition(const float &distance, const int &angleDelta) {
-  float newX = calculateNewX(distance, angleDelta);
-  float newY = calculateNewY(distance, angleDelta);
-  // Set new location
-  setPose(newX, newY, calculateRealAngleWithAdjustment(angleDelta));
-}
-
-int LocalizationClass::getShortestAngleDeltaToGetToOrientation(const int &targetOrientation) {
-  // This returns the shortest angle to get from currentAngleOrientation to a target orientation
-  // The value returned will be + for normal rotation (left/ccw), it'll be negative for 
-  // right/ccw rotation.
-
-  // Note I didn't save the delta because I'm trying to preserver memory
-
-  // The delta of targetOrientation - currentAngle is the degrees moving in right rotation (cw)
-  if (targetOrientation - getCurrentAngle() < -180) {
-    // if less than -180.0 then add 360' to it, this will be + angles
-    return (360 + (targetOrientation - getCurrentAngle()));
-  }
-  else if (targetOrientation - getCurrentAngle() > 180) {
-    // if more than 180' then subtract 360 from it, we'll move in negative direction (ccw)
-    return -(360 - (targetOrientation - getCurrentAngle()));
-  }
-  else {
-    // Return difference, if target larger than current it'll be a positive value (cw) and vica versa if neg :)
-    return (targetOrientation - getCurrentAngle()); 
-  }
-}
-
-// Calculate the distance between two poses
-float LocalizationClass::distanceBetweenPoses(const Pose &firstPose, const Pose &secondPose) {
-  return sqrt(sq(secondPose.xPos - firstPose.xPos) + sq(secondPose.yPos - firstPose.yPos));
-}
-
-// Return a pose that's based on an existing on, and an angle of movement and distance
-Pose LocalizationClass::calculatePose(const Pose &thePos, const int &angleOfMovement, const int &distanceMoved) {
-  // Will return a pose give an existing pose that's moved an angle and movement; note we don't use the angle in the pose
-  // since the movement could be a different angle, yet the pose of that object remains the same.
-  Pose rtnPos;
-  rtnPos.xPos = thePos.xPos + (distanceMoved * cos(degreesToRadians(angleOfMovement)));
-  rtnPos.yPos = thePos.yPos + (distanceMoved * sin(degreesToRadians(angleOfMovement)));
-  rtnPos.angle = thePos.angle;
-  return rtnPos;
-}
-
-// Triangulate a third pose based on two poses and the angle of movement used to get from first pose to the second... I believe I can
-// calculate that angle but can do that down the road... the caller has it so may was well use for now.
+// =========================================================================================================
+//     N O T E:  This code is commented out, left it here for reference only
+// ========================================================================================================= 
+// Triangulate a third pose based on two poses and the angle of movement used to get from first pose to the
+// second... I believe I can calculate that angle but can do that down the road... the caller has it so may 
+// was well use for now.
 
 // The pose returned has the x and y position of the triangulated object; 
 /*
@@ -370,35 +459,13 @@ Pose LocalizationClass::triangulatePoses(const Pose &firstPose, const Pose &seco
   //  rtnPose.angle = thirdLightAngle; // not needed but give anyway
   //}    
 } */ // End of block commenting out the triangle method
+// =========================================================================================================
+//     N O T E:  This is the end of the commented block
+// ========================================================================================================= 
 
-// For debugging we may want to show values on lcd screen
-void LocalizationClass::showPose(const Pose &pos2Show) {
-   #if USE_LCD 
-    sparki.clearLCD(); // wipe the LCD clear
-    sparki.print("x: ");
-    sparki.print(pos2Show.xPos);
-    sparki.print(" y: ");
-    sparki.print(pos2Show.yPos);
-    sparki.print(" angle: ");
-    sparki.println(pos2Show.angle);
-    sparki.updateLCD(); // put the drawings on the screen
-  #else
-    Serial.print("PO,x,");
-    Serial.print(pos2Show.xPos);
-    Serial.print(",y,");
-    Serial.print(pos2Show.yPos);
-    Serial.print(",<,");
-    Serial.println(pos2Show.angle);
-    delay(DELAY_FOR_SERIAL_COMM);
-  #endif
+// ---------------------------------------------------------------------------------------------------------
+// Little helper method to write a string to the serial port.... really just for debugging
+void LocalizationClass::writeMsg2Serial(char *msg) {
+  Serial.println(msg);
+  delay(DELAY_FOR_SERIAL_COMM);
 }
-
- 
-// Call routine to show my pose
-void LocalizationClass::showLocation() {
-   showPose(pose);
-}
- void LocalizationClass::writeMsg2Serial(char *msg) {
-   Serial.println(msg);
-   delay(DELAY_FOR_SERIAL_COMM);
- }

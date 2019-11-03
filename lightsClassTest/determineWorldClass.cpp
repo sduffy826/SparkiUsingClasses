@@ -12,6 +12,7 @@ DetermineWorldClass::DetermineWorldClass(UltrasonicClass &ultrasonicObj, Localiz
     worldCoord.yMin = 0.0;
 }
 
+// Just return the struct that has your world coordinates
 WorldCoord DetermineWorldClass::getWorldCoordinates() {
   return worldCoord;
 }
@@ -101,5 +102,5 @@ void DetermineWorldClass::calculateRectangularCoordinates() {
 
   // Go back to starting position
   sparki.moveRight(90);
-  localizationObject->setCurrentAngle(0.0);  // We are back at origin, set angle to 0'
+  localizationObject->setCurrentAngle(0);  // We are back at origin, set angle to 0'
 }

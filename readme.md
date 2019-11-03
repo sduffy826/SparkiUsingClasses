@@ -12,6 +12,7 @@
 
 ## To Do's
 - Check legend abbreviations
+- Document the follow wall routines
 - Document the lights class
 - Create a 'wander world' or explore world routine
 - Cleanup/refine the routine to follow wall
@@ -33,7 +34,7 @@
 ## LEGEND Serial communications
 **Memory** is critical and strings take up quite a bit of memory, I used the abbreviations below when outputting to the serial port.  
 - **DW** Define world, world dimensions (x,y)
-- **DP** Define world, current position (x,y)
+- **DP** Position in the world (x,y)
 - **LO** Localization, x position, y position, &lt; current angle
 - **LA** Light angle, has description of what it is, it's angle, brightness for left, center and right light sensor
 - **LB** Light brightness delta, shows the angle that has largest increase in brightness over the sample; it will ignore the quadrant if requested
@@ -48,15 +49,25 @@ I listed the classes alphabetically except for the first one... that has the con
 
 ## SparkiClass
 - **SparkiCommon**: this has the .h file to be included in code; it defines constants for the sparki like: it's speed, dimensions, etc... you should put constants here (used define instead of const) to save memory.  When you update this run ./syncClassFiles.sh 
+  - Note: there's a USE_LCD define in here, if that's false then output from various 'show*' methods will write to the serial port, if it's true then the output will be written to the lcd screen.
 
 ## DetermineWorldClass
-**Controls/has information about the robots world** 
-- **DetermineWorldClass()** - 'default' constructor, required by arduino, but you should initialize object with references to required objects (see next constructor)
-- **DetermineWorldClass(UltrasonicClass &ultrasonicObj, LocalizationClass &localizationObj)** - Constructor where you pass references to required objects needed within this object.
-- **WorldCoord getWorldCoordinates()** - Gets your world coordinates
-- **void checkWorldCoordinates()** - Call this periodically to check and adjust world coordinates based on current position; i.e. when you first called getWorldCoordinates some things may not have been visible; if you call this method periodically (i.e. when you stop) you can adjust the 'world' coordinates.
-- **void showWorld()** - This is just a helper to show your world... mainly for debugging.
-- **void calculateRectangularCoordinates()** - Calculates your 'world' space, right now it takes the direction at 90' angles and records them; it also calls localization methods that set's your current position within that world.
+**Controls/has information about the robots world** This needs to be expanded to map all the obstacles/walls etc in the world; possibly have it communicate with external device that would have storage required.... think more on this
+- Constructors
+  - **DetermineWorldClass()** - 'default' constructor, required by arduino, but you should initialize object with references to required objects (see next constructor)
+  - **DetermineWorldClass(UltrasonicClass &ultrasonicObj, LocalizationClass &localizationObj)** - Constructor where you pass references to required objects needed within this object.
+
+- Methods that set world coordinates
+  - **void calculateRectangularCoordinates()** - Calculates your 'world' space, right now it takes the direction at 90' angles and records them; it also calls localization methods that set's your current position within that world.
+  
+  - **void checkWorldCoordinates()** - Call this periodically to check and adjust world coordinates based on current position; i.e. when you first called getWorldCoordinates some things may not have been visible; if you call this method periodically (i.e. when you stop) you can adjust the 'world' coordinates.
+
+- Getting the coordinates
+  - **WorldCoord getWorldCoordinates()** - Gets your world coordinates
+
+- Debugging
+  - **void showWorld()** - This is just a helper to show your world... mainly for debugging.
+
 
 
 ## LightsClass
@@ -170,24 +181,60 @@ I listed the classes alphabetically except for the first one... that has the con
 
 ## LocalizationClass
 **Provides attributes/routines related to localization**  fyi a 'Pose' is a structure, it has float 'xPos' and 'yPos', and an int 'angle'
-- **convertCoordinateSystemAngle(const int &angle)** Convert angle from one coordinate system to another (i.e. cartesian to spherical)
-- **void setPose(const float &x, const float &y, int const &angle)** -- Sets pose of robot
-- **Pose getPose()** - Returns the robots current pose
-- **void setCurrentAngle(const int &angle)** - Sets the robots current angle (be careful resetting robot position)
-- **int getCurrentAngle()** - Gets the robots current angle of orientation
-- **void setCurrentXPosition(const float &x)** - Sets robot's current x position in it's world (be careful with this too)
-- **float getCurrentXPosition()** - Gets the robots x position
-- **int getCurrentXPositionInMM()** - Gets the robots current position in millimeters
-- **int getCurrentXPositionInCM()** - Gets the robots current position in cm (rounded version of the getCurrentXPosition())
-- **void setCurrentYPosition(const float &y)** - Sets robots y position (be careful)
-- **float getCurrentYPosition()** - Gets robots y position
-- **int getCurrentYPositionInMM()** - Gets robots y position in terms of MM
-- **int getCurrentYPositionInCM()** - Gets robots y position in terms of centimeters (rounded version of getCurrentYPosition())
-- **bool closeEnuf(const float &value1, const float &value2, const float &allowedDelta, const boolean &areAngles)** - Checks if two floating point numbers are close enough to one another, the arguments should be obvious (the areAngles is to handle - and + angles correctly )
-- **int calculateAngleBetweenPoints(const float &x1, const float &y1, const float &x2, const float &y2)** - Calculates the angle between two points
-- **float getSlopeOfAngle(const int &degrees)** - Returns the slope of an angle (same as tangent)
-- **float getYInterceptForPose(const Pose &thePose)** - Returns the y intercept for a given pose
-- **boolean setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update)** - Takes two poses and update the third pose passed in with the point of intersection.  High level logic
+- Localization methods
+  - **void setPose(const float &x, const float &y, int const &angle)** -- Sets pose of robot
+  - **Pose getPose()** - Returns the robots current pose
+
+  - **void setNewPosition(const float &distance, const int &angleDelta)** - Sets the robots new position, you pass in the distance it's traveled and the angle it traveled from it's current orientation
+
+  - **void setCurrentAngle(const int &angle)** - Sets the robots current angle (be careful resetting robot position)
+  - **int getCurrentAngle()** - Gets the robots current angle of orientation
+
+  - **int calculateRealAngleWithAdjustment(const int &angleDelta)** - This returns the current robots pose angle when you add in the delta angle passed... i.e. if robot is at 75' and you call this passing in 30 it'll return 105.  Note this does not change anything about the robots pose
+
+  - **void setCurrentXPosition(const float &x)** - Sets robot's current x position in it's world (be careful with this too)
+  - **float getCurrentXPosition()** - Gets the robots x position
+  - **int getCurrentXPositionInMM()** - Gets the robots current position in millimeters
+  - **int getCurrentXPositionInCM()** - Gets the robots current position in cm (rounded version of the getCurrentXPosition())
+
+  - **float calculateNewX(const float &distance, const int &angleDelta)** - Calculates what the robots new x position would be if they traveled a given distance at a given angle from their current orientation (yes angle here is delta from their orientation)  Note: this doesn't update the robots pose.
+
+  - **void setCurrentYPosition(const float &y)** - Sets robots y position (be careful)
+  - **float getCurrentYPosition()** - Gets robots y position
+  - **int getCurrentYPositionInMM()** - Gets robots y position in terms of MM
+  - **int getCurrentYPositionInCM()** - Gets robots y position in terms of centimeters (rounded version of getCurrentYPosition())
+
+  - **float calculateNewY(const float &distance, const int &angleDelta)** - Calculates what the robots y position would be if traveled a given distance and angle from their current orientation
+
+
+- Utility methods
+  - **int getAngle(int angleInDegrees)** - Returns the 'real' value for an angle... this handles conversion of -angles back to positive ones (i.e -45 to 315) and handles angles like 450 and converts them back to 90
+  
+  - **float degreesToRadians(const int &degrees)** - Converts degrees to radians
+  
+  - **int radiansToDegrees(const float &radians)** - Converts radians to degrees
+  
+  - **byte getQuadrantAngleIsIn(const int &degrees)** - Returns the quadrant a given angle is in
+  
+  - **convertCoordinateSystemAngle(const int &angle)** Convert angle from one coordinate system to another (i.e. cartesian to spherical)
+  
+  - **bool closeEnuf(const float &value1, const float &value2, const float &allowedDelta, const boolean &areAngles)** - Checks if two floating point numbers are close enough to one another, the arguments should be obvious (the areAngles is to handle - and + angles correctly )
+  
+  - **int calculateAngleBetweenPoints(const float &x1, const float &y1, const float &x2, const float &y2)** - Calculates the angle between two points
+  
+  - **int getMidpointBetweenTwoAngles(const int &angle1, const int &angle2)** - Returns the midpoint angle between two angles  (if you gave it 110 and 90 it'd return 100)
+  
+  - **int getShortestAngleDeltaToGetToOrientation(const int &targetOrientation)** - Gets shortest angle required to get from the robots current pose to the desired target angle passed in; **Note** the value returned is negative for angles to the left of your current orientation and positive to the right (TODO - handle cartesian changes)
+  
+
+  - **float getSlopeOfAngle(const int &degrees)** - Returns the slope of an angle (same as tangent)
+  
+  - **float getYInterceptForPose(const Pose &thePose)** - Returns the y intercept for a given pose
+  - **float distanceBetweenPoses(const Pose &firstPose, const Pose &secondPose)** - Returns the distance between two poses
+  - **Pose calculatePose(const Pose &thePos, const int &angleOfMovement, const int &distanceMoved)** - Calculate what the new pose would be, you pass in the starting pose, the angle traveled and distance traveled. **Note** angle traveled should be actual angle, not a delta one
+  
+- Determine where two poses will intersect
+  - **boolean setPointOfIntersection(const Pose &pose1, const Pose &pose2, Pose &pose2Update)** - Takes two poses and update the third pose passed in with the point of intersection.  High level logic
     ```
       Calculate the slope for each pose (tangent)
       Calculate the y intercept for the pose (solve yPos - (slope * xPos))
@@ -198,49 +245,58 @@ I listed the classes alphabetically except for the first one... that has the con
       Calculate the angle for each of your poses to get to the point of intersection... 
         the poses angle has to be the same as the angle you calculated... if not the intersection could be -180' from that pose
     ```
-- **float degreesToRadians(const int &degrees)** - Converts degrees to radians
-- **int radiansToDegrees(const float &radians)** - Converts radians to degrees
-- **byte getQuadrantAngleIsIn(const int &degrees)** - Returns the quadrant a given angle is in
-- **int getAngle(int angleInDegrees)** - Returns the 'real' value for an angle... this handles conversion of - angles back to positive ones and handles angles like 450 and convers them back to 90
-- **int calculateRealAngleWithAdjustment(const int &angleDelta)** - This returns the current robots pose angle when you add in the delta angle passed... i.e. if robot is at 75' and you call this passing in 30 it'll return 105
-- **int getMidpointBetweenTwoAngles(const int &angle1, const int &angle2)** - Returns the midpoint between two angles
-- **float calculateNewX(const float &distance, const int &angleDelta)** - Calculates what the robots new x position would be if they traveled a given distance at a given angle from their current orientation (yes angle here is delta from their orientation)
-- **float calculateNewY(const float &distance, const int &angleDelta)** - Calculates what the robots y position would be if traveled a given distance and angle from their current orientation
-- **void setNewPosition(const float &distance, const int &angleDelta)** - Sets the robots new position, you pass in the distance it's traveled and the angle it traveled from it's current orientation
-- **int getShortestAngleDeltaToGetToOrientation(const int &targetOrientation)** - Gets shortest angle required to get from the robots current pose to the desired target angle passed in; **Note** the value returned is negative for angles to the left of your current orientation and positive to the right (TODO - handle cartesian changes)
-- **void showPose(const Pose &pos2Show)** - Helper method to show a pose
-- **void showLocation()** - Routine to show the robots current pose (this calls showPose with it's own pose)
-- **void writeMsg2Serial(char *theMessage)** - Little helper method to write out a string to the serial line
-- **float distanceBetweenPoses(const Pose &firstPose, const Pose &secondPose)** - Returns the distance between two poses
-- **Pose calculatePose(const Pose &thePos, const int &angleOfMovement, const int &distanceMoved)** - Calculate what the new pose would be, you pass in the starting pose, the angle traveled and distance traveled. **Note** angle traveled should be actual angle, not a delta one
-- **Pose triangulatePoses(const Pose &firstPose, const Pose &secondPose, const int &angleOfMovement)** - This will triangulate two poses... I would use 'setPointOfIntersection' instead of this, but left it here for future work/reference.
+  
+Debugging/output methods
+  - **void showPose(const Pose &pos2Show)** - Helper method to show a pose
+  - **void showLocation()** - Routine to show the robots current pose (this calls showPose with it's own pose)
+  - **void writeMsg2Serial(char *theMessage)** - Little helper method to write out a string to the serial line
+  - **Pose triangulatePoses(const Pose &firstPose, const Pose &secondPose, const int &angleOfMovement)** - This will triangulate two poses... I would use 'setPointOfIntersection' instead of this, but left it here for future work/reference.
 
 
 ## MovementsClass
-**Provides access to movement of the robot**
-- **MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, DetermineWorldClass &determineWorldObject)** - Constructor, pass in object references the objects needed within the movements class.
-- **void initMovements()** - Initialization method (called from constructor, it resets your state (i.e. wall opening state, moving state, etc...)
-- **unsigned int getElapsed()** - Helper method to be used within this class... it returns the number of milliseconds between now and the time we started moving
-- **unsigned int getMillisToGetThere(const float &distanceInCM)** - Helper method, it determins how long it will take to travel a given distance.
-- **void startMoving(const bool &goForward)** - This starts the robot moving, it sets various attributes time it started moving.. wall state etc.. the parm controls whether you're moving forward (true) or backward (false).  **Note** localization is controlled via this method and the stopMoving method
-- **float getDistanceTraveledForTime(const int &milliseconds)** - Helper method, you give it a time (millis) and it returns the distance traveled in it
-- **float getDistanceTraveledSoFar()** -- Returns the distance that we've traveled so far (from the time we started moving)
-- **void stopMoving()** - Called to stop the robot from moving... this is the only way you should stop a robot from moving... it sets various attributes that control localization and also determines if it should update it's 'world' coordinates (i.e. the world got bigger as we've traveled into an area that we didn't know existed before)
-- **boolean moveBackward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance)** - Moves us backward a particular distance, note this is non-blocking so it is intended that you keep calling this method within some loop... it knows the distance it's travelled since it started moving (see other methods) and will stop when it's traveled the distance requested, or that it's moved the minimum distance away from an obstacle (if the third argument is true).
-- **boolean moveForward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance)** - Move us forward a particular distanceToTravel, we'll stop moving forward if we're within the minimum allowed distance to an obstacle (second arg) and the 'checkFrontDistance' flag is true... i.e. with this you can keep moving forward until you see something in front of you that is within some range.
-- **void turnLeft(const int &degrees)** - Turns us left by the degrees argument passed in
-- **void turnRight(const int &degrees)** - Turns us right by the degrees passed in
-- **int getClosest90Angle()** - Helper method to return the closes 90' angle
-- **void turnToAngle(const int &theAngle)** - Turn the robot to a particular angle
-- **int getDistanceAtAngle(const int &angle)** - Returns the distance at a given angle, **note** this turns us to that angle; it does not turn us back, cause in most cases we don't want that
-- **void turnToZero()** - Moves us back to our origin angle (0')
-- **void turnTo90ClosestDegreeOrientation()** - Will turn us to the closes 90' orientation
-- **int adjustDistanceToWall(const int &desiredDistance, const int &currentWallDistance)** - This adjusts our distance to the wall
-- **float wallOpeningDistance(int &distanceToMoveForward, const int &startWallDistance, const int &lastWallDistance)** Returns the distance we've traveled since there has been a wall opening.. the opening has to have the minimum depth (i.e. to fit robot) in order to count as an opening
-- **void followWall()** - Method to have the robot follow the wall
-- **void moveToPose(const Pose &targetPose)** - Move the robot to a particular pose
-- **void showTurnRadius()** - Debugging, shows the turn radius of the robot
-- **void showWallMovements()** - Debugging method to show the wall movements ** TODO NEEDS WORK **
+**Provides access to movement of the robot**  This handles forward, backard, turning; it also has methods for following wall, adjust to wall etc... if it has to do with changing the robots pose it should be in here :)  This class also has a reference to the other objects (i.e. Localization) so it keeps all the objects in sync.
+- Constructor
+  - **MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, DetermineWorldClass &determineWorldObject)** - Constructor, pass in object references the objects needed within the movements class.
+
+- Moving forward/backward
+  - **boolean moveForward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance)** - Move us forward a particular distanceToTravel, we'll stop moving forward if we're within the minimum allowed distance to an obstacle (second arg) and the 'checkFrontDistance' flag is true... i.e. with this you can keep moving forward until you see something in front of you that is within some range.
+
+  - **boolean moveBackward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance)** - Moves us backward a particular distance, note this is non-blocking so it is intended that you keep calling this method within some loop... it knows the distance it's travelled since it started moving (see other methods) and will stop when it's traveled the distance requested, or that it's moved the minimum distance away from an obstacle (if the third argument is true).
+
+  - **void startMoving(const bool &goForward)** - This starts the robot moving, it sets various attributes time it started moving.. wall state etc.. the parm controls whether you're moving forward (true) or backward (false).  **Note** localization is controlled via this method and the stopMoving method
+  
+  - **void stopMoving()** - Called to stop the robot from moving... this is the only way you should stop a robot from moving... it sets various attributes that control localization and also determines if it should update it's 'world' coordinates (i.e. the world got bigger as we've traveled into an area that we didn't know existed before)
+  
+  - **void moveToPose(const Pose &targetPose)** - Move the robot to a particular pose
+
+- Turning methods
+  - **void turnLeft(const int &degrees)** - Turns us left by the degrees argument passed in
+  - **void turnRight(const int &degrees)** - Turns us right by the degrees passed in
+  - **void turnToAngle(const int &theAngle)** - Turn the robot to a particular angle
+  - **void turnToZero()** - Moves us back to our origin angle (0')
+  - **void turnTo90ClosestDegreeOrientation()** - Will turn us to the closest 90' orientation
+
+- Determining distance traveled 
+  - **float getDistanceTraveledSoFar()** -- Returns the distance that we've traveled so far (from the time we started moving)
+  - **float getDistanceTraveledForTime(const int &milliseconds)** - Helper method, you give it a time (millis) and it returns the distance traveled in it
+
+- Misc Utility methods
+  - **void initMovements()** - Initialization method (called from constructor, it resets your state (i.e. wall opening state, moving state, etc...)
+  - **unsigned int getElapsed()** - Helper method to be used within this class... it returns the number of milliseconds between now and the time we started moving
+  - **unsigned int getMillisToGetThere(const float &distanceInCM)** - Helper method, it determins how long it will take to travel a given distance.
+  - **int getClosest90Angle()** - Helper method to return the closest 90' angle
+  
+- Determining distance from an obstacle
+  - **int getDistanceAtAngle(const int &angle)** - Returns the distance at a given angle, **note** this turns us to that angle; it does not turn us back, cause in most cases we don't want that
+
+- Wall opening/adjusting distance to side wall
+  - **void followWall()** - Method to have the robot follow the wall
+  - **int adjustDistanceToWall(const int &desiredDistance, const int &currentWallDistance)** - This adjusts our distance to the wall, it stops moving, turns toward the wall and them moves forward or backward to adjust it's length to the wall, it then goes back to it's original pose and resumes it's movements
+  - **float wallOpeningDistance(int &distanceToMoveForward, const int &startWallDistance, const int &lastWallDistance)** Returns the distance we've traveled since there has been a wall opening.. the opening has to have the minimum depth (i.e. to fit robot) in order to count as an opening.  This routine is also responsible to call the adjustDistanceToWall (since it's already looking at the wall :))
+  
+- Debugging/info methods
+  - **void showTurnRadius()** - Debugging, shows the turn radius of the robot
+  - **void showWallMovements()** - Debugging method to show the wall movements ** TODO NEEDS WORK **
 
 ## UltrasonicClass
 **Interface for ultrasonic sensor**
