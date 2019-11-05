@@ -309,17 +309,18 @@ Debugging/output methods
 
 - Misc Utility methods
   - **void initMovements()** - Initialization method (called from constructor, it resets your state (i.e. wall opening state, moving state, etc...)
-  - **unsigned int getElapsed()** - Helper method to be used within this class... it returns the number of milliseconds between now and the time we started moving
+  - **unsigned int getElapsedSinceStartedMoving()** - Helper method to be used within this class... it returns the number of milliseconds between now and the time we started moving
   - **unsigned int getMillisToGetThere(const float &distanceInCM)** - Helper method, it determins how long it will take to travel a given distance.
   - **int getClosest90Angle()** - Helper method to return the closest 90' angle
-  
+  - **void setLocalizationPosition(const boolean &inReverse)** - PRIVATE method, used to update the localization pose while robot is moving.
+
 - Determining distance from an obstacle
-  - **int getDistanceAtAngle(const int &angle)** - Returns the distance at a given angle, **note** this turns us to that angle; it does not turn us back, cause in most cases we don't want that
+  - **float getDistanceAtAngle(const int &angle)** - Returns the distance at a given angle, **note** this turns us to that angle; it does not turn us back, cause in most cases we don't want that
 
 - Wall opening/adjusting distance to side wall
   - **void followWall()** - Method to have the robot follow the wall
-  - **int adjustDistanceToWall(const int &desiredDistance, const int &currentWallDistance)** - This adjusts our distance to the wall, it stops moving, turns toward the wall and them moves forward or backward to adjust it's length to the wall, it then goes back to it's original pose and resumes it's movements
-  - **float wallOpeningDistance(int &distanceToMoveForward, const int &startWallDistance, const int &lastWallDistance)** Returns the distance we've traveled since there has been a wall opening.. the opening has to have the minimum depth (i.e. to fit robot) in order to count as an opening.  This routine is also responsible to call the adjustDistanceToWall (since it's already looking at the wall :))
+  - **float adjustDistanceToWall(const float &desiredDistance, const float &currentWallDistance)** - This adjusts our distance to the wall, it stops moving, turns toward the wall and them moves forward or backward to adjust it's length to the wall, it then goes back to it's original pose and resumes it's movements
+  - **float wallOpeningDistance(float &distanceToMoveForward, const float &startWallDistance, const float &lastWallDistance)** Returns the distance we've traveled since there has been a wall opening.. the opening has to have the minimum depth (i.e. to fit robot) in order to count as an opening.  This routine is also responsible to call the adjustDistanceToWall (since it's already looking at the wall :))
   
 - Debugging/info methods
   - **void showTurnRadius()** - Debugging, shows the turn radius of the robot

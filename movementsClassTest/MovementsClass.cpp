@@ -1,13 +1,5 @@
 #include "movementsClass.h"
 
-// MINWALLOPENINGDEPT is
-// actual distance we are from the wall + 1/2 our robot width (this brings us to the all)  (this is about 9 cm)
-// + robotLength + gripper length   (this is 14 cm)
-// + little fluff  (2cm)  that's how I came up with 25
-// Have method for this when u get time... also the same for the minwallwidth opening,
-//  that should be width of robot + some fluff :)
-#define MINWALLOPENINGDEPTH 25.0  // put in good values later
-#define MINWALLOPENINGWIDTH 15.5
 #define DEBUGWALL true
 
 // ========================================================================
@@ -29,7 +21,7 @@ MovementsClass::MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationCl
 
 // --------------------------------------------------------------------------------------
 // This SHOULD not be called if we're on a wall opening, cause values get reset after stopping
-int MovementsClass::adjustDistanceToWall(const int &desiredDistance, const int &currentWallDistance) {
+float MovementsClass::adjustDistanceToWall(const float &desiredDistance, const float &currentWallDistance) {
   stopMoving();
   turnRight(90);  // turnLogic
   if (desiredDistance > currentWallDistance) {  // Too close backup
@@ -39,7 +31,7 @@ int MovementsClass::adjustDistanceToWall(const int &desiredDistance, const int &
     while (moveForward(currentWallDistance-desiredDistance, ULTRASONIC_MIN_SAFE_DISTANCE, true));
   }
   turnLeft(90);
-  int newDistanceForward = ultrasonicObj->distanceAtAngle(0);
+  float newDistanceForward = ultrasonicObj->getFreeSpaceInFrontOfGripper(0);
   
   #if DEBUGWALL
     Serial.print("In adjustDistanceToWall");
@@ -59,12 +51,12 @@ int MovementsClass::adjustDistanceToWall(const int &desiredDistance, const int &
 // it smart enough to turn right too
 void MovementsClass::followWall() {
   int saveX, saveY;
-  int theDistance;
-  int startWallDistance, lastWallDistance, widthOfOpening;
+  float theDistance;
+  float startWallDistance, lastWallDistance, widthOfOpening;
   byte numTurns;
   // Face the wall to the right
   turnRight(90);  // turnLogic
-  theDistance = ultrasonicObj->distanceAtAngle(0);
+  theDistance = ultrasonicObj->getFreeSpaceInFrontOfGripper(0);
 
   #if DEBUGWALL
     Serial.print("D1 ");
@@ -91,8 +83,8 @@ void MovementsClass::followWall() {
           saveY != localizationObj->getCurrentYPositionInCM())) {
     turnLeft(90);  // turnLogic
     numTurns++;
-    theDistance = ultrasonicObj->distanceAtAngle(0);
-    startWallDistance = lastWallDistance = ultrasonicObj->distanceAtAngle(90);    // turnLogic
+    theDistance = ultrasonicObj->getFreeSpaceInFrontOfGripper(0);
+    startWallDistance = lastWallDistance = ultrasonicObj->getFreeSpaceOnRight();    // turnLogic
     #if DEBUGWALL
       Serial.print("D2 ");
       Serial.print(theDistance);
@@ -119,7 +111,7 @@ void MovementsClass::followWall() {
       
         while (moveBackward((widthOfOpening / 2.0), 0.0, false));  // backup 1/2 distance, don't care about min distance (2,3 args)
         turnRight(90);                                             // turn right
-        theDistance = ultrasonicObj->distanceAtAngle(0);
+        theDistance = ultrasonicObj->getFreeSpaceInFrontOfGripper(0);
       }
       // had delay(100) but removed it... see how it works.
     }
@@ -153,9 +145,9 @@ int MovementsClass::getClosest90Angle() {
 
 // --------------------------------------------------------------------------------------
 // Turn to specific angle and return distance in front of you :)
-int MovementsClass::getDistanceAtAngle(const int &angle) {
+float MovementsClass::getDistanceAtAngle(const int &angle) {
   turnToAngle(angle);
-  return ultrasonicObj->distanceAtAngle(0);
+  return ultrasonicObj->getFreeSpaceInFrontOfGripper(0);
 }
 
 // --------------------------------------------------------------------------------------
@@ -168,20 +160,20 @@ float MovementsClass::getDistanceTraveledForTime(const int &milliseconds) {
 // Return the distance traveled so far
 float MovementsClass::getDistanceTraveledSoFar() {
   if ( movementState.amMoving == true ) {
-    return getDistanceTraveledForTime(getElapsed());
+    return getDistanceTraveledForTime(getElapsedSinceStartedMoving());
   }
   return 0.0;
 }
 
 // --------------------------------------------------------------------------------------
 // Routine to return elapsed time... older version below in case you need it
-unsigned int MovementsClass::getElapsed() {
+unsigned int MovementsClass::getElapsedSinceStartedMoving() {
   return millis() - movementState.startTime;
 }
 
 // --------------------------------------------------------------------------------------
 // THIS IS COMMENTED OUT, JUST LEFT FOR FUTURE REF
-/* unsigned int getElapsed(bool setTime) { 
+/* unsigned int getElapsedSinceStartedMoving(bool setTime) { 
   unsigned int temp = millis() - movementState.startTime;
   if (setTime) {
     // if want to set the time increment startTime by the elapsed amount
@@ -207,6 +199,7 @@ void MovementsClass::initMovements() {
   
   movementState.startTime = 0;
   movementState.elapsedStateChange = 0;
+  movementState.timeSinceLocalized = 0;
 }
 
 // --------------------------------------------------------------------------------------
@@ -215,17 +208,18 @@ void MovementsClass::initMovements() {
 // and it'll stop when we've reached destination or wall.
 boolean MovementsClass::moveBackward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance) {
   if ( movementState.amMoving == true ) {
+    setLocalizationPosition(movementState.inReverse);
     if (getDistanceTraveledSoFar() >= distanceToTravel) {  // done moving
       stopMoving();
     }
     else {
-      if (checkFrontDistance && (ultrasonicObj->distanceAtAngle(0) >= minAllowedDistanceToObstacle)) {  // done moving
+      if (checkFrontDistance && (ultrasonicObj->getFreeSpaceInFrontOfGripper(0) >= minAllowedDistanceToObstacle)) {  // done moving
         stopMoving();
       }
     }
   }
   else {
-    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && (ultrasonicObj->distanceAtAngle(0) >= minAllowedDistanceToObstacle))) {  // cant move
+    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && (ultrasonicObj->getFreeSpaceInFrontOfGripper(0) >= minAllowedDistanceToObstacle))) {  // cant move
       sparki.beep();
     }
     else {
@@ -239,17 +233,18 @@ boolean MovementsClass::moveBackward(const float &distanceToTravel, const float 
 // Similar to above but moves foward.
 boolean MovementsClass::moveForward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance) {
   if ( movementState.amMoving == true ) {
+    setLocalizationPosition(movementState.inReverse);
     if (getDistanceTraveledSoFar() >= distanceToTravel) {  // done moving
       stopMoving();
     }
     else {
-      if (checkFrontDistance && (ultrasonicObj->distanceAtAngle(0) <= minAllowedDistanceToObstacle)) {  // done moving
+      if (checkFrontDistance && (ultrasonicObj->getFreeSpaceInFrontOfGripper(0) <= minAllowedDistanceToObstacle)) {  // done moving
         stopMoving();
       }
     }
   }
   else {
-    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && ultrasonicObj->distanceAtAngle(0) <= minAllowedDistanceToObstacle)) {  // cant move
+    if ((getMillisToGetThere(distanceToTravel) <= 0.0) || (checkFrontDistance && ultrasonicObj->getFreeSpaceInFrontOfGripper(0) <= minAllowedDistanceToObstacle)) {  // cant move
       sparki.beep();
     }
     else {
@@ -265,15 +260,32 @@ void MovementsClass::moveToPose(const Pose &targetPose) {
   
   Pose currentPose = localizationObj->getPose();
   
-  float targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
+  int targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
   
   // Turn to specific angle and return distance in front of you :)
-  int openSpace = getDistanceAtAngle(targetAngle);
+  float openSpace = getDistanceAtAngle(targetAngle);
   float distance2Move = localizationObj->distanceBetweenPoses(currentPose, targetPose);
   if ((float)openSpace < distance2Move) {
     distance2Move = (float)openSpace;
   }
   while (moveForward(distance2Move, ULTRASONIC_MIN_SAFE_DISTANCE, true));
+}
+
+// --------------------------------------------------------------------------------------
+// We want localization data to be accurate so this routine is called repeatedly to 
+// update the pos based on last time we localized
+void MovementsClass::setLocalizationPosition(const boolean &inReverse) {
+  if (movementState.amMoving == true) {
+    unsigned int deltaTime = millis() - movementState.timeSinceLocalized;
+    // Set your position, the angle delta is 0 since we're going in a straight line
+    if (inReverse) {
+      localizationObj->setNewPosition(-getDistanceTraveledForTime(deltaTime), 0.0);
+    }
+    else {      
+      localizationObj->setNewPosition(getDistanceTraveledForTime(deltaTime), 0.0);
+    }
+    movementState.timeSinceLocalized += deltaTime;
+  }
 }
 
 // --------------------------------------------------------------------------------------
@@ -311,6 +323,7 @@ void MovementsClass::startMoving(const bool &goForward) {
   if ( movementState.amMoving == false ) {
     movementState.amMoving = true;
     movementState.startTime = millis();
+    movementState.timeSinceLocalized = movementState.startTime;
     movementState.elapsedStateChange = 0;
     movementState.wallOpening = false;
     if (goForward) {
@@ -327,11 +340,8 @@ void MovementsClass::startMoving(const bool &goForward) {
 // --------------------------------------------------------------------------------------
 // Stop moving and return the distance traveled
 void MovementsClass::stopMoving() {
-  // Set your position, the angle delta is 0 since we're going in a straight line
-  if (movementState.inReverse) 
-    localizationObj->setNewPosition(-getDistanceTraveledSoFar(), 0.0);
-  else
-    localizationObj->setNewPosition(getDistanceTraveledSoFar(), 0.0);
+  // This has to be called before you say you're not moving, otherwise it won't update position
+  setLocalizationPosition(movementState.inReverse);
   sparki.moveStop();
   movementState.amMoving = false;
   determineWorldObj->checkWorldCoordinates(); // We may have found new world positions, check em
@@ -373,7 +383,7 @@ void MovementsClass::turnToZero() {
 
 // --------------------------------------------------------------------------------------
 // Another convenience routine
-void MovementsClass::turnTo90ClosestDegreeOrientation() {
+void MovementsClass::turnToClosest90DegreeOrientation() {
   turnToAngle(getClosest90Angle());
 }
 
@@ -394,14 +404,14 @@ void MovementsClass::turnTo90ClosestDegreeOrientation() {
 // else
 //   see if the distance you are from the wall is the desired distance
 //   if it isn't then call routine to adjust the wall distance
-float MovementsClass::wallOpeningDistance(int &distanceMovingForward, const int &startWallDistance, const int &lastWallDistance) {
+float MovementsClass::wallOpeningDistance(float &distanceMovingForward, const float &startWallDistance, const float &lastWallDistance) {
 
-  int currentWallDistance = ultrasonicObj->distanceAtAngle(90);  // turnLogic
+  float currentWallDistance = ultrasonicObj->getFreeSpaceOnRight();  // turnLogic
 
   if (currentWallDistance > MINWALLOPENINGDEPTH) {
     if (movementState.wallOpening == false) {
       movementState.wallOpening = true;
-      movementState.elapsedStateChange = getElapsed();
+      movementState.elapsedStateChange = getElapsedSinceStartedMoving();
     
       #if DEBUGWALL
         Serial.print("StartWallOpening");
@@ -421,18 +431,18 @@ float MovementsClass::wallOpeningDistance(int &distanceMovingForward, const int 
     // If state was true and flipped then set indicator and new elapsed time
     if ( movementState.wallOpening == true ) {
       movementState.wallOpening = false;
-      movementState.elapsedStateChange = getElapsed();
+      movementState.elapsedStateChange = getElapsedSinceStartedMoving();
     }
   }
   
   if (movementState.wallOpening) {
     // if at wall opening see if we should handle it... i.e turn down it
-    return (getDistanceTraveledForTime(getElapsed() - movementState.elapsedStateChange));
+    return (getDistanceTraveledForTime(getElapsedSinceStartedMoving() - movementState.elapsedStateChange));
   }
   else 
-    if (abs(currentWallDistance - lastWallDistance) > 1) {
+    if (abs(currentWallDistance - lastWallDistance) > 1.0) {
       // We only adjust if we've traveled at least 1/2 our length since the state changed
-      if (getDistanceTraveledForTime(getElapsed() - movementState.elapsedStateChange) > (OVERALL_LENGTH_LESS_GRIPPER / 2.0)) {
+      if (getDistanceTraveledForTime(getElapsedSinceStartedMoving() - movementState.elapsedStateChange) > (OVERALL_LENGTH_LESS_GRIPPER / 2.0)) {
         distanceMovingForward = adjustDistanceToWall(startWallDistance, currentWallDistance);
       }
     }
