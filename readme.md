@@ -32,17 +32,44 @@
     - You need to have enough distance to do this, so keep track of how long the wall has been next to you... when you see a state change in distance you log where you are... you continue to move forward till it hits the next increment; you now have a distance traveled in x direction, and delta in the y direction; you can calculate the angle that you are offset by.... you then backup till you're at desired distance to the wall (note may want to go little more to account for +- of the sensor), you then stop and turn using the angle you just calculated.
   
 ## LEGEND Serial communications
-**Memory** is critical and strings take up quite a bit of memory, I used the abbreviations below when outputting to the serial port.  
-- **DW** Define world, world dimensions (x,y)
-- **DP** Position in the world (x,y)
-- **LO** Localization, x position, y position, &lt; current angle
-- **LA** Light angle, has description of what it is, it's angle, brightness for left, center and right light sensor
-- **LB** Light brightness delta, shows the angle that has largest increase in brightness over the sample; it will ignore the quadrant if requested
-- **LCD** Light sample, it shows the angle and the light brightness for the center light
-- **LBD** Light brightness delta for all angles, this is only shown if DEBUGLIGHT is on
-- **LBIR** Light brightness ignore angle range (only when DEBUGLIGHT is on)
-- **LBI** Light brightness, angle that is ignored in calculation (when looking for second light we ignore the area that we found the first one) (also only when DEBUGLIGHT is on)
-- **US** Ultrasonic sensor
+**Memory** is critical and strings take up quite a bit of memory, I used the abbreviations below when outputting to the serial port.  The first letter is related to the class that generated the value (i.e D-Determine World, L-Lights, M-Movements U-Ultrasonic)
+- **DW** Define world, world dimensions (i.e. DW,x1,0.00,x2,115.40,y1,0.00,y2,151.40), it gives x1/x2 (min/max) so you know length of field, then y coordinates; note as it expllores the world these values could change and x1, y1 may go negative
+- **DP** Position you are in the world (i.e. DP,x,68.20,y,30.20)
+- **MR** Shows turn radius (i.e. MR,8.24)
+
+-   **LO** Localization, x position, y position, &lt; current angle
+
+
+
+- **LA** Light angle, has description of what it is (Sam-Sample, Cal-Calibration, Orig-Original, Curr-Current), it's angle, brightness for left, center and right light sensor (i.e LA,Sam,<,0,l,801,c,704,r,787)  Note: the Orig is a 'base light attribute that's saved', we do that if we want to compare one positions light to another (i.e a 'Curr' one)
+- **LP** Light brightness delta percentage, it is the percentage that the sample is away from the original/calibrated sample.  An example of this is 'LP,<,60,l,8,c,21,r,-1', it means at 60' the left light is 8% over calibrated light, center is 21% and the right light is -1% (i.e. darker).  
+- **LPA** When DEBUGLIGHTS is on you'll see these; it's the same as **LP** but it will show you all angles
+- **LD** This shows the "LightsDeltaSum" values; it has the sum of the light delta's over a given sample size.  The format of the output after 'LD,' is &lt;light&gt;,&lt;deltaSum&gt;/&lt;deltaCounter&gt; ...  It's probably good to have an example here.  In the example below it's showing the LA values also:
+```
+    LA,Orig,<,10,l,715,c,654,r,697
+
+    LA,Curr,<,0,l,714,c,654,r,714
+    LD,l,-1/-1,c,0/0,r,17/1
+
+    LA,Curr,<,0,l,723,c,666,r,716
+    LD,l,7/0,c,12/1,r,36/2
+
+    LA,Curr,<,0,l,720,c,656,r,704
+    LD,l,12/1,c,14/2,r,43/3
+
+    LA,Curr,<,0,l,719,c,657,r,718
+    LD,l,16/2,c,17/3,r,64/4
+
+    LA,Curr,<,0,l,728,c,654,r,712
+    LD,l,29/3,c,17/3,r,79/5
+```
+You can see that each delta from LA,Curr is summed up into &lt;deltaSum&gt;  The &lt;deltaCounter&gt; has a count of each number of increases it's seen (since it's been reset).
+- **LCD** This is only one when DEBUGLIGHTS is on.  It has the angle, and the  light brightness for the center light, an example is 'LCD,<,120,579' so it means angle 120 has a brightness value of 579.
+- These two are related to angles we ignore... when looking for light we sometimes want to ignore other angles... the tags below are showing values for those 'ignored' angles... it's mainly for debugging, and they'll only be displayed when the appropriate DEBUG value is set
+  - **LBIR** This shows the angles that will be ignored, it's displayed when DEBUGLIGHTDELTA is on.  An example is 'LBIR,<,120,to,300'; this means that it will ignore light readings between 120' and 300' (inclusive).
+  - **LBI** This is shown when DEBUGLIGHT is on; it's meant to 'prove' that an angle was really ignored :)  A sample is 'LBI,<,120'; it means that it really ignored that angle.
+
+- **US** Ultrasonic sensor, this shows you the angle of the servo and the reading it took
 
 # Code/Class Definitions 
 I listed the classes alphabetically except for the first one... that has the constants so you should know about that one first.
@@ -301,16 +328,28 @@ Debugging/output methods
 ## UltrasonicClass
 **Interface for ultrasonic sensor**
   - **NOTE:** The ultrasonic sensor is with +/- the constant ULTRASONIC_TOLERANCE (.3175 cm at time of this writing (1/8 inch))
+  
   - **UltrasonicClass::UltrasonicClass()** Constructor
-  - **void UltrasonicClass::positionServo(int theAngle)** -Position the servo to the angle requested
-  - **int UltrasonicClass::distanceAtAngle(const int &angleOfServo)** - Get distance at a particular angle
-  - **int UltrasonicClass::distanceRight()** - Get distance at right angle
-  - **int UltrasonicClass::distanceLeft()** - Get distance at left angle
-  - **float UltrasonicClass::getActualBodyDistanceFromFront(const int &reportedDistance)** - Get the actual open space between front of robot and the object it reported
-  - **float UltrasonicClass::getActualGripperDistanceFromFront(const int &reportedDistance)** - Get distance between gripper tip and the object.
-  - **float UltrasonicClass::getActualCenterOfBodyDistanceFromFront(const int &reportedDistance)** - Get distance between the center of robot and the object it reported in front of it
-  - **float UltrasonicClass::getActualBodyDistanceFromSide(const int &reportedSideDistance)** - Get the distance between side of robot and the wall it's next to 
-  - **float UltrasonicClass::getActualCenterOfBodyDistanceFromSide(const int &reportedSideDistance)** - Get distance between the center of robot and the object it reported on it's side.
-  - **float UltrasonicClass::getAdjustedUltrasonicReadingAfterRotation(const int &reportedDistance, const bool &nowAtZeroAngle)** - This method should only be used when you want to take a reading and calculate what your distance to the wall would be at your new orientation... this is mainly used when turning 90' and want to proceed thru an opening (you can't read wall distance cause your past it).
+  
+  - **void UltrasonicClass::positionServo(int theAngle)** - Position the servo to the angle requested
+
+  - **int UltrasonicClass::getServoAngle()** - Returns the angle the servo is at
+
+  - **float UltrasonicClass::getFreeSpaceInFrontOfGripper(const int &angleOfServo)** - Get the space thats free in front of the grippers, this is probably the most **USEFUL** method; it tells you how far you can travel before you encounter the obstacle.
+  
+  - **float UltrasonicClass::getFreeSpaceInFrontExcludingGripper(const int &angleOfServo)** -  Returns the free space in front of the robot, this does not include the space the gripper's taking... this is useful when trying to grab an object between the grippers
+
+  - **float UltrasonicClass::getDistanceFromServoAtAngle(const int &angleOfServo)** - Returns the distance from the servo to obstacle (you should probably use methods above instead, but you may want this in certain circumstances)
+  
+  - **float UltrasonicClass::getDistanceFromCenterOfRobotToObstacle(const int &angleOfServo)** - Returns distance from the center of the robot to the obstacle.  This is especially useful for mapping, you can give it any angle and the value returned is from the robot's pose.
+          
+  - **float UltrasonicClass::getFreeSpaceOnRight()** - Get the free space between the robot and the wall on the right, this is probably the **SECOND MOST USEFUL**; it's good to see what's on your right side.
+
+  - **float UltrasonicClass::getFreeSpaceOnLeft()** - Get free space between robot and wall on the left, if you're following the left wall this is the 'second most useful' :)
+
+  - **float UltrasonicClass::getSensorTolerance()** - Gets the tolerance of the servo, this is the +/- value from the reading it returns.
+
   - **void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance)** - Helper to show ultrasonic value
  
+    
+    

@@ -134,6 +134,40 @@ void loop() {
       localizationObj->showPose(localizationObj->getPose());  // Show ending pose
     #endif
 
+    #define TESTDELTASUM true
+    #if TESTDELTASUM
+      LightsDeltaSum deltaAmts;
+      // Test the deltasum logic, it gets original lights... will wait for you to shine a light
+      // on bot... make it right or left sensor intense... that should register as an angle change
+      LightAttributes originalLightAttributes = lightsObj->getLightAttributesAtCurrentPose();
+      // Clear all your delta's
+      lightsObj->clearLightsDeltaSum(deltaAmts);
+                
+      #if LIGHTLOG
+        lightsObj->showLightAttributes("Orig",originalLightAttributes,10);
+      #endif
+
+      localizationObj->writeMsg2Serial("Shine Light");
+      sparki.beep();
+      delay(3000);
+      
+      LightAttributes currentLightAttributes;
+      int angle2TurnTo;
+      for (int i = 0; i < 5; i++) {
+        delay(500);
+        currentLightAttributes = lightsObj->getLightAttributesAtCurrentPose();
+        #if LIGHTLOG
+          lightsObj->showLightAttributes("Curr",currentLightAttributes,localizationObj->getCurrentAngle());
+        #endif
+        angle2TurnTo = lightsObj->getLightAngleToTurnToBasedOnDeltaSum(deltaAmts, originalLightAttributes, currentLightAttributes);
+        lightsObj->showLightsDeltaSum(deltaAmts);
+        #if LIGHTLOG
+          Serial.print("angle2TurnTo: ");
+          Serial.println(angle2TurnTo);
+          delay(100);
+        #endif
+      }
+    #endif
 
     #if TESTFINDLIGHTS
       LightsDeltaSum deltaAmts;
@@ -271,5 +305,21 @@ void loop() {
         }
       }
     #endif
+
+    #define TESTSHOWLOG false
+    #if TESTSHOWLOG
+      LightsDeltaSum deltaAmts;
+      lightsObj->sampleWorldLights();
+
+      sparki.beep();
+      localizationObj->writeMsg2Serial("LiteOn");
+      delay(5000);
+
+      localizationObj->writeMsg2Serial("calcDlta");
+      lightsObj->calculateWorldLightDeltas();
+      
+    #endif
+
+    
   }
 }

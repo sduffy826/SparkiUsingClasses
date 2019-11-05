@@ -233,7 +233,7 @@ LightAttributes LightsClass::getLightAttributesAtCurrentPose() {
 // -----------------------------------------------------------------------------------------
 // Helper to get the frequency that the light has changed (- means it's decreased that many times)
 int LightsClass::getLightDeltaCounter(const LightDelta &lightDelta) {
-  return 100-lightDelta.deltaCounter;
+  return lightDelta.deltaCounter-100;
 }
 
 // -----------------------------------------------------------------------------------------
@@ -468,8 +468,8 @@ void LightsClass::showLightAttributes(char *msgStr, const LightAttributes &liteA
     sparki.updateLCD();
   #else
     Serial.print("LA,");
-    sparki.print(msgStr);
-    sparki.print(",<,");
+    Serial.print(msgStr);
+    Serial.print(",<,");
     Serial.print(theAngle);
     Serial.print(",l,");
     Serial.print(liteAttr.lightLeft);
@@ -496,7 +496,7 @@ void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
     sparki.println(lightDeltaPcts[indexOfDelta].rightPct);
     sparki.updateLCD();
   #else
-    Serial.print("LB,<,");
+    Serial.print("LP,<,");
     Serial.print(theAngle);
     Serial.print(",l,");
     Serial.print(deltaPctHelper(lightDeltaPcts[indexOfDelta].leftPct,  lightDeltaPcts[indexOfDelta].leftSignBit));
@@ -509,7 +509,7 @@ void LightsClass::showLightDeltaPctForAngle(const int &theAngle) {
     #if DEBUGLIGHTS
       for (int i = 0; i < LIGHTCALIBRATIONARRAYSIZE; i++) {
         int quadrantOfAngle = localizationObj->getQuadrantAngleIsIn(i*LIGHTSAMPLEANGLE);
-        Serial.print("LBD,<,");
+        Serial.print("LPA,<,");
         Serial.print(i*LIGHTSAMPLEANGLE);
         Serial.print(",l,");
         Serial.print(deltaPctHelper(lightDeltaPcts[i].leftPct,  lightDeltaPcts[i].leftSignBit));
@@ -533,31 +533,31 @@ void LightsClass::showLightsDeltaSum(const LightsDeltaSum &amts) {
     sparki.println("LightDeltaSum"
     sparki.print("  Left:");
     sparki.print(getLightDeltaSum(amts.leftLight));
-    sparki.print(",/");
+    sparki.print("/");
     sparki.println(getLightDeltaCounter(amts.leftLight));
 
     sparki.print("  Center,");
     sparki.print(getLightDeltaSum(amts.centerLight));
-    sparki.print(",/");
+    sparki.print("/");
     sparki.println(getLightDeltaCounter(amts.centerLight));
 
     sparki.print("  Right,");
     sparki.print(getLightDeltaSum(amts.rightLight));
-    sparki.print(",/");
+    sparki.print("/");
     sparki.println(getLightDeltaCounter(amts.rightLight));
     sparki.updateLCD();
   #else
-    Serial.print("LDA,l");
+    Serial.print("LD,l,");
     Serial.print(getLightDeltaSum(amts.leftLight));
-    Serial.print(",/");
+    Serial.print("/");
     Serial.print(getLightDeltaCounter(amts.leftLight));
     Serial.print(",c,");
     Serial.print(getLightDeltaSum(amts.centerLight));
-    Serial.print(",/");
+    Serial.print("/");
     Serial.print(getLightDeltaCounter(amts.centerLight));
     Serial.print(",r,");
     Serial.print(getLightDeltaSum(amts.rightLight));
-    Serial.print(",/");
+    Serial.print("/");
     Serial.println(getLightDeltaCounter(amts.rightLight));
   #endif
 }

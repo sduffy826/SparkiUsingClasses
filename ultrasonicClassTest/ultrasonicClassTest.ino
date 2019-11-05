@@ -12,6 +12,7 @@
 
 int distance, iterations, counter;
 int angleIncrement, angleDirection, currentAngle, minAngle, maxAngle;
+UltrasonicClass *ultrasonicPtr;
 
 void setup() {
  // put your setup code here, to run once:
@@ -39,23 +40,48 @@ void loop() {
   if (counter == 0) {
     counter++;
     UltrasonicClass ultrasonicObj;
+    ultrasonicPtr = &ultrasonicObj;
+
+    if (true == true) {
+      ultrasonicPtr->positionServo(0);
+      Serial.println("getDistanceFromServoAtAngle");
+      ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle()));
+
+      Serial.println("getFreeSpaceInFrontOfGripper");
+      ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getFreeSpaceInFrontOfGripper(ultrasonicPtr->getServoAngle()));
+
+      Serial.println("getFreeSpaceInFrontExcludingGripper");
+      ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getFreeSpaceInFrontExcludingGripper(ultrasonicPtr->getServoAngle()));
+
+      Serial.println("getDistanceFromCenterOfRobotToObstacle");
+      ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromCenterOfRobotToObstacle(ultrasonicPtr->getServoAngle()));
+
+      Serial.println("getFreeSpaceOnRight");
+      ultrasonicPtr->showUltrasonic(90,ultrasonicPtr->getFreeSpaceOnRight());
+
+      Serial.println("getFreeSpaceOnLeft");
+      ultrasonicPtr->showUltrasonic(-90,ultrasonicPtr->getFreeSpaceOnLeft());
+
+      Serial.print("getSensorTolerance");
+      Serial.println(ultrasonicPtr->getSensorTolerance());
+    }
   
     if (true == false) {
-      ultrasonicObj.positionServo(15);
-    }
+      ultrasonicObj.positionServo(80);
+      ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle()));
+   }
     
     
     if (true == false) {
-      ultrasonicObj.showUltrasonic(-90,ultrasonicObj.distanceLeft());
+      ultrasonicObj.showUltrasonic(-90,ultrasonicObj.getFreeSpaceOnLeft());
       delay(1000);
     }
     
     if (true == false) {
-      ultrasonicObj.showUltrasonic(0,ultrasonicObj.distanceAtAngle(0));
+      ultrasonicObj.showUltrasonic(0,ultrasonicObj.getDistanceFromServoAtAngle(0));
       delay(1000);
     }
     
-   
     // Test positioning
     if (true == false) {
       ultrasonicObj.positionServo(ULTRASONIC_RIGHT_ANGLE);
@@ -66,9 +92,8 @@ void loop() {
       delay(5000);
     }
     
-    
     if (true == false) {
-      // Calculate angle between -90 and 90
+      // Calculate angle between -90 and 90, this will also show the distance from the center of the robot to the obstacle
       while (iterations < 2) {
         if (currentAngle <= minAngle) {
           angleDirection = 1;
@@ -79,13 +104,20 @@ void loop() {
             angleDirection = -1;
             iterations++;
           }
-        ultrasonicObj.showUltrasonic(currentAngle,ultrasonicObj.distanceAtAngle(currentAngle));
+        ultrasonicObj.showUltrasonic(currentAngle,ultrasonicObj.getDistanceFromServoAtAngle(currentAngle));
+        
+        // Now show the real distance to the center of the bot
+        ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromCenterOfRobotToObstacle(ultrasonicPtr->getServoAngle()));
+
+
         //delay(100); // wait 0.1 seconds (100 milliseconds)
         currentAngle += ( angleIncrement * angleDirection);
       }
       ultrasonicObj.positionServo(0);
-    }
+     }
    }
+   //ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle()));
+   delay(500);
   
  }
 

@@ -340,14 +340,14 @@ void MovementsClass::stopMoving() {
 // --------------------------------------------------------------------------------------
 // Turn left or right byt certain degrees and set your current orientation angle
 void MovementsClass::turnLeft(const int &degrees) {
-  if (movmeentState.amMoving) stopMoving(); // Just in case some turkey tells us to turn in the middle 
+  if (movementState.amMoving) stopMoving(); // Just in case some turkey tells us to turn in the middle 
   sparki.moveLeft(degrees);
   localizationObj->setCurrentAngle(localizationObj->calculateRealAngleWithAdjustment(-degrees));
 }
 
 // --------------------------------------------------------------------------------------  
 void MovementsClass::turnRight(const int &degrees) {
-  if (movmeentState.amMoving) stopMoving(); // Just in case some turkey tells us to turn in the middle 
+  if (movementState.amMoving) stopMoving(); // Just in case some turkey tells us to turn in the middle 
   sparki.moveRight(degrees);
   localizationObj->setCurrentAngle(localizationObj->calculateRealAngleWithAdjustment(degrees));
 }

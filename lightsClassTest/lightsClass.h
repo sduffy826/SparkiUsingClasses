@@ -8,8 +8,8 @@
 #include "localizationClass.h"
 #include "determineWorldClass.h"
 
-#define DEBUGLIGHTS false
-#define DEBUGLIGHTDELTA false
+#define DEBUGLIGHTS true
+#define DEBUGLIGHTDELTA true
 
 struct LightAttributes {
   unsigned int lightLeft : 10;

@@ -75,13 +75,13 @@ void loop() {
       localizationObj.showLocation();
       
     }
-    if (true == true) {
+    if (true == false) {
       // routine below has the logic to calculate our rectangular world coordinates
       movementObj.initMovements();
       movementObj.followWall();
     }
 
-    if (true == false) {
+    if (true == true) {
       movementObj.showTurnRadius();
     }
 

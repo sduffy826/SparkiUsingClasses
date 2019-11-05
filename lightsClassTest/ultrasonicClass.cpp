@@ -25,62 +25,56 @@ void UltrasonicClass::positionServo(int theAngle) {
   }
 }
 
+// Get the angle the servo is at
+int UltrasonicClass::getServoAngle() {
+  return ultrasonicAngle;
+}
+
 // Get distance at a particular angle
-int UltrasonicClass::distanceAtAngle(const int &angleOfServo) {
+float UltrasonicClass::getDistanceFromServoAtAngle(const int &angleOfServo) {
   positionServo(angleOfServo);
-  ultrasonicTempInt = 0;
+  float sumPings = 0;
   for (byte i = 0; i < ULTRASONIC_SAMPLE_SIZE; i++) {
     delay(ULTRASONIC_SAMPLE_DELAY);
-    ultrasonicTempInt += sparki.ping();
+    sumPings += sparki.ping();
   }
-  ultrasonicTempInt = (int)( ((float)ultrasonicTempInt / (float)ULTRASONIC_SAMPLE_SIZE) + .5);
-  return ultrasonicTempInt > ULTRASONIC_MAX_RANGE ? ULTRASONIC_MAX_RANGE : ultrasonicTempInt;
+  sumPings = (sumPings / (float)ULTRASONIC_SAMPLE_SIZE );
+  return sumPings > ULTRASONIC_MAX_RANGE ? ULTRASONIC_MAX_RANGE : sumPings;
+}
+
+// Return the distance from the center of the robot to the obstacle
+float UltrasonicClass::getDistanceFromCenterOfRobotToObstacle(const int &angleOfServo) {
+  // The center of the robot is ULTRASONIC_SERVO_TO_PIVOT + ULTRASONIC_SERVO_PIVOT_OFFSET when
+  // it's at angle 0.. as it moves toward 90 the PIVOT_OFFSET is reduced, at 90' it's zero, that's
+  // why we have the formula below
+  return ( getDistanceFromServoAtAngle(angleOfServo) + ULTRASONIC_SERVO_TO_PIVOT + ( ((90 - abs(angleOfServo))/90.0) * ULTRASONIC_SERVO_PIVOT_OFFSET) );
+}
+
+// Return the distance from the center of the robot to the obstacle
+float UltrasonicClass::getFreeSpaceInFrontExcludingGripper(const int &angleOfServo) {
+  return (getDistanceFromCenterOfRobotToObstacle(angleOfServo) - (OVERALL_LENGTH_LESS_GRIPPER / 2.0));
+}
+
+float UltrasonicClass::getFreeSpaceInFrontOfGripper(const int &angleOfServo) {
+  return (getFreeSpaceInFrontExcludingGripper(angleOfServo) - GRIPPER_LENGTH);
 }
 
 // Get distance at right angle
-int UltrasonicClass::distanceRight() {
-  return distanceAtAngle(ULTRASONIC_RIGHT_ANGLE);
+float UltrasonicClass::getFreeSpaceOnRight() {
+  return (getDistanceFromCenterOfRobotToObstacle(ULTRASONIC_RIGHT_ANGLE) - (OVERALL_WIDTH / 2.0));
 }
 
 // Get distance at left angle
-int UltrasonicClass::distanceLeft() {
-  return distanceAtAngle(ULTRASONIC_LEFT_ANGLE);
+float UltrasonicClass::getFreeSpaceOnLeft() {
+  return (getDistanceFromCenterOfRobotToObstacle(ULTRASONIC_LEFT_ANGLE) - (OVERALL_WIDTH / 2.0));
 }
 
-// Get the actual open space between front of robot and the object it reported
-float UltrasonicClass::getActualBodyDistanceFromFront(const int &reportedDistance) {
-  return (float)reportedDistance - 2.0;
+float UltrasonicClass::getSensorTolerance() {
+  return (ULTRASONIC_TOLERANCE);
 }
 
-// Get distance between gripper tip and the object.
-float UltrasonicClass::getActualGripperDistanceFromFront(const int &reportedDistance) {
-  return (float)reportedDistance - (2.0 + GRIPPER_LENGTH);
-}
-
-// Get distance between the center of robot and the object it reported in front of it
-float UltrasonicClass::getActualCenterOfBodyDistanceFromFront(const int &reportedDistance) {
-  return (getActualBodyDistanceFromFront(reportedDistance) + (OVERALL_LENGTH_LESS_GRIPPER / 2.0));
-}
-
-// Get the distance between side of robot and the wall it's next to 
-float UltrasonicClass::getActualBodyDistanceFromSide(const int &reportedSideDistance) {
-  return (float)reportedSideDistance - 1.825;
-}
-
-// Get distance between the center of robot and the object it reported on it's side.
-float UltrasonicClass::getActualCenterOfBodyDistanceFromSide(const int &reportedSideDistance) {
-  return (getActualBodyDistanceFromSide(reportedSideDistance) + (OVERALL_WIDTH / 2.0));
-}
-
-// This method should only be used when you want to take a reading and calculate what your distance to the wall
-// would be at your new orientation... this is mainly used when turning 90' and want to proceed thru an
-// opening (you can't read wall distance cause your past it).
-float UltrasonicClass::getAdjustedUltrasonicReadingAfterRotation(const int &reportedDistance, const bool &nowAtZeroAngle) {
-  return (float)(nowAtZeroAngle ? (reportedDistance - ULTRASONIC_SIDE_ADJUSTMENT) : (reportedDistance + ULTRASONIC_SIDE_ADJUSTMENT));
-}
-
-// If want to output values
-void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance) {
+// If want to output values just pass them in... I don't do anything with servo in here, it's just a helper method
+void UltrasonicClass::showUltrasonic(const int &theAngle, const float &theDistance) {
    #if USE_LCD 
     sparki.clearLCD(); // wipe the LCD clear
     sparki.print("<: ");

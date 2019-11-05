@@ -10,12 +10,19 @@
 #define ULTRASONIC_FORWARD_OF_CENTER 4.2
 #define ULTRASONIC_BEHIND_FRONT 1.3
 
+// The servo reading is from front, the pivot point of the servo is 2.7 cm behind that
+#define ULTRASONIC_SERVO_TO_PIVOT 2.7  
+
+// Servo is 1.2 cm forward of the center of the robot when it's facing forward, it's
+// at the center location when it's turned right or left
+#define ULTRASONIC_SERVO_PIVOT_OFFSET 1.2
+
 // Adjustment for Ultrasonic servo to have it at position 0
 // (mine was 5 degrees off)
 #define ULTRASONIC_SERVO_ANGLE_ADJUSTMENT 5
 
 // Max effective range of ULTRASONIC 6 feet (~183cm)
-#define ULTRASONIC_MAX_RANGE 183
+#define ULTRASONIC_MAX_RANGE 183.0
 
 // Ultrasonice error rate +- 1/8 inch or .3175 cm
 #define ULTRASONIC_TOLERANCE 0.3175
@@ -37,7 +44,7 @@
 // so the nose length is equal to it's tail :)
 #define OVERALL_WIDTH 10.5
 #define OVERALL_LENGTH_LESS_GRIPPER 11.28
-#define TURN_RADIUS (OVERALL_LENGTH_LESS_GRIPPER / 2.0) + GRIPPER_LENGTH
+#define TURN_RADIUS ((OVERALL_LENGTH_LESS_GRIPPER / 2.0) + GRIPPER_LENGTH)
 
 // When taking Ultrasonic measurements it's the sample size to use and
 // the delay between them

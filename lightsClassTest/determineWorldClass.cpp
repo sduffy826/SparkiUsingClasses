@@ -83,22 +83,22 @@ void DetermineWorldClass::calculateRectangularCoordinates() {
   worldCoord.xMin = 0.0;
   worldCoord.yMin = 0.0;
   
-  worldCoord.xMax = ultrasonicObject->distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER;
+  worldCoord.xMax = ultrasonicObject->getDistanceFromCenterOfRobotToObstacle(0);
   sparki.moveRight(90);
   delay(DELAY_AFTER_MOVEMENT);
 
   // We save the distance from the right wall as the yPosition
-  localizationObject->setCurrentYPosition(ultrasonicObject->distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER); 
+  localizationObject->setCurrentYPosition(ultrasonicObject->getDistanceFromCenterOfRobotToObstacle(0)); 
   
   sparki.moveRight(90);
   delay(DELAY_AFTER_MOVEMENT);
 
-  localizationObject->setCurrentXPosition(ultrasonicObject->distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER);
+  localizationObject->setCurrentXPosition(ultrasonicObject->getDistanceFromCenterOfRobotToObstacle(0));
   worldCoord.xMax += localizationObject->getCurrentXPosition();
   sparki.moveRight(90);
   delay(DELAY_AFTER_MOVEMENT);
   
-  worldCoord.yMax = ultrasonicObject->distanceAtAngle(0) + ULTRASONIC_FORWARD_OF_CENTER + localizationObject->getCurrentYPosition();
+  worldCoord.yMax = ultrasonicObject->getDistanceFromCenterOfRobotToObstacle(0) + localizationObject->getCurrentYPosition();
 
   // Go back to starting position
   sparki.moveRight(90);
