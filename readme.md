@@ -1,27 +1,33 @@
+## General
+- The work here was performed from various assignments with the arcbotics 'sparki' robot (and more assignments are coming).  This is a fluid repository and I'm making changes very frequently (at least for the next 6 weeks).  When I get closer to the finish line I'll make sure that the documentation/code is 'cleaner' and more accurate, but you should be able to get a feel for where I am and what I'm doing.  Some of the info toward the beginning of this 'readme' may not be as interesting as the classes/methods; if you want, read the fist bullet under 'NOTES" and then jump down to the Code/Class Definition section.
 
-## NOTE
-- I tried to make common code (include files) but couldn't get arduino ide to recognize the path to different directories.  It appears the code has to be in the directory that wants to use it.  What I did is have the code for an area in a .h & .cpp file in the directory for that function.  I named the directory with a 'Test' suffix (i.e. directory localizationClassTest is the directory for the test program (.ino) and where it's localizationClass.h and localizationClass.cpp files are.  To use that code in a different area (i.e. determineWorldTest) you copy the .h & .cpp files into the determineWorldTest directory.  I created a **'syncClassFiles.sh'** script in git/root path, when you run it it copies the required files into the directories that need them.  When you write a new area just update it to include the .h/.cpp files you want to use.  MAKE SURE you keep it up to date, and only update the .h/.cpp file in the correct location.  Also, you need to close/open the folder after you've run the shell script (the ide doesn't know if underlying file was updated).
-- Memory is a concern, you'll probably want to uncomment NO_LCD, NO_ACCEL and NO_MAG in the Sparki.h file.  You should also set USE_LCD to false in sparkiCommon.h... if that's false then (most of) the code will output values to the serial port instead of the lcd screen; if it's true it'll try to write the debugging/log info to the lcd
+- Right now the documentation is geared toward showing the classes/methods developed.  Most of the logic to satisfy the assignments are in the .ino (main) programs; they're not specifically documented here; that'll be coming 
 
-- Here's a brief overview of includes you should be interested in, look at the appropriate .cpp's if want to see implementation
+
+## NOTES
+
+- Here's a brief overview of includes you should be interested in.  I encapsulated the classes to expose public methods for dealing with a given area... i.e. any code that wants to find out the distance an obstacle is using the ultrasosnic sensor will do that by calling methods within the ulltrasonicClass.  The associated .cpp's have implementation of those methods.
   - **sparkiClassCommon.h** has common definitions and global variable definitions; you should be able to control a lot of functionality by just tweaking the 'defines' listed here
-  - **determineWorldClass.h** code for managing the robots world 
-  - **localizationClass.h** code related to localization (more below)
-  - **movementsClass.h** code to make the robot move (forward, backward, turning...)
+  - **determineWorldClass.h** code for managing the robots world, eventually will have map with all the attributes in it
+  - **lightsClass.h** code related to dealing with the light sensors, calibration, sampling, calculating changes etc..
+  - **localizationClass.h** code related to localization, has the robots pose and there are a lot of methods here to calculate positioning (more below).
+  - **movementsClass.h** code to manage robot movements (forward, backward, turning...), has logic for following walls, adjusting positioning, etc...
   - **ultrasonicClass.h** code fo interfacing with the ultrasonic sensor
+- The '*.ino' code in each of the directories has code for testing functionality... since there can only be one .ino file I have conditions like #if XXXX #endif, or if (true == false) .. to control whether that block of code is executed when the .ino program is launched.  Eventually I'll redesign that, but this is a work in progress so that's lower priority right now :)
+
+- I tried to make common code (include files) but couldn't get arduino ide to recognize the path to different directories.  It appears the code has to be in the directory that wants to use it.  What I did is have the code for an area in a .h & .cpp file in the directory for that function.  I named the directory with a 'Test' suffix (i.e. directory localizationClassTest is the directory for the test program (.ino) and where it's localizationClass.h and localizationClass.cpp files are.  To use that code in a different area (i.e. determineWorldTest) you copy the .h & .cpp files into the determineWorldTest directory.  I created a **'syncClassFiles.sh'** script in git/root path, when you run it it copies the required files into the directories that need them.  When you write a new area just update it to include the .h/.cpp files you want to use.  MAKE SURE you keep it up to date, and only update the .h/.cpp file in the correct location.  Also, you need to close/open the folder after you've run the shell script (the ide doesn't know if underlying file was updated).
+
+- Memory is a concern, you'll probably want to uncomment NO_LCD, NO_ACCEL and NO_MAG in the Sparki.h file.  You should also set USE_LCD to false in sparkiClassCommon.h... if that's false then (most of) the code will output values to the serial port instead of the lcd screen; if it's true it'll try to write the debugging/log info to the lcd
 
 ## To Do's
 - Check the methods added to ultrasonic, determine world to track obstacles... done for mapping
 - Check legend abbreviations
-- Document the follow wall routines
-- Document the lights class
+- Review this along with code and put in extra documentation where needed
 - Create a 'wander world' or explore world routine
-- Cleanup/refine the routine to follow wall
 - Couldn't get light triangulation to work, try it with flashlights that can give a more pinpoint/direct light source
-- Test light logic, to find light may want to use shadow logic; see if light is affected by other sensors, magnetometer...
+- A light logic test, to find light may want to use shadow logic... i.e. if light is low then the ultrasonic sensor will cause a shadow on light sensors... maybe moving the sensor at different angles can help identify light source
 - Revisit using accelerometer to detect collisions... at first I couldn't get working but try again
-- Have a battery life state
-- Remember can use struct and define var as int : 3; to mean use three bits 0-7 values; have to clean up some code
+- Recheck data types (i.e us struct and define var as int : &lt;bitSpec&gt;;)
 
 ## Code for testing/calibration (most of this is in the ../sparki directory, and the sparki repo)
 - **movementTest**: This has code used to test movements; I used this to calculate how fast sparki is (2.78cm/sec); to do this you can use the moveForward function, it'll show the elapsed time to move that distance.  I found that sparki was off; it actually moved further than requested.  See the sparkiMovementAnalysis spreadsheet in the sparki_python repo for calculations I did.
@@ -33,14 +39,12 @@
     - You need to have enough distance to do this, so keep track of how long the wall has been next to you... when you see a state change in distance you log where you are... you continue to move forward till it hits the next increment; you now have a distance traveled in x direction, and delta in the y direction; you can calculate the angle that you are offset by.... you then backup till you're at desired distance to the wall (note may want to go little more to account for +- of the sensor), you then stop and turn using the angle you just calculated.
   
 ## LEGEND Serial communications
-**Memory** is critical and strings take up quite a bit of memory, I used the abbreviations below when outputting to the serial port.  The first letter is related to the class that generated the value (i.e D-Determine World, L-Lights, M-Movements U-Ultrasonic)
+**Memory** is critical and strings take up quite a bit of memory, I used the abbreviations below when outputting to the serial port.  The first letter is related to the class that generated the value (i.e D-Determine World, L-Lights, P-Localization, M-Movements U-Ultrasonic)
 - **DW** Define world, world dimensions (i.e. DW,x1,0.00,x2,115.40,y1,0.00,y2,151.40), it gives x1/x2 (min/max) so you know length of field, then y coordinates; note as it expllores the world these values could change and x1, y1 may go negative
 - **DP** Position you are in the world (i.e. DP,x,68.20,y,30.20)
-- **MR** Shows turn radius (i.e. MR,8.24)
+- **DO** Shows the pose and distance that an obstacle was found at. (i.e. DO,x,10.3,y,20.5,<,160,d,7.3)
 
--   **LO** Localization, x position, y position, &lt; current angle
-
-
+---
 
 - **LA** Light angle, has description of what it is (Sam-Sample, Cal-Calibration, Orig-Original, Curr-Current), it's angle, brightness for left, center and right light sensor (i.e LA,Sam,<,0,l,801,c,704,r,787)  Note: the Orig is a 'base light attribute that's saved', we do that if we want to compare one positions light to another (i.e a 'Curr' one)
 - **LP** Light brightness delta percentage, it is the percentage that the sample is away from the original/calibrated sample.  An example of this is 'LP,<,60,l,8,c,21,r,-1', it means at 60' the left light is 8% over calibrated light, center is 21% and the right light is -1% (i.e. darker).  
@@ -63,14 +67,26 @@
 
     LA,Curr,<,0,l,728,c,654,r,712
     LD,l,29/3,c,17/3,r,79/5
-```
+
 You can see that each delta from LA,Curr is summed up into &lt;deltaSum&gt;  The &lt;deltaCounter&gt; has a count of each number of increases it's seen (since it's been reset).
+```
 - **LCD** This is only one when DEBUGLIGHTS is on.  It has the angle, and the  light brightness for the center light, an example is 'LCD,<,120,579' so it means angle 120 has a brightness value of 579.
 - These two are related to angles we ignore... when looking for light we sometimes want to ignore other angles... the tags below are showing values for those 'ignored' angles... it's mainly for debugging, and they'll only be displayed when the appropriate DEBUG value is set
   - **LBIR** This shows the angles that will be ignored, it's displayed when DEBUGLIGHTDELTA is on.  An example is 'LBIR,<,120,to,300'; this means that it will ignore light readings between 120' and 300' (inclusive).
   - **LBI** This is shown when DEBUGLIGHT is on; it's meant to 'prove' that an angle was really ignored :)  A sample is 'LBI,<,120'; it means that it really ignored that angle.
 
-- **US** Ultrasonic sensor, this shows you the angle of the servo and the reading it took
+---
+
+- **PO** Localization, this outputs the pose that's passed in, x position, y position, &lt; current angle  (lots of whitespace as need to LOOK AT THIS, maybe want a msgString* passed in)
+
+---
+
+- **MR** Shows turn radius (i.e. MR,8.24)
+
+---
+
+- **US** Ultrasonic sensor, this shows you the angle of the servo and the reading it took (i.e. US,<,30,d,13.4)
+
 
 # Code/Class Definitions 
 I listed the classes alphabetically except for the first one... that has the constants so you should know about that one first.
@@ -92,6 +108,9 @@ I listed the classes alphabetically except for the first one... that has the con
 
 - Getting the coordinates
   - **WorldCoord getWorldCoordinates()** - Gets your world coordinates
+
+- Mapping world
+  - **recordObstacleFromPoseToLengthconst Pose &servoPivotPose, const float &distanceToObstacle)** - This is called from the ultrasonic object whenever it sees an obstacle, it calls the determine world object and passes in the pose of the servo axis point and the distance to the obstacle.  Note: I pass the servo axis point and distance so the mapping routine can correctly update all positions between that pose and and endpoint
 
 - Debugging
   - **void showWorld()** - This is just a helper to show your world... mainly for debugging.
@@ -350,6 +369,12 @@ Debugging/output methods
   - **float UltrasonicClass::getFreeSpaceOnLeft()** - Get free space between robot and wall on the left, if you're following the left wall this is the 'second most useful' :)
 
   - **float UltrasonicClass::getSensorTolerance()** - Gets the tolerance of the servo, this is the +/- value from the reading it returns.
+
+  - **void sendObstacleReadingToDetermineWorld(const float &distanceFromServo)** - This method is responsible to let the 'determineWorld' object know that it's seen an obstacle; thought is that every time a sensor reading is taken it gives it to the 'world' obj so that the world obj can keep a map of it's world.
+  
+  - **void setDetermineWorldObj(DetermineWorldClass &determineWorldObject)** - This method is called with the object reference of the determine world object; it can't be initialized in the constructor as the determine world object gets the ultrasonic obj during its constructor.  This is used so that the ultrasonic object can call the 'recordObstacleFromPoseToLength' method in the determine world object and let it know that it sees an obstacle.
+
+  - **void setLocalizationObj(LocalizationClass &localizationObject)** - Similar to above method, this one is passed in a reference to the localization object.  That's needed to determine pose so that we can pass it to 'sendObstacleReadingToDetermineWorld'
 
   - **void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance)** - Helper to show ultrasonic value
  
