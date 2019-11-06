@@ -6,6 +6,8 @@
 // Constructor
 UltrasonicClass::UltrasonicClass() {
   this->ultrasonicAngle = 190;
+  localizationObj = NULL;
+  determineWorldObj = NULL;
   positionServo(0); 
 }
 
@@ -72,6 +74,43 @@ float UltrasonicClass::getFreeSpaceOnLeft() {
 float UltrasonicClass::getSensorTolerance() {
   return (ULTRASONIC_TOLERANCE);
 }
+
+// Send the reading from the servo to the determine world object
+void UltrasonicClass::sendObstacleReadingToDetermineWorld(const float &distanceFromServo) {
+  if (SEND_ULTRASONIC_READINGS_TO_WORLD && (localizationObj != NULL) && (determineWorldObj != NULL)) {
+    // Servo axis pose is at ULTRASONIC_SERVO_PIVOT_OFFSET ahead of the center of the robot, so call methods to calculate it.
+    Pose servoPivotPose = localizationObj->calculatePose(localizationObj->getPose(), localizationObj->getCurrentAngle(), ULTRASONIC_SERVO_PIVOT_OFFSET);
+
+    // Calculate the real angle 'world' angle... it's the robot's pose plus the servo angle.
+    servoPivotPose.angle = localizationObj->calculateRealAngleWithAdjustment(getServoAngle()); 
+
+    // Distance is the distanceFromServo + ULTRASONIC_SERVO_TO_PIVOT
+    determineWorldObj->recordObstacleFromPoseToLength(servoPivotPose, distanceFromServo);
+  }
+}
+
+// Set the pointer to determine world
+void UltrasonicClass::setDetermineWorldObj(DetermineWorldClass &determineWorldObject) {
+  this->determineWorldObj = &determineWorldObject;
+}
+
+// Set pointer to localization object
+void UltrasonicClass::setLocalizationObj(LocalizationClass &localizationObject) {
+  this->localizationObj = &localizationObject;
+}
+
+#if SHOWULTRADETADDR
+  void UltrasonicClass::showDetermineWorldAddr() { 
+    Serial.print("determineWorldAddr: ");
+    if (determineWorldObj == NULL) {
+      Serial.println("is NULL");
+    }
+    else {
+      unsigned long theAddr = (long)determineWorldObj;
+      Serial.println(theAddr);
+    }
+  }
+#endif
 
 // If want to output values just pass them in... I don't do anything with servo in here, it's just a helper method
 void UltrasonicClass::showUltrasonic(const int &theAngle, const float &theDistance) {

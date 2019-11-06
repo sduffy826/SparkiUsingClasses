@@ -115,7 +115,32 @@ void loop() {
       }
       ultrasonicObj.positionServo(0);
      }
+
+
+     #if SHOWULTRADETADDR  // This is for showing address and how to update a class with a reference to another object
+       // Here it should be null
+       ultrasonicPtr->showDetermineWorldAddr();
+       
+       LocalizationClass localizationObj;
+       localizationObj.setPose(1.0, 2.0, 3.0);
+       
+       DetermineWorldClass determineWorldObj(ultrasonicObj, localizationObj);
+       DetermineWorldClass *detPtr = &determineWorldObj;
+       determineWorldObj.showWorld();
+
+       // Show the address of the determineWorldObj
+       unsigned long detWorld = (long)detPtr;
+       Serial.print("detPtr addr: ");
+       Serial.println(detWorld);
+
+       // How pass the determineWorldObj into the setDetermineWorldObj method so it has a reference
+       // to determineWorldObj :) then have it output the address of that object
+       //ultrasonicPtr->setDetermineWorldObj(determineWorldObj);
+       ultrasonicPtr->showDetermineWorldAddr();
+     #endif
+     
    }
+   
    //ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle()));
    delay(500);
   

@@ -13,6 +13,9 @@ struct WorldCoord {
   float yMin;
 };
 
+// Have forward declarations for the UltrasonicClass it pulls this in 
+class UltrasonicClass; 
+
 class DetermineWorldClass {
   private: UltrasonicClass *ultrasonicObject;
            LocalizationClass *localizationObject;
@@ -20,9 +23,11 @@ class DetermineWorldClass {
 
   public: DetermineWorldClass();
           DetermineWorldClass(UltrasonicClass &ultrasonicObj, LocalizationClass &localizationObj);
-          WorldCoord getWorldCoordinates();
-          void checkWorldCoordinates();   // Call this periodically to check and adjust world coordinates based on current position
-          void showWorld();
           void calculateRectangularCoordinates();
+          void checkWorldCoordinates();   // Call this periodically to check and adjust world coordinates based on current position
+          WorldCoord getWorldCoordinates();
+          void recordObstacleFromPoseToLength(const Pose &servoPivotPose, const float &distanceToObstacle);
+          void showWorld();
+          
 };
 #endif

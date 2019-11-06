@@ -10,6 +10,11 @@ DetermineWorldClass::DetermineWorldClass(UltrasonicClass &ultrasonicObj, Localiz
     worldCoord.xMin = 0.0;
     worldCoord.yMax = 0.0;
     worldCoord.yMin = 0.0;
+
+
+    // Make a callback to the ultrasonicObj to give it the address of 
+    ultrasonicObject->setDetermineWorldObj(*this);
+    ultrasonicObject->setLocalizationObj(localizationObj);
 }
 
 // Just return the struct that has your world coordinates
@@ -28,6 +33,35 @@ void  DetermineWorldClass::checkWorldCoordinates() {
     worldCoord.yMax = (worldCoord.yMax > tempVar ? worldCoord.yMax : tempVar);
     worldCoord.yMin = (worldCoord.yMin < tempVar ? worldCoord.yMin : tempVar);
   }
+}
+
+// This method is called when one of our sensors identifies an obstacle, it's given the pose from
+// where the reading took place and the distance to the obstacle
+void recordObstacleFromPoseToLength(const Pose &servoPivotPose, const float &distanceToObstacle) {
+  #if USE_LCD
+    sparki.clearLCD();
+    Serial.println("In World got obstacle");
+    Serial.print("Pose,x: ");
+    Serial.print(servoPivotPose.xPos);
+    Serial.print(" y: ");
+    Serial.print(servoPivotPose.yPos);
+    Serial.println("<: ");
+    Serial.print(servoPivotPose.angle);
+    Serial.print(" dist")
+    Serial.println(distanceToObstacle);
+    sparki.updateLCD();
+    delay(3000);
+  #else
+    Serial.print("DO,x,");
+    Serial.print(servoPivotPose.xPos);
+    Serial.print(",y,");
+    Serial.print(servoPivotPose.yPos);
+    Serial.print(",<,");
+    Serial.print(servoPivotPose.angle);
+    Serial.print(",d,");
+    Serial.println(distanceToObstacle);
+    delay(DELAY_FOR_SERIAL_COMM);
+  #endif
 }
 
 void DetermineWorldClass::showWorld() {

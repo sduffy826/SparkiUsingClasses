@@ -11,6 +11,7 @@
   - **ultrasonicClass.h** code fo interfacing with the ultrasonic sensor
 
 ## To Do's
+- Check the methods added to ultrasonic, determine world to track obstacles... done for mapping
 - Check legend abbreviations
 - Document the follow wall routines
 - Document the lights class

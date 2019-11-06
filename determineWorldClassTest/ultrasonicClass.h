@@ -1,11 +1,21 @@
 #ifndef _INCL_ULTRA
 #define _INCL_ULTRA
 
+#define SHOWULTRADETADDR true
+
 #include <Sparki.h>
 #include "sparkiClassCommon.h"
 
+#include "localizationClass.h"
+#include "determineWorldClass.h"
+
+class DetermineWorldClass;
+class LocalizationClass;
+
 class UltrasonicClass {
-  private: int ultrasonicAngle = 190; // Init to invalid angle
+  private: int ultrasonicAngle = 190;           // Init to invalid angle
+           LocalizationClass *localizationObj;
+           DetermineWorldClass *determineWorldObj;
 
   public: UltrasonicClass();
           void positionServo(int theAngle);
@@ -33,8 +43,21 @@ class UltrasonicClass {
           float getFreeSpaceOnLeft();
 
           // Get the tolerance of the sensor (this is the +/- from the reading it reports)
-          float UltrasonicClass::getSensorTolerance();
-          
+          float getSensorTolerance();
+
+          // Send the reading from the servo to the determine world object
+          void sendObstacleReadingToDetermineWorld(const float &distanceFromServo);
+                    
+          // Set the pointers to the localization object
+          void setDetermineWorldObj(DetermineWorldClass &determineWorldObject);
+
+          // Set pointer to determineWolld object
+          void setLocalizationObj(LocalizationClass &localizationObject);
+
+          #if SHOWULTRADETADDR
+            void showDetermineWorldAddr();
+          #endif
+
           void showUltrasonic(const int &theAngle, const float &theDistance);
 };
 #endif

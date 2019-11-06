@@ -11,6 +11,10 @@ rsync -av localizationClassTest/localizationClass.cpp movementsClassTest/
 rsync -av localizationClassTest/localizationClass.h lightsClassTest/
 rsync -av localizationClassTest/localizationClass.cpp lightsClassTest/
 
+rsync -av localizationClassTest/localizationClass.h ultrasonicClassTest/
+rsync -av localizationClassTest/localizationClass.cpp ultrasonicClassTest/
+
+
 # copy the movements/movements.h into paths
 rsync -av movementsClassTest/movementsClass.h lightsClassTest/
 rsync -av movementsClassTest/movementsClass.cpp lightsClassTest/
@@ -21,6 +25,9 @@ rsync -av determineWorldClassTest/determineWorldClass.cpp movementsClassTest/
 
 rsync -av determineWorldClassTest/determineWorldClass.h lightsClassTest/
 rsync -av determineWorldClassTest/determineWorldClass.cpp lightsClassTest/
+
+rsync -av determineWorldClassTest/determineWorldClass.h ultrasonicClassTest/
+rsync -av determineWorldClassTest/determineWorldClass.cpp ultrasonicClassTest/
 
 #rsync -av determineWorldClassTest/determineWorldClass.h lightsClassTest/
 #rsync -av determineWorldClassTest/determineWorldClass.cpp classClassTest/
