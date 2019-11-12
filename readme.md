@@ -110,7 +110,7 @@ I listed the classes alphabetically except for the first one... that has the con
   - **WorldCoord getWorldCoordinates()** - Gets your world coordinates
 
 - Mapping world
-  - **recordObstacleFromPoseToLengthconst Pose &servoPivotPose, const float &distanceToObstacle)** - This is called from the ultrasonic object whenever it sees an obstacle, it calls the determine world object and passes in the pose of the servo axis point and the distance to the obstacle.  Note: I pass the servo axis point and distance so the mapping routine can correctly update all positions between that pose and and endpoint
+  - **recordObstacleFromPoseToLength(const Pose &servoPivotPose, const float &distanceToObstacle)** - This is called from the ultrasonic object whenever it sees an obstacle, it calls the determine world object and passes in the pose of the servo axis point and the distance to the obstacle.  Note: I pass the servo axis point and distance so the mapping routine can correctly update all positions between that pose and and endpoint
 
 - Debugging
   - **void showWorld()** - This is just a helper to show your world... mainly for debugging.
