@@ -21,6 +21,7 @@
 
 ## To Do's
 - Check the methods added to ultrasonic, determine world to track obstacles... done for mapping
+- Update the determineWorld class to write obstacle information to serial so computer can keep track of map
 - Check legend abbreviations
 - Review this along with code and put in extra documentation where needed
 - Create a 'wander world' or explore world routine
@@ -44,6 +45,38 @@
 - **DP** Position you are in the world (i.e. DP,x,68.20,y,30.20)
 - **DO** Shows the pose and distance that an obstacle was found at. (i.e. DO,x,10.3,y,20.5,<,160,d,7.3)
 
+---
+- **IR** Infrared sensors.  There are five infrared sensors underneath the sparki.  There's a structure (InfraredAttributes) that stores a bunch of information about the sensors (it's 8 bytes long - Sensor readings are each 10 bytes, all the other values are bit(1)).  The reason we have so much data is that the intent is to have the sparki communicate with the computer and the computer can use this information to map the configuration space and also instruct the sparki on paths to take.  The format of the data written to the serial device is
+```
+ 'IR,StateChg,el,980,ll,980,lc,888,lr,684,er,980,ell,0,lll,0,lcl,0,lrl,1,erl,0,sdl,1,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,1'
+```
+There's a description of the elements below (the value after IR is a description 'StateChg' meaning a state changed was detected).  Note: internally the sparki compares the last reading to the current one in order to detect state changes... and worth mentioning the line detection logic compares the current readings to a base reading taken when the program starts.
+| Tag | Value |
+| -------- | -------------- |
+| Sensor Readings |
+| el | Edge Left Infrared Reading (0->1000) |
+| ll | Line Left reading |
+| lc | Line Center |
+| lr | Line Right |
+| er | Edge Right Infrared Reading |
+| Line Detection|
+| ell | Line detected on left edge sensor |
+| lll | Line detected for Line Left |
+| lcl | Line detected - Center |
+| lrl | Line detected - Right |
+| erl | Line detected at right edge |
+| State Info/Changes |
+| sdl | Drifting Left |
+| sdr | Drifting Right |
+| sol | On Line - detect line but not 'drifting'; keep moving :) |
+| sae | At Exit - At end of line (and not an intersection (path left or right) |
+| slp | Start detecting 'Path on Left' |
+| srp | Start detecting 'Path on right' |
+| sel | End detecting the 'Path on Left' (difference between slp and elp is width of path (i.e. tape width)) |
+| ser | End detecting the 'Path on Right' |
+| sas | Detected 'At Start' of maze (Should only register once when moving onto grid) |
+
+ 
 ---
 
 - **LA** Light angle, has description of what it is (Sam-Sample, Cal-Calibration, Orig-Original, Curr-Current), it's angle, brightness for left, center and right light sensor (i.e LA,Sam,<,0,l,801,c,704,r,787)  Note: the Orig is a 'base light attribute that's saved', we do that if we want to compare one positions light to another (i.e a 'Curr' one)
