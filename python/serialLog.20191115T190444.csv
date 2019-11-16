@@ -1,0 +1,15 @@
+IR,Base,el,970,ll,976,lc,977,lr,974,er,969,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,0
+IR,last,el,970,ll,976,lc,977,lr,974,er,969,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,0
+IR,StateChg,el,570,ll,879,lc,930,lr,951,er,645,ell,1,lll,0,lcl,0,lrl,0,erl,1,sdl,0,sdr,0,sol,0,sae,0,slp,1,srp,1,sel,0,ser,0,sas,0
+PO,x,4.67,y,0.00,<,0
+IR,StateChg,el,970,ll,133,lc,153,lr,116,er,968,ell,0,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,1,ser,1,sas,0
+PO,x,10.08,y,0.00,<,0
+IR,StateChg,el,309,ll,200,lc,218,lr,171,er,204,ell,1,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,1,srp,1,sel,0,ser,0,sas,0
+PO,x,24.85,y,0.00,<,0
+IR,StateChg,el,923,ll,115,lc,123,lr,98,er,939,ell,0,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,1,ser,1,sas,0
+PO,x,29.59,y,0.00,<,0
+IR,StateChg,el,970,ll,179,lc,166,lr,157,er,819,ell,0,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,1,sel,0,ser,0,sas,0
+PO,x,44.35,y,0.00,<,0
+IR,StateChg,el,475,ll,330,lc,285,lr,154,er,107,ell,1,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,1,srp,0,sel,0,ser,0,sas,0
+PO,x,45.08,y,0.00,<,0
+Done

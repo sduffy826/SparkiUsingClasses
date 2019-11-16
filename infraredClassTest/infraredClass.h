@@ -8,7 +8,7 @@
 #include "localizationClass.h"
 #include "determineWorldClass.h"
 
-#define DEBUGINFRARED true
+#define DEBUGINFRARED false
 
 #define INFRARED_LINE_THRESHOLD .10  // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 300

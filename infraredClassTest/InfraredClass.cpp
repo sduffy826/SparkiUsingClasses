@@ -278,5 +278,7 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
 
 void InfraredClass::waitForInstructions() {
   // This will wait for the instructions from the computer
+  localizationObj->writeMsg2Serial("IR,INS");
+  localizationObj->writeMsg2Serial("Done");
 }
 

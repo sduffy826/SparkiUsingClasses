@@ -10,6 +10,8 @@ void setup() {
   #else
     Serial.begin(SERIAL_SPEED);
     sparki.beep();
+    delay(5);
+    sparki.beep();
     delay(DELAY_AFTER_SERIAL_STARTUP);  
     sparki.beep();
   #endif
@@ -30,7 +32,7 @@ void loop() {
     LocalizationClass *localizationObj;
     localizationObj = &localizationObject;
     
-    localizationObj->setPose(10.0, 20.0, 0);
+    localizationObj->setPose(0.0, 0.0, 0);
 
     DetermineWorldClass determineWorldObject(ultrasonicObject, localizationObject);
     DetermineWorldClass *determineWorldObj;
@@ -148,7 +150,7 @@ void loop() {
 
       bool waitForInstructions = false;  
       bool setLastAttributes = true;
-      float distanceToTravel = 50.0;  // Just some long distance for the first time  
+      float distanceToTravel = 70.0;  // Just some long distance for the first time  
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
         
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
@@ -209,7 +211,7 @@ void loop() {
             // Move the currentAttributes into lastAttributes
             infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
             numStateChanges++;
-            done = (numStateChanges > 2);
+            done = (numStateChanges > 5);
           }
           else {
             setLastAttributes = true;

@@ -1,0 +1,9 @@
+IA,FollowTape
+IR,Base,el,972,ll,976,lc,978,lr,977,er,970,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,0
+IR,last,el,972,ll,976,lc,978,lr,977,er,970,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,0
+IR,StateChg,el,255,ll,566,lc,589,lr,543,er,198,ell,1,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,1,srp,1,sel,0,ser,0,sas,0
+PO,x,7.35,y,0.00,<,0
+IR,StateChg,el,960,ll,970,lc,970,lr,970,er,947,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,1,ser,1,sas,0
+PO,x,12.76,y,0.00,<,0
+IR,INS
+Done
