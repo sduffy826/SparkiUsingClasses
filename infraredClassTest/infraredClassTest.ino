@@ -131,17 +131,19 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     #define TESTSTATECHANGE2 true
     #if TESTSTATECHANGE2
-      localizationObj->writeMsg2Serial("IA,FollowTape");
+      localizationObj->writeMsg2Serial("IR,FollowTape");
       delay(3000);
       sparki.beep();
 
+      Pose poseOfSensor = infraredObj->getPoseOfCenterSensor();
+      
       InfraredAttributes currAttributes, lastAttributes;
       
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
-      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes());
+      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes(),poseOfSensor,false);
       
       infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
-      infraredObj->showInfraredAttributes("last",lastAttributes);
+      infraredObj->showInfraredAttributes("last",lastAttributes,poseOfSensor,false);
 
       int numStateChanges = 0;
       bool done = false;
@@ -150,7 +152,10 @@ void loop() {
 
       bool waitForInstructions = false;  
       bool setLastAttributes = true;
-      float distanceToTravel = 70.0;  // Just some long distance for the first time  
+      bool check4Obstacle = false;
+      
+      localizationObj->writeMsg2Serial("IR,PathStart");
+      float distanceToTravel = 17.0;  // Just some long distance for the first time  
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
         
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
@@ -167,18 +172,18 @@ void loop() {
         if (infraredObj->stateChanged(currAttributes, lastAttributes)) {
           if (DEBUGINFRARED) localizationObj->writeMsg2Serial("State Change");
 
-          // Write out the state change and the pose to the serial port
-          infraredObj->showInfraredAttributes("StateChg",currAttributes);
-          localizationObj->showPose(infraredObj->getPoseOfCenterSensor());
-      
           waitForInstructions = false;  // We want the computer to tell us where to go next
-
+          check4Obstacle      = false;  // We only check this when at an exit
+          
           // In this block we check the STATEs
           if (currAttributes.atExit) {  // We found an exit, stop moving and wait for instructions on where to go
             waitForInstructions = true;
+            check4Obstacle = true;
           }
           else if (currAttributes.startLeftPath || currAttributes.startRightPath) {  // Start of path that's to left or right
-            // Don't have to do anything we'll at at the end
+            // *********** CHANGE SO THAT IT ENSURES IT'S AT INTERSECTION AND NOT DRIFTED INTO LINE.... THINKING
+            // YOU COULD BACKUP A LITTLE, TURN LEFT TILL U SEE LINE KEEP TRACK OF ANGLE, DO THE SAME THING TURNING RIGHT
+            // IF THE ANGLES ARE DIFFERENT THEN YOU KNOW YOU'RE NOT ON CENTER...
           }
           else if (currAttributes.endLeftPath || currAttributes.endRightPath ) { 
             if (currAttributes.onLine == false) {
@@ -201,9 +206,24 @@ void loop() {
             setLastAttributes = false;
           }
 
+
+          // Get the pose of the sensor
+          poseOfSensor = infraredObj->getPoseOfCenterSensor();
+          if (check4Obstacle == true) {  // We're at an exit check to see if there's an obstacle in front of us
+            movementsObj->stopMoving(); 
+            check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
+          }
+            
+          // Write out the state change, it's pose and the flag to say we found our goal
+          infraredObj->showInfraredAttributes("StateChg",currAttributes, poseOfSensor, check4Obstacle);
+      
+          // If the wait for instructions flag is on then wait :)
           while (waitForInstructions) {
             // Stop moving and wait for instructions from computer on what to do
-            movementsObj->stopMoving();
+            // NOTE: we are off the tape here... was going to backup till I see tape but the distance is probably
+            //       so small it's not worth it... may revisit after testing
+            localizationObj->writeMsg2Serial("IR,PathEnd");
+            movementsObj->stopMoving();            
             infraredObj->waitForInstructions();
           }
 
@@ -220,7 +240,7 @@ void loop() {
       }
       movementsObj->stopMoving();
       
-      localizationObj->writeMsg2Serial("Done");
+      localizationObj->writeMsg2Serial("IR,Done");
     #endif
 
     // ----------------------------------------------------------------------------------------

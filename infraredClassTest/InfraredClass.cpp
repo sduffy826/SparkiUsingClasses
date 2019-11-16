@@ -163,7 +163,7 @@ void InfraredClass::setInfraredBaseReadings() {
 // -----------------------------------------------------------------------------------------
 // Helper method to show light attributes, since I don't know the angle the light attributes 
 // where taken you should pass that in
-void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttributes &attr) {
+void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttributes &attr, const Pose &poseOfCenterSensor, const bool &isGoalPosition) {
   #if USE_LCD 
     sparki.print("InfraRed,");
     sparki.println(msgStr);
@@ -181,6 +181,16 @@ void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttribute
   #else
     Serial.print("IR,");
     Serial.print(msgStr);
+
+    // Show the pose before you put out the values
+    Serial.print(",x,");
+    Serial.print(poseOfCenterSensor.xPos);
+    Serial.print(",y,");
+    Serial.print(poseOfCenterSensor.yPos);
+    Serial.print(",<,");
+    Serial.print(poseOfCenterSensor.angle);
+    
+    // Now output sensor values
     Serial.print(",el,");
     Serial.print(attr.edgeLeft);
     Serial.print(",ll,");
@@ -220,8 +230,10 @@ void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttribute
     Serial.print(",ser,");
     Serial.print(attr.endRightPath);   
     Serial.print(",sas,");
-    Serial.println(attr.atEntrance);
-
+    Serial.print(attr.atEntrance);
+    
+    Serial.print(",sgl,");          // Is a goal node
+    Serial.println(isGoalPosition);
     delay(DELAY_FOR_SERIAL_COMM);
   #endif  
 }
@@ -231,8 +243,8 @@ void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttribute
 // NOTE: This updates the attributes for currAttr so be careful
 bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr) {
   if (DEBUGINFRARED) {
-    showInfraredAttributes("StateChg,curr,",currAttr);
-    showInfraredAttributes("StateChg,prio,",priorAttr);
+    showInfraredAttributes("StateChg,curr,",currAttr, getPoseOfCenterSensor(), false);
+    showInfraredAttributes("StateChg,prio,",priorAttr, getPoseOfCenterSensor(), false);
   }
   
   // We're drifting if the outside sensor is on and the other two are off

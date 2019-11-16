@@ -48,24 +48,28 @@
 ---
 - **IR** Infrared sensors.  There are five infrared sensors underneath the sparki.  There's a structure (InfraredAttributes) that stores a bunch of information about the sensors (it's 8 bytes long - Sensor readings are each 10 bytes, all the other values are bit(1)).  The reason we have so much data is that the intent is to have the sparki communicate with the computer and the computer can use this information to map the configuration space and also instruct the sparki on paths to take.  The format of the data written to the serial device is
 ```
- 'IR,StateChg,el,980,ll,980,lc,888,lr,684,er,980,ell,0,lll,0,lcl,0,lrl,1,erl,0,sdl,1,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,1'
+ 'IR,StateChg,x,10.76,y,0.00,<,0,el,980,ll,956,lc,910,lr,970,er,971,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,1,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,1'
 ```
 There's a description of the elements below (the value after IR is a description 'StateChg' meaning a state changed was detected).  Note: internally the sparki compares the last reading to the current one in order to detect state changes... and worth mentioning the line detection logic compares the current readings to a base reading taken when the program starts.
 | Tag | Value |
 | -------- | -------------- |
-| Sensor Readings |
+| **Pose of Sensor (not robot)** |
+| x | x-Coordinate |
+| y | y-Coordinate |
+| < | Angle of pose |
+| **Sensor Readings** |
 | el | Edge Left Infrared Reading (0->1000) |
 | ll | Line Left reading |
 | lc | Line Center |
 | lr | Line Right |
 | er | Edge Right Infrared Reading |
-| Line Detection|
+| **Line Detection** |
 | ell | Line detected on left edge sensor |
 | lll | Line detected for Line Left |
 | lcl | Line detected - Center |
 | lrl | Line detected - Right |
 | erl | Line detected at right edge |
-| State Info/Changes |
+| **State Info/Changes** |
 | sdl | Drifting Left |
 | sdr | Drifting Right |
 | sol | On Line - detect line but not 'drifting'; keep moving :) |
@@ -75,7 +79,8 @@ There's a description of the elements below (the value after IR is a description
 | sel | End detecting the 'Path on Left' (difference between slp and elp is width of path (i.e. tape width)) |
 | ser | End detecting the 'Path on Right' |
 | sas | Detected 'At Start' of maze (Should only register once when moving onto grid) |
-
+| **Goal Info** |
+| sgl | Goal - when at exit (sae) it checks if there's a obstacle in front, if there is (within a range) it'll identify this as the goal to get to |
  
 ---
 

@@ -3,3 +3,5 @@ libraries/
 .DS_Store
 lightsCls2/
 toDo.txt
+python/serialLog.*
+python/__*

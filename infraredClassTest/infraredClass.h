@@ -16,6 +16,7 @@
 #define INFRARED_SAMPLE_SIZE 10      // Number of samples to take
 #define INFRARED_SENSOR_FORWARD_OF_CENTER 4
 #define INFRARED_DRIFT_ADJUSTMENT_DEGREES 3  // Amount of degrees to adjust when drifting off line
+#define INFRARED_MAX_GOAL_DISTANCE 10        // Max distance to be considered a goal (i.e. if obstacle detected < 10cm it's a goal position
 
 struct InfraredAttributes {
   unsigned int edgeLeft : 10;
@@ -78,7 +79,7 @@ class InfraredClass {
            void setInfraredBaseReadings();  
 
            // Debugging method - show the attributes passed in 
-           void showInfraredAttributes(char *msgStr, const InfraredAttributes &attr);
+           void showInfraredAttributes(char *msgStr, const InfraredAttributes &attr, const Pose &poseOfCenterSensor, const bool &isGoalPosition);
 
            // Return boolean if the state changed 
            bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr);

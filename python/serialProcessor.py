@@ -1,12 +1,18 @@
+import os
+import sys
 import serial
 import time
 from datetime import datetime
+import pickle
 import sparkiStats
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
+DEBUGGING    = False
+TAPEWIDTH    = 4.7
 
-outputFile   = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
+serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
+pickleFile    = "pickFile_withSensors.bin" 
 
 if useBluetooth == False:
   if isIBMMacBook:
@@ -19,32 +25,72 @@ runTime   = 60           # Only runs for 2 minutes
 startTime = time.time()  # Returns time in seconds since epoch
 ser.write(b'Trigger')    # Push something on the serial port, this will activate it
 
-sensorValueList = []
-
-fileHandle = open(outputFile,"at") # Append and text file
+logFileHandle = open(serialLogFile,"at") # Append and text file
 currTime   = time.time() - startTime
 leaveLoop  = False
 
+# Init to values that you know are outside range of min/maxe's you'll see
+worldXMin = 200.0
+worldXMax = -200.0
+worldYMin = 200.0
+worldYMax = -200.0
+
+pathsVisited   = []
+paths2Visit    = []
+goalPosition   = {}  # Pose of the goal
+potentialGoals = [] # List of potential goals
+startPosition  = {}
+
+pathValueList = []
+errorList     = []
+
+## NEED TO MAKE CHANGES TO POPULATE THE LISTS/DICTS ABOVE 
 while ((currTime) < runTime) and (leaveLoop == False):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  
-    if stringFromSparki.upper() == "DONE":
+    if stringFromSparki.upper() == "IR,DONE":
       leaveLoop = True
+    elif stringFromSparki.upper() == 'IR,PATHSTART':  # 
+      pathValueList.clear()  # Clear array
+    elif stringFromSparki.upper() == 'IR,PATHEND':
+      processValueList()
 
-    fileHandle.write(stringFromSparki + "\n")
+# NEED TO PUT IN LOGIC TO CHECK ERRORLIST, IF IT HAS VALUES THEN REDO THAT LINE
+
+    elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
+      tellSparkiWhatToDo()
+
+    logFileHandle.write(stringFromSparki + "\n")
     print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
     
-    sparkiStats.setVars(sensorValueList,stringFromSparki)
+    sparkiStats.setVars(pathValueList,stringFromSparki,DEBUGGING)
+    if DEBUGGING:
+      print("len pathValueList: {0}".format(len(pathValueList)))
+
   except:
-    pass
+    print("Exception raised in serialProcessor.py")
+
   readLines += 1
   currTime = time.time() - startTime
 
-ser.flush() #flush the buffer
+try:
+  ser.flush() #flush the buffer
+except:
+  exc_type, exc_obj, exc_tb = sys.exc_info()
+  fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+  print(exc_type, fname, exc_tb.tb_lineno)
+  print("Exception raised flushing serial port")
 
-print("Read {0} lines, sensorList size: {1}".format(readLines, len(sensorValueList)))
+if DEBUGGING:
+  print("Read {0} lines, sensorList size: {1}".format(readLines, len(pathValueList)))
 
-for aDictItem in sensorValueList:
-  print(dict(aDictItem))
+  for aDictItem in pathValueList:
+    print(dict(aDictItem))
 
-fileHandle.close()  
+# Close the file with the strings
+logFileHandle.close()  
+
+# Save the list of dictionary items
+pickle_out = open(pickleFile,"wb")
+pickle.dump(pathValueList, pickle_out)
+pickle_out.close()
