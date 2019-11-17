@@ -202,7 +202,7 @@ void loop() {
             distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance 
             movementsObj->stopMoving();                                       // Stop moving
             infraredObj->adjustForDrifting(currAttributes.driftLeft);         // Call routine to re-center us on the line
-            delay(10000);
+            delay(2000);
             setLastAttributes = false;
           }
 
@@ -225,6 +225,8 @@ void loop() {
             localizationObj->writeMsg2Serial("IR,PathEnd");
             movementsObj->stopMoving();            
             infraredObj->waitForInstructions();
+            // CHANGE DOWN THE ROAD SO THAT IT PROCESSES THE INSTRUCTIONS
+            done = true;
           }
 
           if (setLastAttributes) {
