@@ -5,3 +5,4 @@ lightsCls2/
 toDo.txt
 python/serialLog.*
 python/__*
+python/pickle*.bin

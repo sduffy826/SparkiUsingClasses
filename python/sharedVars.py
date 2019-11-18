@@ -2,7 +2,7 @@
 
 # These are shared variables across different sparki modules
 DEBUGGING    = False
-TAPEWIDTH    = 4.7
+TAPEWIDTH    = 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.5
 MAXTAPEWIDTH = TAPEWIDTH + 0.5
 
@@ -26,10 +26,9 @@ nodeList           = [] # List of nodes
 nodeConnectionList = [] # Nodes and node there connected, with angle and distance between them
 nodesToVisit       = [] # Nodes to visit and the angle they should visit
 
-startNode          = -1
-startDict          = {}
-goalNode           = -1
-goalDict           = {}  # Pose of the goal
+startDict          = {} # The starting position, also has NODEID which is the node id
+goalDict           = {} # The current goal, it has NODEID too
+currPose           = {} # The current position
 potentialGoalNodes = []
 potentialGoalDicts = []
 paths2Visit        = []  # Paths that need to be visited
