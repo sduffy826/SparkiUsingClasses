@@ -8,7 +8,6 @@ MAXANGLEDELTASTOBECONSIDEREDSAME = 14
 # Helper to say that two angles are close enough (i.e. 88 and 91 are 
 # pointing down the same path)
 def areAnglesCloseEnough(angle1, angle2):
-  print("In are<Close {0} and {1}".format(angle1,angle2))
   return (abs(angle1 - angle2) <= MAXANGLEDELTASTOBECONSIDEREDSAME)  
 
 

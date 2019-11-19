@@ -6,6 +6,8 @@ TAPEWIDTH    = 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.5
 MAXTAPEWIDTH = TAPEWIDTH + 0.5
 
+SERIALTERMINATOR = "|"
+
 # Init to values that you know are outside range of min/maxe's you'll see
 worldXMin = 200.0
 worldXMax = -200.0
@@ -28,8 +30,12 @@ nodesToVisit       = [] # Nodes to visit and the angle they should visit
 
 startDict          = {} # The starting position, also has NODEID which is the node id
 goalDict           = {} # The current goal, it has NODEID too
-currPose           = {} # The current position
+closestNodePose    = {} # The closestNodePose to the current position (finalPose)
+finalPose          = {} # This is the last pose the robot reading took, we'll want to move from
+                        #   this position to closestNodePose to get it back to a node position
 potentialGoalNodes = []
 potentialGoalDicts = []
-paths2Visit        = []  # Paths that need to be visited
-pathsVisited   = []  # The paths that have been visited
+goalsVisited       = [] # Goal nodes that have been visited
+paths2Visit        = [] # Paths that need to be visited
+pathsVisited       = [] # The paths that have been visited
+pathBeingVisited   = {} # Path being visited

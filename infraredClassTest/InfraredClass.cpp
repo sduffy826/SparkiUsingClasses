@@ -287,10 +287,30 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
   }    
 }
 
-
-void InfraredClass::waitForInstructions() {
+// Wait for instructions on the serial port... we'll continue in this loop till
+// we get the 'serial termination' character (|)
+String InfraredClass::waitForInstructions() {
   // This will wait for the instructions from the computer
   localizationObj->writeMsg2Serial("IR,INS");
-  localizationObj->writeMsg2Serial("Done");
+  
+  delay(1000);                                        // CHANGE THESE TO CONSTANTS 
+  String rtnString = Serial.readStringUntil('|');
+  /*
+  String rtnString = "";
+  bool keepReading = true;
+  while (keepReading) {
+    delay(DELAY_FOR_SERIAL_COMM);  
+    if (Serial.available() > 0)  {
+      char theChar = (char)Serial.read();
+      if (theChar == '\') {                   // CHANGE THIS TO CONSTANTE
+        keepReading = false
+      }
+      else {
+        rtnString += theChar;
+      }
+    }
+  }
+  */
+  return rtnString;
 }
 

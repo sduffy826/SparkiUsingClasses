@@ -55,6 +55,7 @@ asterisk  = '*' * 80
 while ((currTime) < runTime) and (leaveLoop == False):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  
+    time.sleep(0.5)
     
     logFileHandle.write(stringFromSparki + "\n")
     print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
@@ -80,8 +81,12 @@ while ((currTime) < runTime) and (leaveLoop == False):
         logFileHandle.write(asterisk + "\n")
       
     elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
-      sparkiStats.tellSparkiWhatToDo()
-      leaveLoop = True ## CHANGE THIS DOWN ROAD
+      instructions2Send = sparkiStats.tellSparkiWhatToDo() + gv.SERIALTERMINATOR
+      print("Sending this to sparki: {0}".format(instructions2Send))
+      ser.write(instructions2Send.encode())
+      ser.flush()
+      time.sleep(0.5)
+      # leaveLoop = True ## CHANGE THIS DOWN ROAD
 
     sparkiStats.setPathValueListFromString(stringFromSparki)
     if gv.DEBUGGING:

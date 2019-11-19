@@ -84,7 +84,7 @@ class InfraredClass {
            // Return boolean if the state changed 
            bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr);
 
-           void waitForInstructions();
+           String waitForInstructions();
           
 };
 #endif

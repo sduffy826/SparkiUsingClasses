@@ -13,6 +13,7 @@ void setup() {
     delay(5);
     sparki.beep();
     delay(DELAY_AFTER_SERIAL_STARTUP);  
+    Serial.setTimeout(10000);  // Set serial timeout to 10 seconds
     sparki.beep();
   #endif
   counter = 0;
@@ -224,7 +225,12 @@ void loop() {
             //       so small it's not worth it... may revisit after testing
             localizationObj->writeMsg2Serial("IR,PathEnd");
             movementsObj->stopMoving();            
-            infraredObj->waitForInstructions();
+            String instructions = infraredObj->waitForInstructions();
+            localizationObj->writeMsg2Serial("GotInstructions");
+            char buffer[instructions.length()+1];
+            instructions.toCharArray(buffer, instructions.length()+1);
+            localizationObj->writeMsg2Serial(buffer);
+            localizationObj->writeMsg2Serial("IR,Done");
             // CHANGE DOWN THE ROAD SO THAT IT PROCESSES THE INSTRUCTIONS
             done = true;
           }
