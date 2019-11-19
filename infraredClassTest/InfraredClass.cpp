@@ -103,7 +103,7 @@ InfraredAttributes InfraredClass::getInfraredAttributesAtCurrentPose() {
     reading.lineCenter += (sparki.lineCenter()/INFRARED_SAMPLE_SIZE); // measure the center IR sensor
     reading.lineRight  += (sparki.lineRight()/INFRARED_SAMPLE_SIZE);  // measure the right IR sensor
     reading.edgeRight  += (sparki.edgeRight()/INFRARED_SAMPLE_SIZE);  // measure the right edge IR sensor
-    delay(8);
+    delay(INFRARED_DELAY_BETWEEN_SAMPLES);
   }
   
   reading.el_line = lineFlagHelper(reading.edgeLeft, infraredBase.edgeLeft);  // Set flags
@@ -243,8 +243,8 @@ void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttribute
 // NOTE: This updates the attributes for currAttr so be careful
 bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr) {
   if (DEBUGINFRARED) {
-    showInfraredAttributes("StateChg,curr,",currAttr, getPoseOfCenterSensor(), false);
-    showInfraredAttributes("StateChg,prio,",priorAttr, getPoseOfCenterSensor(), false);
+    showInfraredAttributes("StateChgCurr",currAttr, getPoseOfCenterSensor(), false);
+    showInfraredAttributes("StateChgPrio",priorAttr, getPoseOfCenterSensor(), false);
   }
   
   // We're drifting if the outside sensor is on and the other two are off

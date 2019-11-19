@@ -73,7 +73,7 @@
 
 // Serial device characteristics, speed and amount to delay after communicating
 // over serial port
-#define SERIAL_SPEED 9600
+#define SERIAL_SPEED 19200
 #define DELAY_FOR_SERIAL_COMM 8
 
 // Amount to delay after serial device is initialized, this gives you time

@@ -156,7 +156,7 @@ void loop() {
       bool check4Obstacle = false;
       
       localizationObj->writeMsg2Serial("IR,PathStart");
-      float distanceToTravel = 17.0;  // Just some long distance for the first time  
+      float distanceToTravel = 80.0;  // Just some long distance for the first time  
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
         
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
@@ -203,10 +203,9 @@ void loop() {
             distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance 
             movementsObj->stopMoving();                                       // Stop moving
             infraredObj->adjustForDrifting(currAttributes.driftLeft);         // Call routine to re-center us on the line
-            delay(2000);
+            delay(1000);
             setLastAttributes = false;
           }
-
 
           // Get the pose of the sensor
           poseOfSensor = infraredObj->getPoseOfCenterSensor();
@@ -239,7 +238,7 @@ void loop() {
             // Move the currentAttributes into lastAttributes
             infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
             numStateChanges++;
-            done = (numStateChanges > 5);
+            //done = (numStateChanges > 5);
           }
           else {
             setLastAttributes = true;

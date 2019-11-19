@@ -8,12 +8,13 @@
 #include "localizationClass.h"
 #include "determineWorldClass.h"
 
-#define DEBUGINFRARED false
+#define DEBUGINFRARED true
 
 #define INFRARED_LINE_THRESHOLD .10  // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 300
 #define INFRARED_LINE_WIDTH 2.3     // Width of tape... have it use method
-#define INFRARED_SAMPLE_SIZE 10      // Number of samples to take
+#define INFRARED_SAMPLE_SIZE 7      // Number of samples to take
+#define INFRARED_DELAY_BETWEEN_SAMPLES 6  // Milliseconds to delay between samples
 #define INFRARED_SENSOR_FORWARD_OF_CENTER 4
 #define INFRARED_DRIFT_ADJUSTMENT_DEGREES 3  // Amount of degrees to adjust when drifting off line
 #define INFRARED_MAX_GOAL_DISTANCE 10        // Max distance to be considered a goal (i.e. if obstacle detected < 10cm it's a goal position

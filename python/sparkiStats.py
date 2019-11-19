@@ -113,6 +113,7 @@ def getNodeConnectionPositionInList(node2Check):
 # --------------------------------------------------------------------------------------------------
 # Get the next goal to visit, return a the list of nodes to get there, and the final item pose
 def getNextGoal2Visit():
+ try:
   currentNodeId = gv.closestNodePose["NODEID"]
   currentGraph  = getGraphOfNodeConnectionList()
   dijkstrasObj  = dijkstrasClass.dijkstraGraphPoints(currentGraph, currentNodeId)
@@ -139,6 +140,13 @@ def getNextGoal2Visit():
       return thePath2Goal, theDictItem
     else:
       return [], {}
+ except:
+  print("Exception raised in serialProcessor.py")
+  exc_type, exc_obj, exc_tb = sys.exc_info()
+  fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+  print(exc_type, fname, exc_tb.tb_lineno)
+  print("Exception raised flushing serial port")  
+  sys.exit()
 
 # --------------------------------------------------------------------------------------------------
 # Return a list that has the path from the current position to the next path to visit and
@@ -195,9 +203,11 @@ def getPose(arrayValues):
 # Return dictionary for the state, this converts the string 'numeric' values to their corresponding
 # types (x and y are floats, the rest are ints)
 def getState(arrayValues):
+ try:
   idx = 2 # Have it represent where the value is not the label for it
   stateToReturn = { "RECTYPE" : "STATE" }
   while idx < len(arrayValues):
+    # print(str(arrayValues[idx]))
     sensorLabel = arrayValues[idx]
     if sensorLabel == "x" or sensorLabel == "y":
       sensorValue = float(arrayValues[idx+1])
@@ -206,7 +216,13 @@ def getState(arrayValues):
     idx += 2
     stateToReturn[sensorLabel] = sensorValue
   return stateToReturn
-
+ except:
+  print("Exception raised in serialProcessor.py")
+  exc_type, exc_obj, exc_tb = sys.exc_info()
+  fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+  print(exc_type, fname, exc_tb.tb_lineno)
+  print("Exception raised flushing serial port")  
+  sys.exit()
 # --------------------------------------------------------------------------------------------------
 # Little helper routine to see if the dictionary item passed in (with NODEID, <) 
 # already matches a path that has been visited before.
@@ -385,7 +401,11 @@ def processValueList():
       if dictItem["TYPE"] == "sgl":        
         gv.goalDict = dictItem.copy()
 
-      if dictItem["TYPE"] == "sli" or dictItem["TYPE"] == "sri":        
+      if dictItem["TYPE"] == "sli" or dictItem["TYPE"] == "sri":   
+        if (gv.DEBUGGING):
+          print("calling nodeConnectionHelper: ")
+          print(str(lastDict))
+          print(str(dictItem))     
         nodeConnectionHelper(lastDict,dictItem)  
         intersectDict = dictItem.copy()
         # Want to put the destination angle into the < element, we'll
@@ -419,6 +439,7 @@ def processValueList():
 # Gets the input line from the sparki, parses it into the respective dictionary
 # object and puts it into the 'gv.pathValueList' array
 def setPathValueListFromString(stringFromSparki):
+ try:
   # Store values, we care about StateChg and POses, we'll make them
   #   dictionary objects and put them into the gv.pathValueList array
   arrayOfValues = stringFromSparki.split(",")
@@ -439,11 +460,18 @@ def setPathValueListFromString(stringFromSparki):
         print(logPose)
     if gv.DEBUGGING:
       print("Leaving setVars, len of array {0}".format(len(gv.pathValueList)))
-
+ except:
+  print("Exception raised in serialProcessor.py")
+  exc_type, exc_obj, exc_tb = sys.exc_info()
+  fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+  print(exc_type, fname, exc_tb.tb_lineno)
+  print("Exception raised flushing serial port")  
+  sys.exit()
 # --------------------------------------------------------------------------------------------------
 # Sparki wants instructions; if there's paths to visit then give him the best one
 # if there aren't any paths then start checking goals
 def tellSparkiWhatToDo():
+ try:
   movementType = 'XPLORE'
   nodes2Target, gv.pathBeingVisited = getNextPath2Visit()
   if len(gv.pathBeingVisited) == 0:  # No paths left to visit see if there's a goal
@@ -454,7 +482,13 @@ def tellSparkiWhatToDo():
     return "Done"
   else:
     return getDirectionsForNodes(nodes2Target, gv.pathBeingVisited, movementType)
-
+ except:
+  print("Exception raised in serialProcessor.py")
+  exc_type, exc_obj, exc_tb = sys.exc_info()
+  fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+  print(exc_type, fname, exc_tb.tb_lineno)
+  print("Exception raised flushing serial port")  
+  sys.exit()
 # --------------------------------------------------------------------------------------------------
 # Write all the variables of interest out to the console
 def writeVariables():

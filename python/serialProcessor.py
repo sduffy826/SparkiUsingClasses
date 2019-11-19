@@ -10,7 +10,7 @@ import sparkiStats
 
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 # DEBUGGING    = False
 #TAPEWIDTH    = 4.7
 #MINTAPEWIDTH = TAPEWIDTH - 0.5
@@ -55,7 +55,7 @@ asterisk  = '*' * 80
 while ((currTime) < runTime) and (leaveLoop == False):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  
-    time.sleep(0.5)
+    #time.sleep(0.5)
     
     logFileHandle.write(stringFromSparki + "\n")
     print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
@@ -84,6 +84,7 @@ while ((currTime) < runTime) and (leaveLoop == False):
       instructions2Send = sparkiStats.tellSparkiWhatToDo() + gv.SERIALTERMINATOR
       print("Sending this to sparki: {0}".format(instructions2Send))
       ser.write(instructions2Send.encode())
+      time.sleep(0.05)
       ser.flush()
       time.sleep(0.5)
       # leaveLoop = True ## CHANGE THIS DOWN ROAD
