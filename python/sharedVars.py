@@ -2,7 +2,7 @@
 
 # These are shared variables across different sparki modules
 DEBUGGING    = False
-TAPEWIDTH    = 4.7 # 2.5 # 4.7
+TAPEWIDTH    = 4.1 # 4.9 # 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.5
 MAXTAPEWIDTH = TAPEWIDTH + 0.5
 

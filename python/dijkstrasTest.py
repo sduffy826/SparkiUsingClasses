@@ -12,3 +12,8 @@ for x, y in graph.items():
 
 print("Len to z is: {0}".format(dijkstrasObj.getDistanceToNode('z')))
 print("Path is {0}".format(str(dijkstrasObj.getShortestPathToGoal('z'))))
+
+emptyGraph = {}
+emptyNode = ''
+emptyDijkstrasObj = dijkstrasClass.dijkstraGraphPoints(emptyGraph,emptyNode)
+print("Path is {0}".format(str(dijkstrasObj.getShortestPathToGoal('z'))))
