@@ -14,6 +14,24 @@ InfraredClass::InfraredClass(LocalizationClass &localizationObject, MovementsCla
 //      Methods 
 // -----------------------------------------------------------------------------------------
 
+// --------------------------------------------------------------------------------------
+// Adjust the angle from the currentPose to the targetPose and return the distance
+// required to get there, note this does not account for obstacles between current
+// pose and the target (if u wanted to then return min of distance2Move and openSpace
+// NOTE: REVIEW this you may want to move this into the movementsClass.. but for now
+// not sure if other changes will be required so left here
+float InfraredClass::adjustAngleToPose(const Pose &targetPose) {
+  
+  Pose currentPose = localizationObj->getPose();
+  
+  int targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
+  
+  // Turn to specific angle and return distance in front of you :)
+  float openSpace = movementsObj->getDistanceAtAngle(targetAngle);
+  float distance2Move = localizationObj->distanceBetweenPoses(currentPose, targetPose);
+  return distance2Move;
+}
+
 // -----------------------------------------------------------------------------------------
 // We've drifted, try to straighten back out
 void InfraredClass::adjustForDrifting(const bool &driftingLeft) {
@@ -86,6 +104,18 @@ void InfraredClass::clearInfraredAttributes(InfraredAttributes &attr2Clear) {
   attr2Clear.atEntrance     = false;
 }
 
+// This routine extracts data from src and populates the array at dst
+const char* InfraredClass::extractToken(char* dst, const char* src) {
+  while ( *src ) {
+    if ( ',' == *src ) {
+      *dst = '\0';
+      return ++src;
+    }
+    *dst++ = *src++;
+  }
+  *dst = '\0';
+  return NULL;
+}
 // Return the base attributes
 InfraredAttributes InfraredClass::getBaseAttributes() {
   return infraredBase;
@@ -145,6 +175,34 @@ boolean InfraredClass::lineFlagHelper(const int &currentReading, const int &base
   }
   else {
     return false;
+  }
+}
+
+// This method takes in a char* and counts how many parms there are and what the length of the max
+// parameter is
+void InfraredClass::parmCountAndLength(const char* str_data, unsigned int& num_params, unsigned int& theLen) {
+  unsigned int t_max    = 0;
+  const char* src = str_data;
+  const char* p   = nullptr;
+  char  ch;
+  while ( (ch = *src++) ) {
+    t_max++;  
+    if ( ',' == ch ) {
+      p = src;
+      num_params++;
+      if ( t_max > theLen ) {
+        theLen  = t_max;
+        t_max  = 0;
+      }
+    }
+  }
+  
+  const unsigned int count_remaining = strlen(p);
+  if ( count_remaining ) {
+    num_params++;
+    if ( count_remaining > theLen ) {
+      theLen = count_remaining;
+    }
   }
 }
 
@@ -289,12 +347,80 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
 
 // Wait for instructions on the serial port... we'll continue in this loop till
 // we get the 'serial termination' character (|)
-String InfraredClass::waitForInstructions() {
+String InfraredClass::waitForInstructions(StackArray<InfraredInstructions> &stackOfInstructions) {
   // This will wait for the instructions from the computer
   localizationObj->writeMsg2Serial("IR,INS");
   
   delay(1000);                                        // CHANGE THESE TO CONSTANTS 
   String rtnString = Serial.readStringUntil('|');
+
+  // Format of the data returned is similar to comment on right, we get -1 values for angles on GOTO (M)
+  // (the X is eXplore, Q is done/quit, G is Goal)
+  // since it's not relevant... we get -1.0, -1,0, -1 on the DONE verb too
+  const char*  str_data = rtnString.c_str();  //"M,x,9.2,y,4.3,<,-1,X,x,4.52,y,5.21,34,<,90"
+  size_t num_parameters = 0;
+  size_t len_parameter = 0;
+    
+  parmCountAndLength(str_data, num_parameters, len_parameter);
+
+  const size_t PARAMS_MAX = num_parameters;
+  const size_t LENGTH_MAX = len_parameter;
+  char szParams[PARAMS_MAX][LENGTH_MAX + 1];
+
+  // This setups the 0'the row and sets pnext to point to the next address
+  char* pnext = (char*)extractToken(&szParams[0][0], str_data);
+  for ( size_t i = 1; i < num_parameters; i++ ) {  
+     pnext = (char*)extractToken(&szParams[i][0], pnext);
+  }
+
+  if (DEBUGINFRARED) {
+    for ( size_t i = 0; i < num_parameters; i++ ) {
+       Serial.print("szParams[");
+       Serial.print(i);
+       Serial.print("]: ");
+       Serial.println(szParams[i]);
+    }
+  }
+
+  // Put the instructions into the stack
+  int i = 0;
+  InfraredInstructions theInstructions;
+  while (i < num_parameters) {
+    switch( i % 7) {
+      case 0:
+        theInstructions.instruction = szParams[i][0];
+        if (DEBUGINFRARED) {
+          Serial.print("ins: " );
+          Serial.println(theInstructions.instruction);
+        }
+        break;
+      case 2: // x
+        theInstructions.pose.xPos = atof(szParams[i]);
+        if (DEBUGINFRARED) {
+          Serial.print("xPos: " );
+          Serial.println(theInstructions.pose.xPos);
+        }
+        break;
+      case 4: // y
+        theInstructions.pose.yPos = atof(szParams[i]);
+        if (DEBUGINFRARED) {        
+          Serial.print("yPos: " );
+          Serial.println(theInstructions.pose.yPos);
+        }
+        break;
+      case 6: // angle
+        theInstructions.pose.angle = atoi(szParams[i]);
+        if (DEBUGINFRARED) {        
+          Serial.print("angle: " );
+          Serial.println(theInstructions.pose.angle);
+        }
+        stackOfInstructions.push(theInstructions);
+        // theInstructions = new InfraredInstructions;
+        break;
+    }
+    i++;
+  }
+
   /*
   String rtnString = "";
   bool keepReading = true;

@@ -10,6 +10,14 @@ import dijkstrasClass
 SENSORDISTANCEPASTTAPE = 0.2
 
 """
+C_EXPLORE = "X"
+C_GOAL    = "G"
+C_DONE    = "Q"
+C_GOTO    = "M"
+
+
+
+
 To do:
     Check that when pass intersection it doesn't register sae unless it's online again, and may
     want to have some min distance
@@ -56,10 +64,10 @@ nodesToVisit = [] # Nodes to visit and the angle they should visit
 def getDirectionsForNodes(nodes2Target, finalPath, pathType):
   try:
     if len(nodes2Target) > 1:
-      rtnString = "GOTO"
+      rtnString = gv.C_GOTO
       for nodeIdx in range(len(nodes2Target)-1):
         node2GoTo = nodes2Target[nodeIdx]
-        rtnString += ",x," + str(gv.nodeList[node2GoTo]["x"]) + ",y," + str(gv.nodeList[node2GoTo]["y"])
+        rtnString += ",x," + str(gv.nodeList[node2GoTo]["x"]) + ",y," + str(gv.nodeList[node2GoTo]["y"]) + ",<,-1"
       rtnString += "," + pathType
     else:
       rtnString = pathType
@@ -192,15 +200,28 @@ def getNextPath2Visit():
     minCost       = 9999999
     pidxWithMin   = -1
     for pidx in range(len(gv.paths2Visit)):
-      path2Check    = gv.paths2Visit[pidx]
-      cost2GetThere = dijkstrasObj.getDistanceToNode(path2Check["NODEID"])
+      path2Check = gv.paths2Visit[pidx]
+      isCorrection = False
+      if "TYPE" in path2Check:
+        isCorrection = (path2Check["TYPE"] == "CORRECTION")
+      
+      # If this path is on list cause it needs to be 'corrected' (i.e. error 
+      # occurred on prior exploration) then this is most important one to 
+      # visit... we need node information
+      if (isCorrection == True):
+        cost2GetThere = -1
+      else:
+        cost2GetThere = dijkstrasObj.getDistanceToNode(path2Check["NODEID"])
       if cost2GetThere < minCost:
         minCost     = cost2GetThere
         pidxWithMin = pidx
     if pidxWithMin >= 0:
       thePath2Visit = gv.paths2Visit[pidxWithMin]  # Next path to visit
       gv.paths2Visit.pop(pidxWithMin)              # Remove it from the list
-      thePath2Goal = dijkstrasObj.getShortestPathToGoal(thePath2Visit["NODEID"])
+      if "NODEID" in thePath2Visit:
+        thePath2Goal = dijkstrasObj.getShortestPathToGoal(thePath2Visit["NODEID"])
+      else:
+        thePath2Goal = []
       return thePath2Goal, thePath2Visit
     else:
       return [], {}
@@ -545,14 +566,14 @@ def setPathValueListFromString(stringFromSparki):
 # if there aren't any paths then start checking goals
 def tellSparkiWhatToDo():
   try:
-    movementType = 'XPLORE'
+    movementType = gv.C_EXPLORE
     nodes2Target, gv.pathBeingVisited = getNextPath2Visit()
     if len(gv.pathBeingVisited) == 0:  # No paths left to visit see if there's a goal
-      movementType = 'GOAL'
+      movementType = gv.C_GOAL
       nodes2Target, gv.pathBeingVisited = getNextGoal2Visit()
 
     if len(gv.pathBeingVisited) == 0: # No nodes or goals to vist tell em we're done
-      return "Done"
+      return gv.C_DONE
     else:
       return getDirectionsForNodes(nodes2Target, gv.pathBeingVisited, movementType)
   except:

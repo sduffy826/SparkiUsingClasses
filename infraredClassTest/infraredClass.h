@@ -7,8 +7,9 @@
 #include "ultrasonicClass.h"
 #include "localizationClass.h"
 #include "determineWorldClass.h"
+#include "StackArray.h"
 
-#define DEBUGINFRARED true
+#define DEBUGINFRARED false
 
 #define INFRARED_LINE_THRESHOLD .10  // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 300
@@ -18,6 +19,13 @@
 #define INFRARED_SENSOR_FORWARD_OF_CENTER 4
 #define INFRARED_DRIFT_ADJUSTMENT_DEGREES 3  // Amount of degrees to adjust when drifting off line
 #define INFRARED_MAX_GOAL_DISTANCE 10        // Max distance to be considered a goal (i.e. if obstacle detected < 10cm it's a goal position
+#define INFRARED_MAX_DISTANCE_TO_TRAVEL 100.0  
+
+#define EXPLORE_MODE 'X'  // eXplore
+#define GOAL_MODE 'G'     // Goal
+#define DONE_MODE 'Q'     // done/Quit
+#define GOTO_MODE 'M'     // goto/Move
+
 
 struct InfraredAttributes {
   unsigned int edgeLeft : 10;
@@ -42,6 +50,14 @@ struct InfraredAttributes {
   unsigned int atEntrance : 1;
 };
 
+struct InfraredInstructions {
+  // InfraredInstructions();
+  char instruction;  // X-explore, G-goal, Q-quit/done M-moveto (goto)
+  Pose pose;         // has x, y (floats) and angle (int)
+};
+//InfraredInstructions::InfraredInstructions() { }
+
+
 class InfraredClass {
   private: MovementsClass *movementsObj;
            LocalizationClass *localizationObj;
@@ -54,6 +70,11 @@ class InfraredClass {
            
    public: InfraredClass(LocalizationClass &localizationObject, MovementsClass &movementsObject);
 
+           // Move to an angle and return the distance to get from current pose to target pose 
+           // NOTE!!!! may want to move this into movementsClass (and change the move2Pose to
+           // use this... 
+           float adjustAngleToPose(const Pose &targetPose);
+
            // Adjust for drifting
            void adjustForDrifting(const bool &driftingLeft);
 
@@ -63,6 +84,9 @@ class InfraredClass {
            
            // Clear infrared readings for the argument passed in
            void clearInfraredAttributes(InfraredAttributes &attr2Clear);
+
+           // Extract value in src delimitted by , result goes into dst
+           const char* extractToken(char* dst, const char* src);
 
            // Get the base attributes
            InfraredAttributes getBaseAttributes();
@@ -75,6 +99,9 @@ class InfraredClass {
 
            // Return the pose of the middle infrared sensor
            Pose getPoseOfCenterSensor();
+
+           // Routine to get parms returned on serial device... may want to move this into a serial class down the road
+           void parmCountAndLength(const char* str_data, unsigned int& num_params, unsigned int& theLen);
            
            // Routines to sample the infrared readings
            void setInfraredBaseReadings();  
@@ -85,7 +112,9 @@ class InfraredClass {
            // Return boolean if the state changed 
            bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr);
 
-           String waitForInstructions();
+           String waitForInstructions(StackArray<InfraredInstructions> &stackOfInstructions);
+
+           
           
 };
 #endif

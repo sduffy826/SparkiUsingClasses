@@ -14,6 +14,16 @@ void setup() {
     sparki.beep();
     delay(DELAY_AFTER_SERIAL_STARTUP);  
     Serial.setTimeout(10000);  // Set serial timeout to 10 seconds
+   
+    // Clear anything on the serial port
+    if (Serial.available() > 0)  {
+      while (Serial.available() > 0) {
+        char theChar = (char)Serial.read(); 
+        delay(DELAY_FOR_SERIAL_COMM);
+      }
+    }
+   
+    
     sparki.beep();
   #endif
   counter = 0;
@@ -132,6 +142,9 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     #define TESTSTATECHANGE2 true
     #if TESTSTATECHANGE2
+      StackArray<InfraredInstructions> stackOfInstructions;
+      InfraredInstructions currentInstruction;
+    
       localizationObj->writeMsg2Serial("IR,FollowTape");
       delay(3000);
       sparki.beep();
@@ -156,8 +169,10 @@ void loop() {
       bool check4Obstacle = false;
       
       localizationObj->writeMsg2Serial("IR,PathStart");
-      float distanceToTravel = 80.0;  // Just some long distance for the first time  
-      while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
+      float distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;  // Just some long distance for the first time  
+      currentInstruction.instruction = EXPLORE_MODE;
+      // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
+      while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,(currentInstruction.instruction==GOAL_MODE)) == true) && (done == false) ) {
         
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
 
@@ -219,19 +234,73 @@ void loop() {
       
           // If the wait for instructions flag is on then wait :)
           while (waitForInstructions) {
-            // Stop moving and wait for instructions from computer on what to do
-            // NOTE: we are off the tape here... was going to backup till I see tape but the distance is probably
-            //       so small it's not worth it... may revisit after testing
-            localizationObj->writeMsg2Serial("IR,PathEnd");
-            movementsObj->stopMoving();            
-            String instructions = infraredObj->waitForInstructions();
-            localizationObj->writeMsg2Serial("GotInstructions");
-            char buffer[instructions.length()+1];
-            instructions.toCharArray(buffer, instructions.length()+1);
-            localizationObj->writeMsg2Serial(buffer);
-            localizationObj->writeMsg2Serial("IR,Done");
-            // CHANGE DOWN THE ROAD SO THAT IT PROCESSES THE INSTRUCTIONS
-            done = true;
+            // Stop so you can act on whatever instructions you're given
+            movementsObj->stopMoving();          
+
+            // May want to change so it calls wait for instructions whenever it was in explore mode... otherwise
+            // if had two explores in a row the first set of values would be lost
+            
+            if (stackOfInstructions.isEmpty() == true) {
+              // Get more instructions
+              // NOTE: we are off the tape here... was going to backup till I see tape but the distance is probably
+              //       so small it's not worth it... may revisit after testing
+              localizationObj->writeMsg2Serial("IR,PathEnd");
+              String instructions = infraredObj->waitForInstructions(stackOfInstructions);
+              if (DEBUGINFRARED) {
+                localizationObj->writeMsg2Serial("GotInstructions");
+                char buffer[instructions.length()+1];
+                instructions.toCharArray(buffer, instructions.length()+1);
+                localizationObj->writeMsg2Serial(buffer);
+  
+                InfraredInstructions theIns;
+                Serial.print("stackOfInstructions, size: ");
+                Serial.print(stackOfInstructions.count());
+                if (stackOfInstructions.isEmpty() == false) {                  
+                  theIns = stackOfInstructions.peek();
+                  Serial.print(" top item, ins: ");
+                  Serial.print(theIns.instruction);
+                  Serial.print(" x: ");
+                  Serial.print(theIns.pose.xPos);
+                  Serial.print(" y: ");
+                  Serial.print(theIns.pose.yPos);
+                  Serial.print(" <: ");
+                  Serial.println(theIns.pose.angle); 
+                }
+              }
+              
+              if (stackOfInstructions.isEmpty() == true) {
+                // Tell python we're done
+                localizationObj->writeMsg2Serial("IR,Done");
+                done = true;      
+              }
+              else {
+                // We have instructions in the stack, do the top item
+                currentInstruction = stackOfInstructions.pop();
+                switch (currentInstruction.instruction) {
+                  case EXPLORE_MODE:
+                      //  if (localizationObj->closeEnuf(localizationObj->getCurrentAngle(),currentInstruction.pose.angle,5.0,true) == false) {
+                    movementsObj->turnToAngle(currentInstruction.pose.angle);
+                    distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;
+                    localizationObj->writeMsg2Serial("IR,PathStart");
+                    break;
+                  case GOAL_MODE:
+                    // The goal_mode is the pose of the sensor, we need to go to pose of center of bot so we remove INFRARED_SENSOR_FORWARD_OF_CENTER
+                    distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose) - INFRARED_SENSOR_FORWARD_OF_CENTER;
+                    localizationObj->writeMsg2Serial("IR,GoalStart");
+                    break;
+                  case DONE_MODE:
+                    done = true;
+                    break;
+                  case GOTO_MODE:
+                    // Call routine to re-orient ourselves toward the goal, and set the distanceToTravel to be where we want to go
+                    distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose);
+                    localizationObj->writeMsg2Serial("IR,GoToStart");
+                    break;
+                  default:
+                    break;
+                }
+              }
+            }
           }
 
           if (setLastAttributes) {

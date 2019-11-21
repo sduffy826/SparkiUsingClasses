@@ -34,6 +34,9 @@
 // the front reading, but since it only measures in cm I made it 2 cm
 #define ULTRASONIC_SIDE_ADJUSTMENT 2
 
+// If on the ultrasonic sensor will send data to the world
+#define SEND_ULTRASONIC_READINGS_TO_WORLD true
+
 // Gripper characterisitics
 #define GRIPPER_LENGTH 2.6
 #define GRIPPER_MAX_WIDTH 4.0
@@ -64,9 +67,6 @@
 #define ULTRASONIC_DELAY_AFTER_SERVO_MOVEMENT 200
 #define ULTRASONIC_RIGHT_ANGLE 85
 #define ULTRASONIC_LEFT_ANGLE -85
-
-// If on the ultrasonic sensor will send data to the world
-#define SEND_ULTRASONIC_READINGS_TO_WORLD true
 
 // Amount to delay after movement
 #define DELAY_AFTER_MOVEMENT 100

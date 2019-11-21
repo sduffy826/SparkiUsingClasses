@@ -34,6 +34,9 @@
 // the front reading, but since it only measures in cm I made it 2 cm
 #define ULTRASONIC_SIDE_ADJUSTMENT 2
 
+// If on the ultrasonic sensor will send data to the world
+#define SEND_ULTRASONIC_READINGS_TO_WORLD true
+
 // Gripper characterisitics
 #define GRIPPER_LENGTH 2.6
 #define GRIPPER_MAX_WIDTH 4.0
@@ -70,7 +73,7 @@
 
 // Serial device characteristics, speed and amount to delay after communicating
 // over serial port
-#define SERIAL_SPEED 9600
+#define SERIAL_SPEED 19200
 #define DELAY_FOR_SERIAL_COMM 8
 
 // Amount to delay after serial device is initialized, this gives you time

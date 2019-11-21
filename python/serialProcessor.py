@@ -10,7 +10,7 @@ import sparkiStats
 
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 # DEBUGGING    = False
 #TAPEWIDTH    = 4.7
 #MINTAPEWIDTH = TAPEWIDTH - 0.5
@@ -62,7 +62,8 @@ while ((currTime) < runTime) and (leaveLoop == False):
    
     if stringFromSparki.upper() == "IR,DONE":
       leaveLoop = True
-    elif stringFromSparki.upper() == 'IR,PATHSTART':  # 
+    elif stringFromSparki.upper() == 'IR,PATHSTART' or stringFromSparki.upper() == 'IR,GOALSTART' or \
+                                                                stringFromSparki.upper() == 'IR,GOTOSTART':  # 
       logFileHandle.write(separator + "\n")  # Mark start of path
       gv.pathValueList.clear()  # Clear arrays
       gv.errorList.clear()

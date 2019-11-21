@@ -1,8 +1,15 @@
 # This file has the global variables shared amonst modules
 
+# Constants used to communicate with Sparki, these are from python to sparki
+# Make sure the values below match what the sparki expects
+C_EXPLORE = "X"
+C_GOAL    = "G"
+C_DONE    = "Q"  # quit
+C_GOTO    = "M"  # move to
+
 # These are shared variables across different sparki modules
 DEBUGGING    = False
-TAPEWIDTH    = 4.1 # 4.9 # 2.5 # 4.7
+TAPEWIDTH    = 4.9 # 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.5
 MAXTAPEWIDTH = TAPEWIDTH + 0.5
 
