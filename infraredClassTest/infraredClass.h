@@ -7,7 +7,7 @@
 #include "ultrasonicClass.h"
 #include "localizationClass.h"
 #include "determineWorldClass.h"
-#include "StackArray.h"
+#include "QueueArray.h"
 
 #define DEBUGINFRARED false
 
@@ -112,7 +112,7 @@ class InfraredClass {
            // Return boolean if the state changed 
            bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr);
 
-           String waitForInstructions(StackArray<InfraredInstructions> &stackOfInstructions);
+           String waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions);
 
            
           

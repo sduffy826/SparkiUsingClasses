@@ -8,7 +8,7 @@ C_DONE    = "Q"  # quit
 C_GOTO    = "M"  # move to
 
 # These are shared variables across different sparki modules
-DEBUGGING    = False
+DEBUGGING    = True
 TAPEWIDTH    = 4.9 # 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.5
 MAXTAPEWIDTH = TAPEWIDTH + 0.5

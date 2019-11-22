@@ -55,6 +55,9 @@ class MovementsClass {
           // Initialization (this is called from constructor, but can be used to 'reset' state... be careful)
           void initMovements();
           
+          // Return boolean with 'moving' status
+          bool isMoving();
+          
           // Routines to handle movement forward and backward
           boolean moveBackward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance);
           boolean moveForward(const float &distanceToTravel, const float &minAllowedDistanceToObstacle, const bool &checkFrontDistance);

@@ -10,7 +10,7 @@ import sparkiStats
 
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 # DEBUGGING    = False
 #TAPEWIDTH    = 4.7
 #MINTAPEWIDTH = TAPEWIDTH - 0.5
@@ -63,12 +63,15 @@ while ((currTime) < runTime) and (leaveLoop == False):
     if stringFromSparki.upper() == "IR,DONE":
       leaveLoop = True
     elif stringFromSparki.upper() == 'IR,PATHSTART' or stringFromSparki.upper() == 'IR,GOALSTART' or \
-                                                                stringFromSparki.upper() == 'IR,GOTOSTART':  # 
+                                                                stringFromSparki.upper() == 'IR,GOTOSTART': 
       logFileHandle.write(separator + "\n")  # Mark start of path
       gv.pathValueList.clear()  # Clear arrays
       gv.errorList.clear()
     elif stringFromSparki.upper() == 'IR,PATHEND':
       sparkiStats.processValueList()
+
+      sparkiStats.writeVariables()
+
       # !!!!!!!! PUT IN LOGIC HERE TO UPDATE MAP
       if len(gv.errorList) > 0:
         print(asterisk)

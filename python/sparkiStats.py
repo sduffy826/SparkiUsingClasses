@@ -61,14 +61,17 @@ nodesToVisit = [] # Nodes to visit and the angle they should visit
 #   for all nodes in nodes2Target (except for the last node) we'll have 'GOTO' instructions
 #   for the last value we use the 'finalPath' (it has <) and we'll prefix the last one
 #     with the pathType (a string that tells what this last type is)
+
+# Changed to include all nodes in nodes2Target... that way the 'goto' is the goto the
+# node, and the pathType verb is really just handling the angle change 
 def getDirectionsForNodes(nodes2Target, finalPath, pathType):
   try:
     if len(nodes2Target) > 1:
-      rtnString = gv.C_GOTO
-      for nodeIdx in range(len(nodes2Target)-1):
+      rtnString = ""
+      for nodeIdx in range(len(nodes2Target)):
         node2GoTo = nodes2Target[nodeIdx]
-        rtnString += ",x," + str(gv.nodeList[node2GoTo]["x"]) + ",y," + str(gv.nodeList[node2GoTo]["y"]) + ",<,-1"
-      rtnString += "," + pathType
+        rtnString += gv.C_GOTO + ",x," + str(gv.nodeList[node2GoTo]["x"]) + ",y," + str(gv.nodeList[node2GoTo]["y"]) + ",<,-1,"
+      rtnString += pathType
     else:
       rtnString = pathType
 
@@ -100,6 +103,9 @@ def getGraphOfNodeConnectionList():
         graphToReturn[nodeId1] = {}
       if neighbor not in graphToReturn[nodeId1]:
         graphToReturn[nodeId1][neighbor] = nodeDict["len"]
+    if (gv.DEBUGGING): 
+      print("getGraphOfNodeConnectionList, graph is:")
+      print("  " + str(graphToReturn.copy()))
     return graphToReturn.copy()
   except:
     print("Exception raised - getGraphOfNodeConnectionList")
@@ -191,6 +197,8 @@ def getNextGoal2Visit():
 # also the dictionary item for the final location
 def getNextPath2Visit():
   try:
+    if (gv.DEBUGGING):  print("getNextPath2Vistit (gNP2V)")
+      
     if "NODEID" in gv.closestNodePose:
       currentNodeId = gv.closestNodePose["NODEID"]
     else:
@@ -212,9 +220,11 @@ def getNextPath2Visit():
         cost2GetThere = -1
       else:
         cost2GetThere = dijkstrasObj.getDistanceToNode(path2Check["NODEID"])
+      if (gv.DEBUGGING): print("  (gNP2V) cost2GetThere: " + str(cost2GetThere))
       if cost2GetThere < minCost:
         minCost     = cost2GetThere
         pidxWithMin = pidx
+
     if pidxWithMin >= 0:
       thePath2Visit = gv.paths2Visit[pidxWithMin]  # Next path to visit
       gv.paths2Visit.pop(pidxWithMin)              # Remove it from the list
@@ -222,8 +232,10 @@ def getNextPath2Visit():
         thePath2Goal = dijkstrasObj.getShortestPathToGoal(thePath2Visit["NODEID"])
       else:
         thePath2Goal = []
+      if (gv.DEBUGGING): print("  (gNP2V) thePath2Visit: " + str(thePath2Visit))
       return thePath2Goal, thePath2Visit
     else:
+      if (gv.DEBUGGING): print("  (gNP2V) pidxWithMin < 0, no path")
       return [], {}
   except:
     print("Exception raised - getNextPath2Visit")
@@ -566,6 +578,7 @@ def setPathValueListFromString(stringFromSparki):
 # if there aren't any paths then start checking goals
 def tellSparkiWhatToDo():
   try:
+    print("In tell sparki (TS)")
     movementType = gv.C_EXPLORE
     nodes2Target, gv.pathBeingVisited = getNextPath2Visit()
     if len(gv.pathBeingVisited) == 0:  # No paths left to visit see if there's a goal

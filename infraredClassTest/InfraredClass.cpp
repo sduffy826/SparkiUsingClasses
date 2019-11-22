@@ -23,12 +23,22 @@ InfraredClass::InfraredClass(LocalizationClass &localizationObject, MovementsCla
 float InfraredClass::adjustAngleToPose(const Pose &targetPose) {
   
   Pose currentPose = localizationObj->getPose();
-  
+  Serial.print("in adjustAngleToPose currPose");
+  localizationObj->showPose(currentPose);
+  Serial.print("in adjustAngleToPose targetPose");
+  localizationObj->showPose(targetPose);
   int targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
   
   // Turn to specific angle and return distance in front of you :)
   float openSpace = movementsObj->getDistanceAtAngle(targetAngle);
   float distance2Move = localizationObj->distanceBetweenPoses(currentPose, targetPose);
+
+  Serial.print("<: ");
+  Serial.print(targetAngle);
+  Serial.print(" distance: ");
+  Serial.println(distance2Move);
+
+  
   return distance2Move;
 }
 
@@ -347,7 +357,7 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
 
 // Wait for instructions on the serial port... we'll continue in this loop till
 // we get the 'serial termination' character (|)
-String InfraredClass::waitForInstructions(StackArray<InfraredInstructions> &stackOfInstructions) {
+String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions) {
   // This will wait for the instructions from the computer
   localizationObj->writeMsg2Serial("IR,INS");
   
@@ -414,7 +424,7 @@ String InfraredClass::waitForInstructions(StackArray<InfraredInstructions> &stac
           Serial.print("angle: " );
           Serial.println(theInstructions.pose.angle);
         }
-        stackOfInstructions.push(theInstructions);
+        queueOfInstructions.push(theInstructions);
         // theInstructions = new InfraredInstructions;
         break;
     }

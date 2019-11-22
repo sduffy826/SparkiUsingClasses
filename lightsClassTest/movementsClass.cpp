@@ -203,6 +203,12 @@ void MovementsClass::initMovements() {
 }
 
 // --------------------------------------------------------------------------------------
+// Return boolean with moving state
+bool MovementsClass::isMoving() {
+  return movementState.amMoving;
+}
+
+// --------------------------------------------------------------------------------------
 // Handles moving backward a given distance, second parm is the min distance you can be within of a wall
 // Intent is that this will be called continuously... it doesn't block... it'll start moving if sparki isn't
 // and it'll stop when we've reached destination or wall.
