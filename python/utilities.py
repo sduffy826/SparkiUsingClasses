@@ -10,7 +10,16 @@ MAXANGLEDELTASTOBECONSIDEREDSAME = 14
 def areAnglesCloseEnough(angle1, angle2):
   return (abs(angle1 - angle2) <= MAXANGLEDELTASTOBECONSIDEREDSAME)  
 
+# ----------------------------------------------------------------------
+# Helper to return cosine of degree angle.
+def degreesCos(theDegrees):
+  return math.cos(math.radians(theDegrees))
 
+# ----------------------------------------------------------------------
+# Helper to return cosine of degree angle.
+def degreesSin(theDegrees):
+  return math.cos(math.radians(theDegrees))  
+  
 # ----------------------------------------------------------------------
 # Takes in an angle and an adjustment (+ or -) and returns the resulting
 # angle within 0->359' range

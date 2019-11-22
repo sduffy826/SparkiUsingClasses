@@ -64,19 +64,57 @@ nodesToVisit = [] # Nodes to visit and the angle they should visit
 
 # Changed to include all nodes in nodes2Target... that way the 'goto' is the goto the
 # node, and the pathType verb is really just handling the angle change 
+
+def getPotentialGoalNodeIndex(theNodeId):
+  rtnValue = -1
+  for tempGidx in range(len(gv.potentialGoalDicts)):
+    if gv.potentialGoalDicts[tempGidx]["NODEID"] == theNodeId:
+      rtnValue = tempGidx
+  return rtnValue
+
+# TEST THIS!!!!  
+def getNodeActualPose(theDictItem):
+  tempDict = theDictItem.copy() # Make copy, this is the item we'll return
+  print("gnap(1)")
+  if "NODEID" in theDictItem:
+    print("gnap(21)")
+    # See if the node is a goal node.. if it is then we need to adjust it's x/y pos, the pose recorded is the sensor's pose
+    if tempDict["NODEID"] in gv.potentialGoalNodes:
+      print("gnap(3)")
+      theGoalNodeIndex = getPotentialGoalNodeIndex(tempDict["NODEID"])
+      print("gnap(4)")
+      if theGoalNodeIndex != -1:  # We found the record, get it's angle
+        print("gnap(4.5)")
+        print(theGoalNodeIndex)
+        theGoalAngle = gv.potentialGoalDicts[theGoalNodeIndex]["<"]
+        print("gnap(5)")
+      else:
+        theGoalAngle = tempDict["<"]  # Use the angle in the node itself (not great but this should never happen)
+      # Subtract the distance that the sensor is ahead of the body of the robot to get the new x and y position
+      tempDict["x"] = tempDict["x"] - gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle)
+      print("gnap(6)")
+      tempDict["y"] = tempDict["y"] - gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle)
+      print("gnap(7)")
+  return tempDict
+
 def getDirectionsForNodes(nodes2Target, finalPath, pathType):
   try:
     if len(nodes2Target) > 1:
       rtnString = ""
       for nodeIdx in range(len(nodes2Target)):
         node2GoTo = nodes2Target[nodeIdx]
-        rtnString += gv.C_GOTO + ",x," + str(gv.nodeList[node2GoTo]["x"]) + ",y," + str(gv.nodeList[node2GoTo]["y"]) + ",<,-1,"
+        workNode = getNodeActualPose(gv.nodeList[node2GoTo])  # The index in nodeList is the node id
+        rtnString += gv.C_GOTO + ",x," + str(workNode["x"]) + ",y," + str(workNode["y"]) + ",<,-1,"
       rtnString += pathType
     else:
       rtnString = pathType
+    
+    # Handle the last record, this will adjust the x/y in case it's a goal node so that the pose to goto is
+    # the center of the robot
+    workNode = getNodeActualPose(finalPath)
 
     # Now we add the last item, it has the orientation the robot should be at for the 'pathType'
-    rtnString += ",x," + str(finalPath["x"]) + ",y," + str(finalPath["y"]) + ",<," + str(finalPath["<"])
+    rtnString += ",x," + str(workNode["x"]) + ",y," + str(workNode["y"]) + ",<," + str(workNode["<"])
     return rtnString
   except:
     print("Exception raised - getDirectionsForNodes")
@@ -586,7 +624,7 @@ def tellSparkiWhatToDo():
       nodes2Target, gv.pathBeingVisited = getNextGoal2Visit()
 
     if len(gv.pathBeingVisited) == 0: # No nodes or goals to vist tell em we're done
-      return gv.C_DONE
+      return gv.C_DONE + ",x,-1.0,y,-1.0,<,-1"  # Need to pass all the elements that sparki expects, it'll ignore them"
     else:
       return getDirectionsForNodes(nodes2Target, gv.pathBeingVisited, movementType)
   except:
@@ -625,6 +663,8 @@ def writeVariables():
       print("Potential goals:")
       for aPotentialGoal in gv.potentialGoalDicts:
         print("  {0}".format(str(aPotentialGoal)))
+        print("  robot pose: {0}".format(getNodeActualPose(aPotentialGoal)))
+
     else:
       print("No Potential goals found")
 

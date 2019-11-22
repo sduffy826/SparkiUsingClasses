@@ -7,6 +7,8 @@ C_GOAL    = "G"
 C_DONE    = "Q"  # quit
 C_GOTO    = "M"  # move to
 
+INFRARED_SENSOR_FORWARD_OF_CENTER = 4
+
 # These are shared variables across different sparki modules
 DEBUGGING    = True
 TAPEWIDTH    = 4.9 # 2.5 # 4.7

@@ -159,7 +159,7 @@ void loop() {
       infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
       infraredObj->showInfraredAttributes("last",lastAttributes,poseOfSensor,false);
 
-      int numStateChanges = 0;
+      //int numStateChanges = 0;
       bool done = false;
       unsigned int baseTimer = millis();
       unsigned int currTimer;
@@ -287,14 +287,16 @@ void loop() {
             else {
               // We have instructions in the stack, do the top item
               currentInstruction = queueOfInstructions.pop();
-              Serial.print("Ins:");
-              Serial.print(currentInstruction.instruction);
-              Serial.print(" x:");
-              Serial.print(currentInstruction.pose.xPos);
-              Serial.print(" y:");
-              Serial.print(currentInstruction.pose.yPos);
-              Serial.print(" <:");
-              Serial.println(currentInstruction.pose.angle);
+              if (DEBUGINFRARED) {
+                Serial.print("Ins:");
+                Serial.print(currentInstruction.instruction);
+                Serial.print(" x:");
+                Serial.print(currentInstruction.pose.xPos);
+                Serial.print(" y:");
+                Serial.print(currentInstruction.pose.yPos);
+                Serial.print(" <:");
+                Serial.println(currentInstruction.pose.angle);
+              }
               switch (currentInstruction.instruction) {
                 case EXPLORE_MODE:
                     //  if (localizationObj->closeEnuf(localizationObj->getCurrentAngle(),currentInstruction.pose.angle,5.0,true) == false) {
@@ -330,7 +332,7 @@ void loop() {
           if (setLastAttributes) {
             // Move the currentAttributes into lastAttributes
             infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
-            numStateChanges++;
+            //numStateChanges++;
             //done = (numStateChanges > 5);
           }
           else {
