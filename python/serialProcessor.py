@@ -11,10 +11,6 @@ import sparkiStats
 
 useBluetooth = False
 isIBMMacBook = False
-# DEBUGGING    = False
-#TAPEWIDTH    = 4.7
-#MINTAPEWIDTH = TAPEWIDTH - 0.5
-#MAXTAPEWIDTH = TAPEWIDTH + 0.5
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 pickleFile    = "pickFile_withSensors.bin" 
@@ -26,28 +22,13 @@ if useBluetooth == False:
     ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=9600)
 
 readLines = 0
-runTime   = 60           # Only runs for 2 minutes
+runTime   = 3600         # Run for 60 minutes
 startTime = time.time()  # Returns time in seconds since epoch
 ser.write(b'Trigger')    # Push something on the serial port, this will activate it
 
 logFileHandle = open(serialLogFile,"at") # Append and text file
 currTime      = time.time() - startTime
 leaveLoop     = False
-
-# Init to values that you know are outside range of min/maxe's you'll see
-#worldXMin = 200.0
-#worldXMax = -200.0
-#worldYMin = 200.0
-#worldYMax = -200.0
-
-#pathsVisited   = []
-#paths2Visit    = []
-#goalPosition   = {}  # Pose of the goal
-#potentialGoals = [] # List of potential goals
-#startPosition  = {}
-
-#pathValueList = []
-#errorList     = []
 
 separator = '-' * 80  # Give 80 -'s (cool)
 asterisk  = '*' * 80
@@ -61,13 +42,16 @@ while ((currTime) < runTime) and (leaveLoop == False):
     print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
    
     if stringFromSparki.upper() == "IR,DONE":
+      print(asterist)
       leaveLoop = True
     elif stringFromSparki.upper() == 'IR,PATHSTART' or stringFromSparki.upper() == 'IR,GOALSTART' or \
                                                                 stringFromSparki.upper() == 'IR,GOTOSTART': 
+      print(separator)                                                                
       logFileHandle.write(separator + "\n")  # Mark start of path
       gv.pathValueList.clear()  # Clear arrays
       gv.errorList.clear()
     elif stringFromSparki.upper() == 'IR,PATHEND':
+      print(separator)
       sparkiStats.processValueList()
 
       sparkiStats.writeVariables()
@@ -83,8 +67,12 @@ while ((currTime) < runTime) and (leaveLoop == False):
           logFileHandle.write(str(anError) + "\n")
         print(asterisk)
         logFileHandle.write(asterisk + "\n")
+        if len(gv.nodeList) == 0:
+          print("ERROR ON FIRST PATH, RESTART THE PROGRAM!!!")
+          leaveLoop = True
       
     elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
+      print(separator)
       instructions2Send = sparkiStats.tellSparkiWhatToDo() + gv.SERIALTERMINATOR
       print("Sending this to sparki: {0}".format(instructions2Send))
       ser.write(instructions2Send.encode())

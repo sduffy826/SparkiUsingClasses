@@ -18,8 +18,8 @@ def degreesCos(theDegrees):
 # ----------------------------------------------------------------------
 # Helper to return cosine of degree angle.
 def degreesSin(theDegrees):
-  return math.cos(math.radians(theDegrees))  
-  
+  return math.sin(math.radians(theDegrees))  
+
 # ----------------------------------------------------------------------
 # Takes in an angle and an adjustment (+ or -) and returns the resulting
 # angle within 0->359' range

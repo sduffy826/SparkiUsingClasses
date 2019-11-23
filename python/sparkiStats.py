@@ -75,26 +75,18 @@ def getPotentialGoalNodeIndex(theNodeId):
 # TEST THIS!!!!  
 def getNodeActualPose(theDictItem):
   tempDict = theDictItem.copy() # Make copy, this is the item we'll return
-  print("gnap(1)")
   if "NODEID" in theDictItem:
-    print("gnap(21)")
     # See if the node is a goal node.. if it is then we need to adjust it's x/y pos, the pose recorded is the sensor's pose
     if tempDict["NODEID"] in gv.potentialGoalNodes:
-      print("gnap(3)")
       theGoalNodeIndex = getPotentialGoalNodeIndex(tempDict["NODEID"])
-      print("gnap(4)")
       if theGoalNodeIndex != -1:  # We found the record, get it's angle
-        print("gnap(4.5)")
         print(theGoalNodeIndex)
         theGoalAngle = gv.potentialGoalDicts[theGoalNodeIndex]["<"]
-        print("gnap(5)")
       else:
         theGoalAngle = tempDict["<"]  # Use the angle in the node itself (not great but this should never happen)
       # Subtract the distance that the sensor is ahead of the body of the robot to get the new x and y position
-      tempDict["x"] = tempDict["x"] - gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle)
-      print("gnap(6)")
-      tempDict["y"] = tempDict["y"] - gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle)
-      print("gnap(7)")
+      tempDict["x"] = tempDict["x"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle))
+      tempDict["y"] = tempDict["y"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle))
   return tempDict
 
 def getDirectionsForNodes(nodes2Target, finalPath, pathType):
@@ -293,8 +285,8 @@ def getPose(arrayValues):
     idx = 1
     while (idx < len(arrayValues)):
       if gv.DEBUGGING:
-        print("getPose key: {0} value: {1}".format(arrayValues[idx],arrayValues[idx+1]))
-      if arrayValues[idx] == "x" or arrayValues == "y":
+        print("getPose key: {0} value:{1}:".format(arrayValues[idx],arrayValues[idx+1]))
+      if arrayValues[idx] == "x" or arrayValues[idx] == "y":
         theValu = float(arrayValues[idx+1])
       else:
         theValu = int(arrayValues[idx+1])
@@ -363,6 +355,12 @@ def hasPathBeenVisited(dictOfPath2Check):
 # you'd want to allow (that's why made it an argument)
 def nodeConnectionHelper(lastDict,currDict,point2Self=False):
   try:
+    if (gv.DEBUGGING):
+      pass
+    print("nodeConnectionHelper, last:")
+    print(str(lastDict))
+    print(" curr: ")
+    print(str(currDict))
     if ((lastDict["NODEID"] != currDict["NODEID"]) or (point2Self == True)):
       # Write routine to add these two nodes as connected into the node connection list
       distanceBetweenPts = utilities.getDistanceBetweenPoints(lastDict["x"],lastDict["y"],
@@ -444,6 +442,10 @@ def processValueList():
       if initValues: # Save first record just in case we have to do a doover
         firstPose = recPose.copy()
 
+      # If it's a pose record skip it... we only have it for setting position
+      if dictItem["RECTYPE"] == "POSE":
+        continue 
+
       if dictItem["sas"] == 1:
         processValueHelper("sas",recPose,tempList)
       
@@ -514,13 +516,19 @@ def processValueList():
 
     # If error's we'll put the path we were just on back onto the list of paths to visit
     if len(gv.errorList) > 0:   
-      angle2Travel   = utilities.getAngleAfterAdjustment(firstPose["<"],180)      
+      angle2Travel   = utilities.getAngleAfterAdjustment(firstPose["<"],180)    
       path2Travel    = { "x" : firstPose["x"], "y" : firstPose["y"], "<" : angle2Travel, 
                         "TYPE" : "CORRECTION", "INFO" : "Had errors on path" }
       gv.paths2Visit.append(path2Travel)
     else:
       # No errors process the data in tempList
-      lastDict = {}
+      lastDict = firstPose.copy()  # Use the firstPose we saw as the 'lastDict', this is needed because we need another node
+                                   # as the distance from node being processed... this only comes into play when we're calling
+                                   # this function after we've already started the exploration
+      tempNodeId = getNodeAtPosition(lastDict["x"],lastDict["y"],False)
+      if tempNodeId != -1:
+        lastDict["NODEID"] = tempNodeId
+
       for dictItem in tempList:
         gv.worldXMin = min(gv.worldXMin, dictItem["x"])
         gv.worldXMax = max(gv.worldXMax, dictItem["x"])
@@ -640,7 +648,7 @@ def writeVariables():
   try:
     print("Start position: {0}".format(str(gv.startDict)))
     print("Current position: {0}".format(str(gv.finalPose)))
-    print("Closes node position: {0}".format(str(gv.closestNodePose)))
+    print("Closest node position: {0}".format(str(gv.closestNodePose)))
     print("World xMin: {0} yMin: {1} xMax: {2} yMax: {3}".format(gv.worldXMin,gv.worldYMin,gv.worldXMax,gv.worldYMax))
     
     print("PathsVisited:")

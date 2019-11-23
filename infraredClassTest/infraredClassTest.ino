@@ -302,7 +302,8 @@ void loop() {
                     //  if (localizationObj->closeEnuf(localizationObj->getCurrentAngle(),currentInstruction.pose.angle,5.0,true) == false) {
                   movementsObj->turnToAngle(currentInstruction.pose.angle);
                   distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;
-                  localizationObj->writeMsg2Serial("IR,PathStart");
+                  localizationObj->writeMsg2Serial("IR,PathStart");     // Send trigger to python that we're starting a new path
+                  localizationObj->showPose(infraredObj->getPoseOfCenterSensor());  // Tell it our current pose... this is the start position
                   break;
                 case GOAL_MODE:
                   // The goal_mode is the pose of the sensor, we need to go to pose of center of bot so we remove INFRARED_SENSOR_FORWARD_OF_CENTER
