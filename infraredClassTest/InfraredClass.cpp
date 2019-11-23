@@ -8,6 +8,11 @@ InfraredClass::InfraredClass(LocalizationClass &localizationObject, MovementsCla
   movementsObj    = &movementsObject;
   lineWidthInMM   = 0;
   clearInfraredAttributes(infraredBase);
+
+  unsigned int startTime = millis();
+  sparki.moveRight(90);
+  millisFor90Degrees = millis() - startTime;
+  sparki.moveLeft(90);
 }
 
 // =========================================================================================
@@ -46,19 +51,63 @@ float InfraredClass::adjustAngleToPose(const Pose &targetPose) {
 // We've drifted, try to straighten back out
 void InfraredClass::adjustForDrifting(const bool &driftingLeft) {
   if (driftingLeft) {
-    if (DEBUGINFRARED) localizationObj->writeMsg2Serial("IA,AdjustLeftDrift");
+    //if (DEBUGINFRARED) localizationObj->writeMsg2Serial("IA,AdjustLeftDrift");
+    localizationObj->writeMsg2Serial("IR,AdjustLeftDrift");
     movementsObj->turnLeft(90 - INFRARED_DRIFT_ADJUSTMENT_DEGREES);
     while (movementsObj->moveBackward((getLineWidth()/2.0), ULTRASONIC_MIN_SAFE_DISTANCE, false));
     movementsObj->turnRight(90);
   }
   else {
-    if (DEBUGINFRARED) localizationObj->writeMsg2Serial("IA,AdjustRightDrift");
+    //if (DEBUGINFRARED) localizationObj->writeMsg2Serial("IA,AdjustRightDrift");
+    localizationObj->writeMsg2Serial("IR,AdjustRightDrift");
     movementsObj->turnRight(90 - INFRARED_DRIFT_ADJUSTMENT_DEGREES);
     while (movementsObj->moveBackward((getLineWidth()/2.0), ULTRASONIC_MIN_SAFE_DISTANCE, false));
     movementsObj->turnLeft(90);
   }
 }
 
+// Routine below adjusts the position of the robot on the line, idea is to call this when you
+// start a new path... it'll cause the robot to straighten itself out... the value returned is
+// the next interval that should be checked... if no adjustment was made then the interval
+// returned doubles from it's last value.  Note: the robot should not be moving when this is
+// called; I expect the caller to handle saving state, stopping and restarting
+// Checks the that we're on the line, pass in the lastDistance interval checked
+int InfraredClass::adjustPositionOnLine(const int &lastIntervalDistance) {
+
+  int distance2Check = lastIntervalDistance;
+
+  if (onIntersection(infraredBase.edgeLeft) == false) {
+
+    int leftAngle  = calcAngleFromEdgeToTape(true, infraredBase.edgeLeft, millisFor90Degrees);
+    int rightAngle = calcAngleFromEdgeToTape(false, infraredBase.edgeRight, millisFor90Degrees);
+    int deltaAngle = abs(leftAngle - rightAngle);
+
+    if (DEBUGINFRARED) {        
+      Serial.print("adjustPosOnLine, l<: ");
+      Serial.print(leftAngle);
+      Serial.print(" r<: ");
+      Serial.print(rightAngle);
+      Serial.print(" delta: ");
+      Serial.println(deltaAngle);
+    }
+    
+    if (deltaAngle > INFRARED_DRIFT_ADJUSTMENT_DEGREES) {
+      deltaAngle = (deltaAngle + 1)/2 + 1;  // Move 1 degree more than 1/2 way
+      if (leftAngle > rightAngle)
+        sparki.moveRight(deltaAngle);
+      else
+        sparki.moveLeft(deltaAngle);
+      distance2Check = 1;  // Made adjustment go back to 1
+    }
+    else // No drift increase the distance to check
+      distance2Check += distance2Check;
+  }
+  else // On an instersection go back to 1
+    distance2Check = 1;
+    
+  return distance2Check;
+
+}
 
 // -----------------------------------------------------------------------------------------
 // Assigning structs is just reference assignment, this does the byname... didn't overload assignment
@@ -187,6 +236,51 @@ boolean InfraredClass::lineFlagHelper(const int &currentReading, const int &base
     return false;
   }
 }
+
+// -------------------------------------------------------------------------------------------------
+// Little routine to return boolean if we're on an intersection... both edge readings are on
+boolean InfraredClass::onIntersection(const int &baseReading) {
+  return (lineFlagHelper(sparki.edgeLeft(),baseReading) && lineFlagHelper(sparki.edgeRight(),baseReading));
+}
+
+// -------------------------------------------------------------------------------------------------
+// Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
+// the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
+// of milliseconds needed to turn 90 degrees (I use that to calculate the angle)       
+int InfraredClass::calcAngleFromEdgeToTape(const boolean &leftEdge, const int &baseReading, const int &millisFor90Degrees) {
+  unsigned int startTime;
+  unsigned int endTime;
+  unsigned int theReading;
+  int consecutiveReadingsOn = 0;
+
+  startTime = millis();
+  if (leftEdge) 
+    sparki.moveRight();
+  else
+    sparki.moveLeft();
+    
+  while ((consecutiveReadingsOn < INFRARED_CONSECUTIVE_EDGE_READINGS) && ((millis()-startTime) < millisFor90Degrees)) {
+    if (leftEdge) 
+      theReading = sparki.edgeLeft();
+    else
+      theReading = sparki.edgeRight();
+    
+    if (lineFlagHelper(theReading,baseReading) == true) 
+      consecutiveReadingsOn++;
+    else
+      consecutiveReadingsOn = 0;
+    delay(3);
+  }
+  endTime = millis();
+  sparki.moveStop();
+  unsigned int degrees2Return = (int)( ( (float)(endTime-startTime)/(float)(millisFor90Degrees) ) * 90.0 + 0.5);
+  if (leftEdge) 
+    sparki.moveLeft(degrees2Return);
+  else
+    sparki.moveRight(degrees2Return);
+  return degrees2Return;
+}
+
 
 // This method takes in a char* and counts how many parms there are and what the length of the max
 // parameter is

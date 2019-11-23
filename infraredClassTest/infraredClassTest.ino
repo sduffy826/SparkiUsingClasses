@@ -168,13 +168,36 @@ void loop() {
       bool setLastAttributes = true;
       bool check4Obstacle = false;
       bool isMoving = false;
+      char lastInstructionMode = ' ';
+
+      int distanceInterval2CheckLine = 1;
       
-      localizationObj->writeMsg2Serial("IR,PathStart");
+      //localizationObj->writeMsg2Serial("IR,PathStart");
       float distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;  // Just some long distance for the first time  
       currentInstruction.instruction = EXPLORE_MODE;
       // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,(currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
-        
+
+        if (lastInstructionMode != currentInstruction.instruction) {
+          // Tell python program that we are at start of a new instruction, we do the 'end of instruction' down below 
+          // because when it changes we're always at 'waitForInstruction'
+          localizationObj->writeMsg2Serial("IR,INSSTART,",false);
+          localizationObj->writeChar2Serial(currentInstruction.instruction,false);
+          localizationObj->writeChar2Serial(',',false);
+          localizationObj->showPose(poseOfSensor);
+          lastInstructionMode = currentInstruction.instruction;
+          distanceInterval2CheckLine = INFRARED_INTERVAL_2_CHECK_ON_LINE;
+        }
+
+        if (movementsObj->getDistanceTraveledSoFar() > distanceInterval2CheckLine) {
+          distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
+          movementsObj->stopMoving();                                       // Stop moving
+          distanceInterval2CheckLine = infraredObj->adjustPositionOnLine(distanceInterval2CheckLine);  // Call routine to re-center us on the line
+          delay(100);
+          continue;  // Go back to the start of the loop
+        }
+
+        // Get the attributes at the current pose
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
         isMoving       = movementsObj->isMoving();
         if (isMoving == false) Serial.println("isMoving is false");
@@ -187,13 +210,13 @@ void loop() {
         }
         baseTimer = currTimer;
 
-        // We continue moving till the state changes
+        // We continue moving till the state changes or we're done moving
         if (infraredObj->stateChanged(currAttributes, lastAttributes) || (isMoving==false)) {
           if (DEBUGINFRARED) localizationObj->writeMsg2Serial("State Change");
 
           waitForInstructions = false;  // We want the computer to tell us where to go next
           check4Obstacle      = false;  // We only check this when at an exit
-          
+
           // In this block we check the STATEs
           if (currAttributes.atExit) {  // We found an exit, stop moving and wait for instructions on where to go
             waitForInstructions = true;
@@ -227,13 +250,23 @@ void loop() {
 
           // Get the pose of the sensor
           poseOfSensor = infraredObj->getPoseOfCenterSensor();
-          if (check4Obstacle == true) {  // We're at an exit check to see if there's an obstacle in front of us
+
+          // If we're not moving and running in 'Goal state' then turn on check4Obstacle
+          if (currentInstruction.instruction == GOAL_MODE && isMoving == false) 
+            check4Obstacle = true;
+         
+
+          // If check4Obstacle then stop moving and take reading... reusing variable to identify if there is one 
+          if (check4Obstacle == true) {  
             movementsObj->stopMoving(); 
+            Serial.print("spaceInFrontOfGripper: ");
+            Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
             check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
           }
             
-          // Write out the state change, it's pose and the flag to say we found our goal
-          infraredObj->showInfraredAttributes("StateChg",currAttributes, poseOfSensor, check4Obstacle);
+          // If running in explor mode then send info to python program, we write out the state change, it's pose and the flag to say we found our goal
+          if (currentInstruction.instruction == EXPLORE_MODE)
+            infraredObj->showInfraredAttributes("StateChg",currAttributes, poseOfSensor, check4Obstacle);
 
           // If isMoving is off then we've reached destination, get the next destination
           if (isMoving == false) {
@@ -241,10 +274,22 @@ void loop() {
           }
           
           // If the wait for instructions flag is on then wait :)
-          while (waitForInstructions) {
-            Serial.println("in waitForInstructions");
+          if (waitForInstructions) {            
+            if (DEBUGINFRARED) Serial.println("in waitForInstructions");
             // Stop so you can act on whatever instructions you're given
             movementsObj->stopMoving();          
+
+            // Tell the python program that the prior instructions completed, we'll write out tag to say
+            // INSSTOP,instructionCode,POSEValues...,Obst,ObstacleIndicator (obstacle only really valid on goas)
+            localizationObj->writeMsg2Serial("IR,INSSTOP,",false);
+            localizationObj->writeChar2Serial(currentInstruction.instruction,false);
+            localizationObj->writeChar2Serial(',',false);
+            localizationObj->showPose(poseOfSensor,false);
+            localizationObj->writeMsg2Serial(",Obst,",false);
+            localizationObj->writeMsg2Serial((check4Obstacle ? "true" : "false"));
+
+            // Reset flag so that nex time thru the loop we give our state
+            lastInstructionMode = ' ';
 
             // May want to change so it calls wait for instructions whenever it was in explore mode... otherwise
             // if had two explores in a row the first set of values would be lost
@@ -253,7 +298,7 @@ void loop() {
               // Get more instructions
               // NOTE: we are off the tape here... was going to backup till I see tape but the distance is probably
               //       so small it's not worth it... may revisit after testing
-              localizationObj->writeMsg2Serial("IR,PathEnd");
+       // localizationObj->writeMsg2Serial("IR,PathEnd");
               String instructions = infraredObj->waitForInstructions(queueOfInstructions);
               if (DEBUGINFRARED) {
                 localizationObj->writeMsg2Serial("GotInstructions");
@@ -282,6 +327,7 @@ void loop() {
             if (queueOfInstructions.isEmpty() == true) {
               // Tell python we're done
               localizationObj->writeMsg2Serial("IR,Done");
+              distanceToTravel = 0.0;
               done = true;      
             }
             else {
@@ -302,31 +348,35 @@ void loop() {
                     //  if (localizationObj->closeEnuf(localizationObj->getCurrentAngle(),currentInstruction.pose.angle,5.0,true) == false) {
                   movementsObj->turnToAngle(currentInstruction.pose.angle);
                   distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;
-                  localizationObj->writeMsg2Serial("IR,PathStart");     // Send trigger to python that we're starting a new path
-                  localizationObj->showPose(infraredObj->getPoseOfCenterSensor());  // Tell it our current pose... this is the start position
+                  //localizationObj->writeMsg2Serial("IR,PathStart");     // Send trigger to python that we're starting a new path
+                  //localizationObj->showPose(infraredObj->getPoseOfCenterSensor());  // Tell it our current pose... this is the start position
                   break;
                 case GOAL_MODE:
                   // The goal_mode is the pose of the sensor, we need to go to pose of center of bot so we remove INFRARED_SENSOR_FORWARD_OF_CENTER
                   distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose) - INFRARED_SENSOR_FORWARD_OF_CENTER;
-                  localizationObj->writeMsg2Serial("IR,GoalStart");
+                  //localizationObj->writeMsg2Serial("IR,GoalStart");
                   break;
                 case DONE_MODE:
-                  distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;
+                  distanceToTravel = 0.0;
                   done = true;
                   break;
                 case GOTO_MODE:
                   // Call routine to re-orient ourselves toward the goal, and set the distanceToTravel to be where we want to go
                   distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose);
-                  localizationObj->writeMsg2Serial("IR,GoToStart");
+                  //localizationObj->writeMsg2Serial("IR,GoToStart");
                   break;
                 default:
                   break;
               }
               if ((distanceToTravel < 0.1) && (done == false)) {
-                Serial.println("distanceToTravel < 0.1");
-                delay(1000);
-                waitForInstructions = true;
+                // make the distance 0, we don't need to move that minimal amt, that'll cause loop to come
+                // back in and as for another instruction
+                distanceToTravel = 0.0;
+                //Serial.println("distanceToTravel < 0.1");
+                //delay(1000);
+                //waitForInstructions = true;
               }
+             
             }
           }
 

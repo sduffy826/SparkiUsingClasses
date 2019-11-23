@@ -56,6 +56,13 @@ nodeConnectionList = [] # Nodes and node there connected, with angle and distanc
 nodesToVisit = [] # Nodes to visit and the angle they should visit
 """
 
+# Helper method, pass in the indicator as to whether we saw an obstacle (called after checking a goal)
+# if the flag is on then we'll set the global (goalFound) to be the goal that was being checked (goalBeingChecked)
+def checkAndSetGoalStatus(sawObstacle):
+  if ((gv.goalBeingChecked != ' ') and (sawObstacle == True)):
+    gv.goalFound = gv.goalBeingChecked
+
+
 # --------------------------------------------------------------------------------------------------
 # This handles passing instructions to caller... what we do
 #   for all nodes in nodes2Target (except for the last node) we'll have 'GOTO' instructions
@@ -80,22 +87,29 @@ def getNodeActualPose(theDictItem):
     if tempDict["NODEID"] in gv.potentialGoalNodes:
       theGoalNodeIndex = getPotentialGoalNodeIndex(tempDict["NODEID"])
       if theGoalNodeIndex != -1:  # We found the record, get it's angle
-        print(theGoalNodeIndex)
+        if (gv.DEBUGGING): print("getNodeActualPose, index: {0}".format(theGoalNodeIndex))
         theGoalAngle = gv.potentialGoalDicts[theGoalNodeIndex]["<"]
       else:
         theGoalAngle = tempDict["<"]  # Use the angle in the node itself (not great but this should never happen)
       # Subtract the distance that the sensor is ahead of the body of the robot to get the new x and y position
       tempDict["x"] = tempDict["x"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle))
       tempDict["y"] = tempDict["y"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle))
+  tempDict["x"] = round(tempDict["x"],2)
+  tempDict["y"] = round(tempDict["y"],2)
   return tempDict
 
+# Returns a string that has the directions to go to the 'finalPath', the args are
+#  nodes2Target - This is an array of the nodes that we need to go thru to get to the final path
+#  finalPath - a dictionary item that has the final path and angle that we want to be at
 def getDirectionsForNodes(nodes2Target, finalPath, pathType):
   try:
+    print("in getDirectionsForNodes")
     if len(nodes2Target) > 1:
       rtnString = ""
       for nodeIdx in range(len(nodes2Target)):
         node2GoTo = nodes2Target[nodeIdx]
         workNode = getNodeActualPose(gv.nodeList[node2GoTo])  # The index in nodeList is the node id
+        print("node2GoTo: {0} workNode: {1}".format(node2GoTo,str(workNode)))
         rtnString += gv.C_GOTO + ",x," + str(workNode["x"]) + ",y," + str(workNode["y"]) + ",<,-1,"
       rtnString += pathType
     else:
@@ -135,7 +149,7 @@ def getGraphOfNodeConnectionList():
         graphToReturn[nodeId1][neighbor] = nodeDict["len"]
     if (gv.DEBUGGING): 
       print("getGraphOfNodeConnectionList, graph is:")
-      print("  " + str(graphToReturn.copy()))
+      print("  " + str(graphToReturn))
     return graphToReturn.copy()
   except:
     print("Exception raised - getGraphOfNodeConnectionList")
@@ -155,7 +169,7 @@ def getNodeAtPosition(x, y, createIfNonExistant=True):
         nodeIdToReturn = idx
     if nodeIdToReturn == -1 and createIfNonExistant: # Not found, add it
       nodeIdToReturn = len(gv.nodeList) # Len is 1 greater than index position, so can use it without any modification
-      gv.nodeList.append({"x" : x, "y" : y})
+      gv.nodeList.append({"x" : x, "y" : y, "NODEID" : nodeIdToReturn}) # Added nodeid 11/23 so can use in getDirection...
     return nodeIdToReturn
   except:
     print("Exception raised - getNodeAtPosition")
@@ -192,10 +206,12 @@ def getNextGoal2Visit():
       currentNodeId = ''
     currentGraph  = getGraphOfNodeConnectionList()
     dijkstrasObj  = dijkstrasClass.dijkstraGraphPoints(currentGraph, currentNodeId)
+    gv.goalBeingChecked = ' ' # Clear existing value if set
 
     # If there is a goal node and we didn't visit it then return that
     if ((len(gv.goalDict) > 0) and (gv.goalDict["NODEID"] not in gv.goalsVisited)):
       gv.goalsVisited.append(gv.goalDict["NODEID"])
+      gv.goalBeingChecked = gv.goalDict["NODEID"]
       thePath2Goal = dijkstrasObj.getShortestPathToGoal(gv.goalDict["NODEID"])
       return thePath2Goal, gv.goalDict.copy()
     else:
@@ -211,6 +227,7 @@ def getNextGoal2Visit():
       if minPos >= 0:
         theDictItem = gv.potentialGoalDicts[minPos].copy()
         gv.goalsVisited.append(theDictItem["NODEID"])
+        gv.goalBeingChecked = theDictItem["NODEID"]
         thePath2Goal = dijkstrasObj.getShortestPathToGoal(theDictItem["NODEID"])
         return thePath2Goal, theDictItem
       else:
@@ -356,11 +373,7 @@ def hasPathBeenVisited(dictOfPath2Check):
 def nodeConnectionHelper(lastDict,currDict,point2Self=False):
   try:
     if (gv.DEBUGGING):
-      pass
-    print("nodeConnectionHelper, last:")
-    print(str(lastDict))
-    print(" curr: ")
-    print(str(currDict))
+      print("nodeConnectionHelper, last: {0} curr: {1}".format(str(lastDict),str(currDict)))
     if ((lastDict["NODEID"] != currDict["NODEID"]) or (point2Self == True)):
       # Write routine to add these two nodes as connected into the node connection list
       distanceBetweenPts = utilities.getDistanceBetweenPoints(lastDict["x"],lastDict["y"],
@@ -382,7 +395,7 @@ def nodeConnectionHelper(lastDict,currDict,point2Self=False):
       if getNodeConnectionPositionInList(nodeConnection) == -1:                     
         gv.nodeConnectionList.append(nodeConnection.copy())
   except:
-    print("Exception raised - nodeConnectionHelper")
+    print("Exception - nodeConnectionHelper, lastDict: {0} currDict: {1}".format(str(lastDict),str(currDict)))
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     print(exc_type, fname, exc_tb.tb_lineno)
@@ -516,15 +529,16 @@ def processValueList():
 
     # If error's we'll put the path we were just on back onto the list of paths to visit
     if len(gv.errorList) > 0:   
-      angle2Travel   = utilities.getAngleAfterAdjustment(firstPose["<"],180)    
-      path2Travel    = { "x" : firstPose["x"], "y" : firstPose["y"], "<" : angle2Travel, 
+      angle2Travel = utilities.getAngleAfterAdjustment(firstPose["<"],180)    
+      path2Travel  = { "x" : firstPose["x"], "y" : firstPose["y"], "<" : angle2Travel, 
                         "TYPE" : "CORRECTION", "INFO" : "Had errors on path" }
       gv.paths2Visit.append(path2Travel)
     else:
       # No errors process the data in tempList
-      lastDict = firstPose.copy()  # Use the firstPose we saw as the 'lastDict', this is needed because we need another node
-                                   # as the distance from node being processed... this only comes into play when we're calling
-                                   # this function after we've already started the exploration
+
+      # Use the sensorPoseAtStart for lastDict, this is needed because we need another node as the base to calculate
+      # the distance being processed... mainly comes into play when calling exploration for the second time :)
+      lastDict   = gv.sensorPoseAtStart.copy()  
       tempNodeId = getNodeAtPosition(lastDict["x"],lastDict["y"],False)
       if tempNodeId != -1:
         lastDict["NODEID"] = tempNodeId
@@ -598,8 +612,7 @@ def setPathValueListFromString(stringFromSparki):
     if len(arrayOfValues) > 2:  # Has to has more than two values
       keyWord = arrayOfValues[0]
       if keyWord == "IR" and arrayOfValues[1].upper() == "STATECHG":
-        if gv.DEBUGGING:
-          print("in IR processing")
+        if gv.DEBUGGING: print("in setPathValueListFromString")
         stateObj = getState(arrayOfValues)
         gv.pathValueList.append(stateObj)
       
@@ -610,8 +623,7 @@ def setPathValueListFromString(stringFromSparki):
         gv.pathValueList.append(logPose)
         if gv.DEBUGGING:
           print(logPose)
-      if gv.DEBUGGING:
-        print("Leaving setVars, len of array {0}".format(len(gv.pathValueList)))
+      if gv.DEBUGGING: print("Leaving setPathValueListFromString, len of array {0}".format(len(gv.pathValueList)))
   except:
     print("Exception raised - setPathValueListFromString")
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -624,12 +636,13 @@ def setPathValueListFromString(stringFromSparki):
 # if there aren't any paths then start checking goals
 def tellSparkiWhatToDo():
   try:
-    print("In tell sparki (TS)")
+    print("In tellSparkiWhatToDo (TS)")
     movementType = gv.C_EXPLORE
     nodes2Target, gv.pathBeingVisited = getNextPath2Visit()
     if len(gv.pathBeingVisited) == 0:  # No paths left to visit see if there's a goal
-      movementType = gv.C_GOAL
-      nodes2Target, gv.pathBeingVisited = getNextGoal2Visit()
+      if gv.goalFound != ' ':
+        movementType = gv.C_GOAL
+        nodes2Target, gv.pathBeingVisited = getNextGoal2Visit()
 
     if len(gv.pathBeingVisited) == 0: # No nodes or goals to vist tell em we're done
       return gv.C_DONE + ",x,-1.0,y,-1.0,<,-1"  # Need to pass all the elements that sparki expects, it'll ignore them"
@@ -646,16 +659,21 @@ def tellSparkiWhatToDo():
 # Write all the variables of interest out to the console
 def writeVariables():
   try:
-    print("Start position: {0}".format(str(gv.startDict)))
-    print("Current position: {0}".format(str(gv.finalPose)))
-    print("Closest node position: {0}".format(str(gv.closestNodePose)))
+    print("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    print("gv.startDict (start position): {0}".format(str(gv.startDict)))
+    print("gv.finalPose (current pose): {0}".format(str(gv.finalPose)))
+    print("gv.closestNodePose: {0}".format(str(gv.closestNodePose)))
     print("World xMin: {0} yMin: {1} xMax: {2} yMax: {3}".format(gv.worldXMin,gv.worldYMin,gv.worldXMax,gv.worldYMax))
     
-    print("PathsVisited:")
+    print("gv.currentMode: {0}".format(gv.currentMode))
+    print("gv.sensorPoseAtStart: {0}".format(str(gv.sensorPoseAtStart)))
+    print("gv.sensorPoseAtStop: {0}".format(str(gv.sensorPoseAtStop)))
+
+    print("gv.pathsVisited:")
     for aPathVisited in gv.pathsVisited:
       print("  {0}".format(str(aPathVisited)))
     
-    print("Paths2Visit:")
+    print("gv.paths2Visit:")
     for aPath2Visit in gv.paths2Visit:
       print("  {0}".format(str(aPath2Visit)))
     
@@ -663,35 +681,41 @@ def writeVariables():
     print("  {0}".format(str(gv.pathBeingVisited)))
 
     if len(gv.goalDict) > 0:
-      print("Goal position {0}".format(str(gv.goalDict)))
+      print("gv.goalDict {0}".format(str(gv.goalDict)))
     else:
-      print("Goal not found")
+      print("gv.goalDict is empty")
+
+    if gv.goalBeingChecked != ' ':
+      print("gv.goalBeingChecked: {0}".format(gv.goalBeingChecked))
+    if gv.goalFound != ' ':
+      print("*** gv.goalFound: {0}".format(gv.goalFound))
 
     if len(gv.potentialGoalDicts) > 0:
-      print("Potential goals:")
+      print("gv.potentialGoalDicts")
       for aPotentialGoal in gv.potentialGoalDicts:
         print("  {0}".format(str(aPotentialGoal)))
-        print("  robot pose: {0}".format(getNodeActualPose(aPotentialGoal)))
-
+        print("  Robot pose: {0}".format(getNodeActualPose(aPotentialGoal)))
     else:
-      print("No Potential goals found")
+      print("gv.potentialGoalDicts is empty")
 
     if len(gv.nodeList) > 0:
-      print("Node list below")
+      print("gv.nodeList")
       for nodeId in range(len(gv.nodeList)):
-        print("NodeId: {0} value: {1}".format(nodeId,str(gv.nodeList[nodeId])))
+        print("  NodeId: {0} value: {1}".format(nodeId,str(gv.nodeList[nodeId])))
     
     if len(gv.nodeConnectionList) > 0:
-      print("Node connection list below")
+      print("gv.nodeConnectionList")
       for aNodeConnection in gv.nodeConnectionList:
-        print(str(aNodeConnection))
-      print("Node connection as a graph")
-      print("  " + str(getGraphOfNodeConnectionList()))
+        print("  {0}".format(str(aNodeConnection)))
+      print("  As a graph: {0}".format(str(getGraphOfNodeConnectionList())))
 
-    if len(gv.nodesToVisit) > 0:
-      print("Nodes to visit")
+    if (len(gv.nodesToVisit) > 0):
+      print("gv.NodesToVisit")
       for aNode in gv.nodesToVisit:
-        print(str(aNode))
+        print("  {0}".format(str(aNode)))
+    
+    print("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+
   except:
     print("Exception raised - writeVariables")
     exc_type, exc_obj, exc_tb = sys.exc_info()

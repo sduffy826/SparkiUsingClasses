@@ -334,7 +334,8 @@ I listed the classes alphabetically except for the first one... that has the con
 Debugging/output methods
   - **void showPose(const Pose &pos2Show)** - Helper method to show a pose
   - **void showLocation()** - Routine to show the robots current pose (this calls showPose with it's own pose)
-  - **void writeMsg2Serial(char *theMessage)** - Little helper method to write out a string to the serial line
+  - **void writeMsg2Serial(char *theMessage, boolean const &newLine=true)** - Utility method to write out a string to the serial line; the default arg controls whether newline is sent or not
+  - **void writeChar2Serial(char theChar, boolean const &newLine=true)** - Similar to above but outputs a single char
   - **Pose triangulatePoses(const Pose &firstPose, const Pose &secondPose, const int &angleOfMovement)** - This will triangulate two poses... I would use 'setPointOfIntersection' instead of this, but left it here for future work/reference.
 
 

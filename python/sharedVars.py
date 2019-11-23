@@ -10,7 +10,7 @@ C_GOTO    = "M"  # move to
 INFRARED_SENSOR_FORWARD_OF_CENTER = 4
 
 # These are shared variables across different sparki modules
-DEBUGGING    = True
+DEBUGGING    = False
 TAPEWIDTH    = 4.9 # 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.5
 MAXTAPEWIDTH = TAPEWIDTH + 0.5
@@ -23,7 +23,12 @@ worldXMax = -200.0
 worldYMin = 200.0
 worldYMax = -200.0
 
+currentMode      = ' ' # Mode running (explore, goal, done, goto)
+goalBeingChecked = ' ' # The goal node that's being checked
+goalFound        = ' ' # When goal is found this has it's node id
 
+sensorPoseAtStart = {}  # Pose at the start/end of an instruction sequence
+sensorPoseAtStop  = {}
 
 potentialGoals = []  # List of potential goals
 startPosition  = {}  # Starting position 

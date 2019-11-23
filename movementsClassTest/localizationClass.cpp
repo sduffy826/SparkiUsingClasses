@@ -335,7 +335,7 @@ void LocalizationClass::setPose(const float &x, const float &y, const int &angle
 
 // ---------------------------------------------------------------------------------------------------------
 // For debugging we may want to show values on lcd screen
-void LocalizationClass::showPose(const Pose &pos2Show) {
+void LocalizationClass::showPose(const Pose &pos2Show, const boolean &newLine=true) {
    #if USE_LCD 
     sparki.clearLCD(); // wipe the LCD clear
     sparki.print("x: ");
@@ -351,8 +351,13 @@ void LocalizationClass::showPose(const Pose &pos2Show) {
     Serial.print(",y,");
     Serial.print(pos2Show.yPos);
     Serial.print(",<,");
-    Serial.println(pos2Show.angle);
-    delay(DELAY_FOR_SERIAL_COMM);
+    if (newLine) {
+      Serial.println(pos2Show.angle);
+      delay(DELAY_FOR_SERIAL_COMM);
+    }
+    else {
+      Serial.print(pos2Show.angle);
+    }
   #endif
 }
 
@@ -464,8 +469,22 @@ Pose LocalizationClass::triangulatePoses(const Pose &firstPose, const Pose &seco
 // ========================================================================================================= 
 
 // ---------------------------------------------------------------------------------------------------------
-// Little helper method to write a string to the serial port.... really just for debugging
-void LocalizationClass::writeMsg2Serial(char *msg) {
-  Serial.println(msg);
-  delay(DELAY_FOR_SERIAL_COMM);
+// Little helper method to write a string to the serial port.  It defaults to sending it on it's own line
+// but you can override that by providing last argument
+void LocalizationClass::writeMsg2Serial(char *msg, const boolean &newLine=true) {
+  if (newLine) {
+    Serial.println(msg);
+    delay(DELAY_FOR_SERIAL_COMM);
+  }
+  else {
+    Serial.print(msg);
+  }
+}
+
+// Helper to output a character
+void LocalizationClass::writeChar2Serial(char theChar, const boolean &newLine=true) {
+  char charBuf[2];
+  charBuf[0] = theChar;
+  charBuf[1] = '\0';
+  writeMsg2Serial(charBuf,newLine);
 }

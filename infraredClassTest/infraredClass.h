@@ -13,13 +13,15 @@
 
 #define INFRARED_LINE_THRESHOLD .10  // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 300
-#define INFRARED_LINE_WIDTH 2.3     // Width of tape... have it use method
+#define INFRARED_LINE_WIDTH 4.7     // Width of tape... have it use method
 #define INFRARED_SAMPLE_SIZE 7      // Number of samples to take
 #define INFRARED_DELAY_BETWEEN_SAMPLES 6  // Milliseconds to delay between samples
 #define INFRARED_SENSOR_FORWARD_OF_CENTER 4
 #define INFRARED_DRIFT_ADJUSTMENT_DEGREES 3  // Amount of degrees to adjust when drifting off line
 #define INFRARED_MAX_GOAL_DISTANCE 10        // Max distance to be considered a goal (i.e. if obstacle detected < 10cm it's a goal position
 #define INFRARED_MAX_DISTANCE_TO_TRAVEL 100.0  
+#define INFRARED_CONSECUTIVE_EDGE_READINGS 3 
+#define INFRARED_INTERVAL_2_CHECK_ON_LINE 1    // Interval to check that we're on the line after a position change
 
 #define EXPLORE_MODE 'X'  // eXplore
 #define GOAL_MODE 'G'     // Goal
@@ -64,6 +66,7 @@ class InfraredClass {
            
            InfraredAttributes infraredBase;    // Base reading without anything underneath it
            byte lineWidthInMM;
+           unsigned int millisFor90Degrees;    // Milliseconds needed to turn 90'
 
            // Helper method to identify if infrared lights are on a line
            boolean lineFlagHelper(const int &currentReading, const int &baseReading);
@@ -75,13 +78,22 @@ class InfraredClass {
            // use this... 
            float adjustAngleToPose(const Pose &targetPose);
 
+           // Routine below adjusts the position of the robot on the line, pass in the last interval that was
+           // used... it'll return the new interval that should be checked, NOTE: robot should not be moving
+           // when this is called.
+           int adjustPositionOnLine(const int &lastIntervalDistance);
+
            // Adjust for drifting
            void adjustForDrifting(const bool &driftingLeft);
 
            // Struct assignments
            void assignSourceAttributesToTarget(const InfraredAttributes &source, InfraredAttributes &target);
             
-           
+           // Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
+           // the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
+           // of milliseconds needed to turn 90 degrees (I use that to calculate the angle)
+           int calcAngleFromEdgeToTape(const boolean &leftEdge, const int &baseReading, const int &millisFor90Degrees);
+
            // Clear infrared readings for the argument passed in
            void clearInfraredAttributes(InfraredAttributes &attr2Clear);
 
@@ -99,6 +111,9 @@ class InfraredClass {
 
            // Return the pose of the middle infrared sensor
            Pose getPoseOfCenterSensor();
+
+           // Return boolean if the robot is on an intersection (both edge readings on)
+           boolean onIntersection(const int &baseReading);
 
            // Routine to get parms returned on serial device... may want to move this into a serial class down the road
            void parmCountAndLength(const char* str_data, unsigned int& num_params, unsigned int& theLen);

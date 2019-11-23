@@ -8,9 +8,8 @@ import pickle
 import sharedVars as gv
 import sparkiStats
 
-
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 pickleFile    = "pickFile_withSensors.bin" 
@@ -33,30 +32,51 @@ leaveLoop     = False
 separator = '-' * 80  # Give 80 -'s (cool)
 asterisk  = '*' * 80
 ## NEED TO MAKE CHANGES TO POPULATE THE LISTS/DICTS ABOVE 
-while ((currTime) < runTime) and (leaveLoop == False):
-  try:
-    stringFromSparki = ser.readline().decode('ascii').strip()  
-    #time.sleep(0.5)
-    
-    logFileHandle.write(stringFromSparki + "\n")
-    print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
+
+gv.currentMode = ' ' # Set current mode to unknown
+
+# --------------------------------------------------------------------------------------------------
+# Routine to handle start/stop instructions for goal, explore, goto... (not IR,DONE or IR,INS)
+# it only returns 'True' when the calling program needs to stop; the parms are:
+#  insStart - is boolean (if a start instruction, otherwise this is a stop instruction)
+#  insMode - the mode of the instruction (i.e. C_EXPLORE)
+#  insPose - The pose of the sensor at the time of start/stop
+#  insGoalFlag - a boolean indicator that's only applicable if the insMode is C_GOAL, in that
+#                  case it's a boolean as to whether the goal was found (i.e. it had an obstacle
+#                  in front of it)
+def handleInstruction(isStart,insMode,insPose,insGoalFlag):
+  flgStopMainline = False
+  gv.currentMode  = insMode  # Update the global which has our current mode 
+
+  print("handleInstructions {0} :{1} :({2}) :{3}".format(isStart,insMode,str(insPose),insGoalFlag))
+
+  if isStart:
+    # At start we'll just set the sensorPose and clear the pathValueList and errorList
+    # we do that no matter which instruction is being started... can change if needed 
+    # down the road
+    gv.sensorPoseAtStart = insPose.copy()
+    gv.sensorPoseAtStop.clear() # Clear the stop var
+    gv.pathValueList.clear()  # Clear arrays
+    gv.errorList.clear()
    
-    if stringFromSparki.upper() == "IR,DONE":
-      print(asterist)
-      leaveLoop = True
-    elif stringFromSparki.upper() == 'IR,PATHSTART' or stringFromSparki.upper() == 'IR,GOALSTART' or \
-                                                                stringFromSparki.upper() == 'IR,GOTOSTART': 
-      print(separator)                                                                
-      logFileHandle.write(separator + "\n")  # Mark start of path
-      gv.pathValueList.clear()  # Clear arrays
-      gv.errorList.clear()
-    elif stringFromSparki.upper() == 'IR,PATHEND':
-      print(separator)
+    if insMode == gv.C_GOAL:
+      pass
+    elif insMode == gv.C_EXPLORE:
+      pass
+    elif insMode == gv.C_GOTO:
+      pass
+  else:
+    gv.sensorPoseAtStop = insPose.copy()
+
+    if insMode == gv.C_GOAL:
+      sparkiStats.checkAndSetGoalStatus(insGoalFlag)
+    elif insMode == gv.C_EXPLORE:      
       sparkiStats.processValueList()
-
-      sparkiStats.writeVariables()
-
-      # !!!!!!!! PUT IN LOGIC HERE TO UPDATE MAP
+      sparkiStats.writeVariables()  # For debugging
+      # Should update map
+      
+      # If error then write them to console, if an error encountered on first explore
+      # then terminate program, need restart
       if len(gv.errorList) > 0:
         print(asterisk)
         logFileHandle.write(asterisk + "\n")
@@ -69,8 +89,71 @@ while ((currTime) < runTime) and (leaveLoop == False):
         logFileHandle.write(asterisk + "\n")
         if len(gv.nodeList) == 0:
           print("ERROR ON FIRST PATH, RESTART THE PROGRAM!!!")
-          leaveLoop = True
-      
+          flgStopMainline = True
+    elif insMode == gv.C_GOTO:
+      pass
+    # Since we're done processing the 'stop' let's clear variables
+    gv.currentMode = ' '
+    gv.sensorPoseAtStart.clear()
+    gv.sensorPoseAtStop.clear()
+  return flgStopMainline  
+
+# --------------------------------------------------------------------------------------------------
+# Checks if the instruction is a start or end state
+def isSparkiStartStopInstruction(theInstruction2Check):
+  # Format of start/end state is:
+  # 0    1             2                           3  4  5  6  7  8 9  10   11
+  # IR,INSTART|INSTOP,mode(explore,goal,goto,done),PO,x,n.n,y,m.m,<,l,OBST,TRUE|FALSE
+  # The OBST is only on INSTOP records
+  dumArray = theInstruction2Check.upper().split(',')
+  if (gv.DEBUGGING): print(str(dumArray))
+  flgToRtn = False
+  rtnDict  = {}
+  if len(dumArray) >= 10:
+    if dumArray[0] == "IR":
+      if ((dumArray[1] == "INSSTART") or (dumArray[1] == "INSSTOP")):
+        flgToRtn           = True
+        rtnDict["ISSTART"] = (dumArray[1] == "INSSTART")
+        rtnDict["MODE"]    = dumArray[2] # This is the value that matches C_EXPLORE, C_GOAL....
+        rtnDict["POSE"]    = { "x" : float(dumArray[5]), "y" : float(dumArray[7]), "<" : int(dumArray[9])}
+        if dumArray[1] == "INSSTART":
+          rtnDict["GOAL"] = False 
+        else:
+          rtnDict["GOAL"] = (dumArray[11] == "TRUE")
+  return flgToRtn, rtnDict
+
+
+# ==================================================================================================
+# Mainline program
+# ==================================================================================================
+# Put out separators so it's easy to spot in the terminal
+for sepIdx in range(20): print(" ")
+for sepIdx in range(1,4):
+  print(asterisk)
+
+while ((currTime < runTime) and (leaveLoop == False)):
+  try:
+    stringFromSparki = ser.readline().decode('ascii').strip()  
+    logFileHandle.write(stringFromSparki + "\n")
+    print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
+   
+    # See if this is information from the sparki about start or stop instruction (this
+    # is only for explore, goal, goto), the IR,DONE, IR,INS is also sent
+    isAStartStopInstruction, dictOfInfo = isSparkiStartStopInstruction(stringFromSparki)
+    if (isAStartStopInstruction):  # This handles path, goal, goto etc...
+      print(separator)
+      logFileHandle.write(separator + "\n")  # Mark start of path
+      isStartIns = dictOfInfo["ISSTART"]
+      insMode    = dictOfInfo["MODE"]
+      insPose    = dictOfInfo["POSE"]
+      insGoal    = dictOfInfo["GOAL"]
+
+      # Routine below handles stop/start instructions, it only returns true when there's an 
+      # error on the initial 'explore' path (means a restart)
+      leaveLoop = handleInstruction(isStartIns,insMode,insPose,insGoal)
+    elif stringFromSparki.upper() == "IR,DONE":
+      print(asterisk)
+      leaveLoop = True
     elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
       print(separator)
       instructions2Send = sparkiStats.tellSparkiWhatToDo() + gv.SERIALTERMINATOR
@@ -79,9 +162,11 @@ while ((currTime) < runTime) and (leaveLoop == False):
       time.sleep(0.05)
       ser.flush()
       time.sleep(0.5)
-      # leaveLoop = True ## CHANGE THIS DOWN ROAD
-
-    sparkiStats.setPathValueListFromString(stringFromSparki)
+    
+    # If in 'explore' mode then we'll update the path value list (it's used to determine map), we
+    # don't do that when in goal mode or 'goto' mode
+    if gv.currentMode == gv.C_EXPLORE:
+      sparkiStats.setPathValueListFromString(stringFromSparki)
     if gv.DEBUGGING:
       print("len pathValueList: {0}".format(len(gv.pathValueList)))
 

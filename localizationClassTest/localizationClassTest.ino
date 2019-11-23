@@ -67,7 +67,7 @@ void loop() {
     }
 
     // Show angle between two points
-    if (true == true) {
+    if (true == false) {
       float x1 = -2;
       float y1 = 1;
       //float x2 = 2.73;
@@ -89,7 +89,7 @@ void loop() {
 
     
     // Test triangulation
-    if (true == true) {
+    if (true == false) {
       // Test triangulation
       Pose startPose;
       Pose endPose;
@@ -118,7 +118,36 @@ void loop() {
       localizationObj.showPose(triangulationPose);
       */
     }
-  
+
+    if (true == true) {
+      localizationObj.writeMsg2Serial("On it's own line");
+      
+      String theMsg = "hi mom";
+      char theChar[] = "_";
+      theChar[0] = '!';
+      localizationObj.writeMsg2Serial(theMsg.c_str(),false);
+      localizationObj.writeMsg2Serial(theChar,false);
+      localizationObj.writeMsg2Serial(",rest of it");
+
+      byte theLen = theMsg.length();
+      char charBuf[theLen+2];
+      theMsg.toCharArray(charBuf, theLen);
+      charBuf[theLen-2] = '$';
+      charBuf[theLen-1] = '\0';
+      localizationObj.writeMsg2Serial(charBuf,false);
+      localizationObj.writeMsg2Serial("cool");
+
+      localizationObj.writeMsg2Serial("This is a strin",false);
+      localizationObj.writeChar2Serial('g',false);
+      localizationObj.writeChar2Serial(',',false);
+      localizationObj.showPose(localizationObj.getPose(),false);
+      localizationObj.writeMsg2Serial(",done :)");
+
+      localizationObj.writeMsg2Serial("true:",false);
+      localizationObj.writeMsg2Serial((true ? "true" : "false"));
+      
+      
+    }
   
   
   }
