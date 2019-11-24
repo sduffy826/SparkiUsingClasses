@@ -22,12 +22,37 @@ void setup() {
         delay(DELAY_FOR_SERIAL_COMM);
       }
     }
-   
-    
     sparki.beep();
   #endif
   counter = 0;
 }
+
+char handShakeWithComputer(LocalizationClass &locObj) {
+  LocalizationClass *locPtr = &locObj;
+  locPtr->writeMsg2Serial("IR,HNDSHK");
+  char rtnChar = ' ';
+  char lastChar = ' ';
+  byte iteration = 0;
+  while ((iteration < 20) && (rtnChar == ' ')) {
+    delay(500);
+    if (Serial.available() > 0) {
+      rtnChar = (char)Serial.read();
+      if (lastChar != '$') {
+        lastChar = rtnChar;
+        rtnChar  = ' ';
+      }
+      else {
+        while (Serial.available() > 0) {
+          Serial.read();  // Take other stuff off
+        }
+      }
+    }
+    iteration++;
+  }
+  return rtnChar;      
+}
+
+
 
 void loop() {
   // Just want to test once :)
@@ -102,6 +127,7 @@ void loop() {
       bool done = false;
       unsigned int baseTimer = millis();
       unsigned int currTimer;
+      
       while ( (movementsObj->moveForward(13,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
         currTimer = millis();
@@ -140,12 +166,12 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
-    #define TESTSTATECHANGE2 true
+    #define TESTSTATECHANGE2 false
     #if TESTSTATECHANGE2
       QueueArray<InfraredInstructions> queueOfInstructions;
       InfraredInstructions currentInstruction;
     
-      localizationObj->writeMsg2Serial("IR,FollowTape");
+      localizationObj->writeMsg2Serial("IR,ProgStrt");
       delay(3000);
       sparki.beep();
 
@@ -161,8 +187,10 @@ void loop() {
 
       //int numStateChanges = 0;
       bool done = false;
-      unsigned int baseTimer = millis();
-      unsigned int currTimer;
+      #if DEBUGINFRARED
+        unsigned long baseTimer = millis();
+        unsigned long currTimer;
+      #endif
 
       bool waitForInstructions = false;  
       bool setLastAttributes = true;
@@ -174,10 +202,19 @@ void loop() {
       
       //localizationObj->writeMsg2Serial("IR,PathStart");
       float distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;  // Just some long distance for the first time  
-      currentInstruction.instruction = EXPLORE_MODE;
+      //currentInstruction.instruction = EXPLORE_MODE;
+
+      currentInstruction.instruction = handShakeWithComputer(localizationObject);  // The python program will tell us the mode we're in
+      if (currentInstruction.instruction == ' ') {
+        distanceToTravel = 0.0;
+        done             = true;
+        Serial.print("NoHandShake");
+      }
+      
       // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,(currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
 
+        // See if the current instruction is different from the last one... if so send a message down the serial port
         if (lastInstructionMode != currentInstruction.instruction) {
           // Tell python program that we are at start of a new instruction, we do the 'end of instruction' down below 
           // because when it changes we're always at 'waitForInstruction'
@@ -189,30 +226,30 @@ void loop() {
           distanceInterval2CheckLine = INFRARED_INTERVAL_2_CHECK_ON_LINE;
         }
 
+        // See if we should be checking if on a line
         if (movementsObj->getDistanceTraveledSoFar() > distanceInterval2CheckLine) {
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
           movementsObj->stopMoving();                                       // Stop moving
           distanceInterval2CheckLine = infraredObj->adjustPositionOnLine(distanceInterval2CheckLine);  // Call routine to re-center us on the line
-          delay(100);
           continue;  // Go back to the start of the loop
         }
 
         // Get the attributes at the current pose
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
         isMoving       = movementsObj->isMoving();
-        if (isMoving == false) Serial.println("isMoving is false");
+        if (DEBUGINFRARED && isMoving == false) Serial.println("isMovingIsFalse");
         
-        // This is just for debugging
-        currTimer = millis();
-        if (DEBUGINFRARED) {
-          Serial.print("time to measure:");
+        // This is just for debugging       
+        #if DEBUGINFRARED
+          currTimer = millis();
+          Serial.print("timeToMeas:");
           Serial.println((float)(currTimer-baseTimer)/1000.0);
-        }
-        baseTimer = currTimer;
+          baseTimer = currTimer;
+        #endif
 
         // We continue moving till the state changes or we're done moving
         if (infraredObj->stateChanged(currAttributes, lastAttributes) || (isMoving==false)) {
-          if (DEBUGINFRARED) localizationObj->writeMsg2Serial("State Change");
+          if (DEBUGINFRARED) localizationObj->writeMsg2Serial("StateChange");
 
           waitForInstructions = false;  // We want the computer to tell us where to go next
           check4Obstacle      = false;  // We only check this when at an exit
@@ -240,6 +277,7 @@ void loop() {
           else if (currAttributes.onLine) {  // If on a line nothing to do but keep going forward
             // Don't need to do anything
           }
+          /* ------- We no longer need to do 'driftLogic' the adjustPositionOnLine should handle it, and because of memory limitations I commented this out
           else if (currAttributes.driftLeft || currAttributes.driftRight) {   // If have drifted off the line then adjust
             distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance 
             movementsObj->stopMoving();                                       // Stop moving
@@ -247,20 +285,22 @@ void loop() {
             delay(1000);
             setLastAttributes = false;
           }
-
+          ------- */
+          
           // Get the pose of the sensor
           poseOfSensor = infraredObj->getPoseOfCenterSensor();
 
           // If we're not moving and running in 'Goal state' then turn on check4Obstacle
           if (currentInstruction.instruction == GOAL_MODE && isMoving == false) 
             check4Obstacle = true;
-         
 
           // If check4Obstacle then stop moving and take reading... reusing variable to identify if there is one 
           if (check4Obstacle == true) {  
             movementsObj->stopMoving(); 
-            Serial.print("spaceInFrontOfGripper: ");
-            Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
+            if (DEBUGINFRARED) {
+              Serial.print("spaceInFrontOfGripper: ");
+              Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
+            }
             check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
           }
             
@@ -307,17 +347,17 @@ void loop() {
                 localizationObj->writeMsg2Serial(buffer);
   
                 InfraredInstructions theIns;
-                Serial.print("queueOfInstructions, size: ");
+                Serial.print("qOfIns,size:");
                 Serial.print(queueOfInstructions.count());
                 if (queueOfInstructions.isEmpty() == false) {                  
                   theIns = queueOfInstructions.peek();
-                  Serial.print(" top item, ins: ");
+                  Serial.print(" topItem,ins:");
                   Serial.print(theIns.instruction);
-                  Serial.print(" x: ");
+                  Serial.print(" x:");
                   Serial.print(theIns.pose.xPos);
-                  Serial.print(" y: ");
+                  Serial.print(" y:");
                   Serial.print(theIns.pose.yPos);
-                  Serial.print(" <: ");
+                  Serial.print(" <:");
                   Serial.println(theIns.pose.angle); 
                 }
               }
@@ -394,6 +434,53 @@ void loop() {
       movementsObj->stopMoving();
       
       localizationObj->writeMsg2Serial("IR,Done");
+    #endif
+
+
+    // ----------------------------------------------------------------------------------------
+    // Preliminary navigation work - follow tape
+    // ----------------------------------------------------------------------------------------
+    #define TESTONLINE false
+    #if TESTONLINE   
+
+      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
+      InfraredAttributes baseAttr = infraredObj->getBaseAttributes();
+      float distanceToTravel = 18;
+      int distanceInterval2CheckLine = INFRARED_INTERVAL_2_CHECK_ON_LINE;
+      
+      sparki.beep(); 
+      localizationObj->writeMsg2Serial("Move to tape");
+      delay(5000);
+     
+      // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
+      while (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) {
+        if (movementsObj->getDistanceTraveledSoFar() > distanceInterval2CheckLine) {
+          Serial.print("distTraveledSoFar:");
+          Serial.println(movementsObj->getDistanceTraveledSoFar());
+          
+          distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
+          Serial.print("distanceToTravel:");
+          Serial.println(distanceToTravel);
+          movementsObj->stopMoving();                                       // Stop moving
+          distanceInterval2CheckLine = infraredObj->adjustPositionOnLine(distanceInterval2CheckLine);  // Call routine to re-center us on the line
+          Serial.println(" ");
+          Serial.print("distanceInterval2CheckLine: ");
+          Serial.println(distanceInterval2CheckLine);
+          continue;  // Go back to the start of the loop
+        }
+        delay(50);
+      }
+      
+    #endif
+
+    #define TESTCENTERONLINE true
+    #if TESTCENTERONLINE   
+
+      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
+      InfraredAttributes baseAttr = infraredObj->getBaseAttributes();
+      sparki.beep(); 
+      delay(3000);
+      infraredObj->adjustToLineCenter();
     #endif
 
     // ----------------------------------------------------------------------------------------

@@ -69,7 +69,7 @@ class InfraredClass {
            unsigned int millisFor90Degrees;    // Milliseconds needed to turn 90'
 
            // Helper method to identify if infrared lights are on a line
-           boolean lineFlagHelper(const int &currentReading, const int &baseReading);
+           bool lineFlagHelper(const int &currentReading, const int &baseReading);
            
    public: InfraredClass(LocalizationClass &localizationObject, MovementsClass &movementsObject);
 
@@ -86,13 +86,16 @@ class InfraredClass {
            // Adjust for drifting
            void adjustForDrifting(const bool &driftingLeft);
 
+           // Another method to adjust to center of line :)
+           void adjustToLineCenter();
+
            // Struct assignments
            void assignSourceAttributesToTarget(const InfraredAttributes &source, InfraredAttributes &target);
             
            // Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
            // the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
            // of milliseconds needed to turn 90 degrees (I use that to calculate the angle)
-           int calcAngleFromEdgeToTape(const boolean &leftEdge, const int &baseReading, const int &millisFor90Degrees);
+           int calcAngleFromEdgeToTape(const bool &leftEdge, const int &baseReading, const int &millisFor90Degrees, const bool &isRecall=false);
 
            // Clear infrared readings for the argument passed in
            void clearInfraredAttributes(InfraredAttributes &attr2Clear);
@@ -112,8 +115,11 @@ class InfraredClass {
            // Return the pose of the middle infrared sensor
            Pose getPoseOfCenterSensor();
 
-           // Return boolean if the robot is on an intersection (both edge readings on)
-           boolean onIntersection(const int &baseReading);
+           // Return bool if the robot is on an intersection (both edge readings on)
+           bool onIntersection(const int &baseReading);
+
+           // Return bool if any of the three center infrared lights is on
+           bool onLine(const int &baseReading);
 
            // Routine to get parms returned on serial device... may want to move this into a serial class down the road
            void parmCountAndLength(const char* str_data, unsigned int& num_params, unsigned int& theLen);
@@ -124,12 +130,10 @@ class InfraredClass {
            // Debugging method - show the attributes passed in 
            void showInfraredAttributes(char *msgStr, const InfraredAttributes &attr, const Pose &poseOfCenterSensor, const bool &isGoalPosition);
 
-           // Return boolean if the state changed 
+           // Return bool if the state changed 
            bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr);
 
-           String waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions);
-
-           
+           String waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions);    
           
 };
 #endif

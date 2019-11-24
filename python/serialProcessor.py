@@ -131,6 +131,18 @@ for sepIdx in range(20): print(" ")
 for sepIdx in range(1,4):
   print(asterisk)
 
+while True:
+  print("Waiting for handshake from sparki")
+  ser.write(b' ')  # Poke the port
+  stringFromSparki = ser.readline().decode('ascii').strip()
+  if stringFromSparki == "IR,HNDSHK":
+    ser.write(("$"+gv.C_EXPLORE).encode())
+    break
+  else:
+    print("Ignoring this from sparki: {0}".format(stringFromSparki))
+print("Handshake complete, told sparki that we're in C_EXPLORE MODE  $$$CHANGE THIS$$ DOWN THE ROAD")
+
+# Enter main loop now
 while ((currTime < runTime) and (leaveLoop == False)):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  

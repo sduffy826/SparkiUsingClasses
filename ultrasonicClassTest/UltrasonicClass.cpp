@@ -32,7 +32,7 @@ int UltrasonicClass::getServoAngle() {
   return ultrasonicAngle;
 }
 
-// Get distance at a particular angle
+// Get distance at a particular angle, if sumPings is < 0 or > MAX then return MAX range
 float UltrasonicClass::getDistanceFromServoAtAngle(const int &angleOfServo) {
   positionServo(angleOfServo);
   float sumPings = 0;
@@ -41,8 +41,9 @@ float UltrasonicClass::getDistanceFromServoAtAngle(const int &angleOfServo) {
     sumPings += sparki.ping();
   }
   sumPings = (sumPings / (float)ULTRASONIC_SAMPLE_SIZE );
-  return sumPings > ULTRASONIC_MAX_RANGE ? ULTRASONIC_MAX_RANGE : sumPings;
+  return sumPings < 0 ? ULTRASONIC_MAX_RANGE : (sumPings > ULTRASONIC_MAX_RANGE ? ULTRASONIC_MAX_RANGE : sumPings);
 }
+
 
 // Return the distance from the center of the robot to the obstacle
 float UltrasonicClass::getDistanceFromCenterOfRobotToObstacle(const int &angleOfServo) {

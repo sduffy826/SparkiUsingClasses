@@ -1,6 +1,6 @@
 #include "movementsClass.h"
 
-#define DEBUGWALL true
+#define DEBUGWALL false
 
 // ========================================================================
 //     Constructors

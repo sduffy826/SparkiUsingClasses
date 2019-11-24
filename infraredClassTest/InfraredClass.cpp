@@ -9,7 +9,7 @@ InfraredClass::InfraredClass(LocalizationClass &localizationObject, MovementsCla
   lineWidthInMM   = 0;
   clearInfraredAttributes(infraredBase);
 
-  unsigned int startTime = millis();
+  unsigned long startTime = millis();
   sparki.moveRight(90);
   millisFor90Degrees = millis() - startTime;
   sparki.moveLeft(90);
@@ -28,21 +28,26 @@ InfraredClass::InfraredClass(LocalizationClass &localizationObject, MovementsCla
 float InfraredClass::adjustAngleToPose(const Pose &targetPose) {
   
   Pose currentPose = localizationObj->getPose();
-  Serial.print("in adjustAngleToPose currPose");
-  localizationObj->showPose(currentPose);
-  Serial.print("in adjustAngleToPose targetPose");
-  localizationObj->showPose(targetPose);
+  
+  if (DEBUGINFRARED) {
+    Serial.print("(aa2p)cur");
+     localizationObj->showPose(currentPose);
+     Serial.print("(aa2p)tar");
+     localizationObj->showPose(targetPose);
+  }
+ 
   int targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
   
   // Turn to specific angle and return distance in front of you :)
   float openSpace = movementsObj->getDistanceAtAngle(targetAngle);
   float distance2Move = localizationObj->distanceBetweenPoses(currentPose, targetPose);
 
-  Serial.print("<: ");
-  Serial.print(targetAngle);
-  Serial.print(" distance: ");
-  Serial.println(distance2Move);
-
+  if (DEBUGINFRARED) {
+    Serial.print("<:");
+    Serial.print(targetAngle);
+    Serial.print(" dist: ");
+    Serial.println(distance2Move);
+  }
   
   return distance2Move;
 }
@@ -52,14 +57,14 @@ float InfraredClass::adjustAngleToPose(const Pose &targetPose) {
 void InfraredClass::adjustForDrifting(const bool &driftingLeft) {
   if (driftingLeft) {
     //if (DEBUGINFRARED) localizationObj->writeMsg2Serial("IA,AdjustLeftDrift");
-    localizationObj->writeMsg2Serial("IR,AdjustLeftDrift");
+    localizationObj->writeMsg2Serial("IR,LeftDrift");
     movementsObj->turnLeft(90 - INFRARED_DRIFT_ADJUSTMENT_DEGREES);
     while (movementsObj->moveBackward((getLineWidth()/2.0), ULTRASONIC_MIN_SAFE_DISTANCE, false));
     movementsObj->turnRight(90);
   }
   else {
     //if (DEBUGINFRARED) localizationObj->writeMsg2Serial("IA,AdjustRightDrift");
-    localizationObj->writeMsg2Serial("IR,AdjustRightDrift");
+    localizationObj->writeMsg2Serial("IR,RightDrift");
     movementsObj->turnRight(90 - INFRARED_DRIFT_ADJUSTMENT_DEGREES);
     while (movementsObj->moveBackward((getLineWidth()/2.0), ULTRASONIC_MIN_SAFE_DISTANCE, false));
     movementsObj->turnLeft(90);
@@ -75,39 +80,142 @@ void InfraredClass::adjustForDrifting(const bool &driftingLeft) {
 int InfraredClass::adjustPositionOnLine(const int &lastIntervalDistance) {
 
   int distance2Check = lastIntervalDistance;
+  Serial.println("AdjustPosOnLine (apol)");
 
-  if (onIntersection(infraredBase.edgeLeft) == false) {
-
+  if ((onLine(infraredBase.lineCenter) == true) && (onIntersection(infraredBase.edgeLeft) == false)) {
     int leftAngle  = calcAngleFromEdgeToTape(true, infraredBase.edgeLeft, millisFor90Degrees);
     int rightAngle = calcAngleFromEdgeToTape(false, infraredBase.edgeRight, millisFor90Degrees);
-    int deltaAngle = abs(leftAngle - rightAngle);
+    int deltaAngle = abs(leftAngle - rightAngle);  // Delta between the left and right angles
 
     if (DEBUGINFRARED) {        
-      Serial.print("adjustPosOnLine, l<: ");
+      Serial.print("(apol),l<:");
       Serial.print(leftAngle);
-      Serial.print(" r<: ");
+      Serial.print(",r<:");
       Serial.print(rightAngle);
-      Serial.print(" delta: ");
-      Serial.println(deltaAngle);
+      Serial.print(",delt:");
+      Serial.print(deltaAngle);
+      Serial.print(",adj:");
+      Serial.println((deltaAngle + 1)/2 + 1);
+      Serial.flush();
     }
     
     if (deltaAngle > INFRARED_DRIFT_ADJUSTMENT_DEGREES) {
       deltaAngle = (deltaAngle + 1)/2 + 1;  // Move 1 degree more than 1/2 way
+      // We want the localization object updated so we'll use movementsObj to adjust angle
       if (leftAngle > rightAngle)
-        sparki.moveRight(deltaAngle);
+        movementsObj->turnRight(deltaAngle);
       else
-        sparki.moveLeft(deltaAngle);
+        movementsObj->turnLeft(deltaAngle);
       distance2Check = 1;  // Made adjustment go back to 1
     }
     else // No drift increase the distance to check
       distance2Check += distance2Check;
   }
-  else // On an instersection go back to 1
-    distance2Check = 1;
+  else { 
+    // On an instersection or not on a line
+    distance2Check = getLineWidth() + 2;
+    if (DEBUGINFRARED) {
+      Serial.println("aPOL,NotOnline or am at Intersection");
+    }
+  }
     
   return distance2Check;
-
 }
+
+void InfraredClass::adjustToLineCenter() {
+
+  byte theFlag = 1;  // Backward mode
+  int leftAngle, rightAngle, deltaAngle;
+  
+  // backup 2cm so that we don't mistakingly read intersection
+  while (movementsObj->moveBackward(2.0, ULTRASONIC_MIN_SAFE_DISTANCE, false));
+
+  while (theFlag != 0) {
+    leftAngle  = calcAngleFromEdgeToTape(true, infraredBase.edgeLeft, millisFor90Degrees);
+    rightAngle = calcAngleFromEdgeToTape(false, infraredBase.edgeRight, millisFor90Degrees);
+    deltaAngle = abs(leftAngle - rightAngle);  // Delta between the left and right angles
+
+    // Make adjustment if required or we need to move back to original position
+    if ((deltaAngle > INFRARED_DRIFT_ADJUSTMENT_DEGREES) || (theFlag == 2)) {
+      deltaAngle = (deltaAngle + 1)/2 + 1;  // Move 1 degree more than 1/2 way
+      // We want the localization object updated so we'll use movementsObj to adjust angle
+      if (theFlag == 2) {
+        if (leftAngle > rightAngle)
+          movementsObj->turnRight(deltaAngle);
+        else
+          movementsObj->turnLeft(deltaAngle);
+        while (movementsObj->moveForward(4.0, ULTRASONIC_MIN_SAFE_DISTANCE, false));
+        if (leftAngle > rightAngle)
+          movementsObj->turnLeft(deltaAngle);
+        else
+          movementsObj->turnRight(deltaAngle);
+        theFlag = 1;  // Next mode is reverse
+      }
+      else {
+        if (leftAngle > rightAngle)
+          movementsObj->turnLeft(deltaAngle);
+        else
+          movementsObj->turnRight(deltaAngle);
+        while (movementsObj->moveBackward(4.0, ULTRASONIC_MIN_SAFE_DISTANCE, false));
+        if (leftAngle > rightAngle)
+          movementsObj->turnRight(deltaAngle);
+        else
+          movementsObj->turnLeft(deltaAngle);
+        theFlag = 2;
+      }
+    }
+    else theFlag = 0;  // No adjustment needed and no repositioning required
+  } 
+
+
+  /*
+  int distance2Check = lastIntervalDistance;
+  Serial.println("AdjustPosOnLine (apol)");
+
+  if ((onLine(infraredBase.lineCenter) == true) && (onIntersection(infraredBase.edgeLeft) == false)) {
+    int leftAngle  = calcAngleFromEdgeToTape(true, infraredBase.edgeLeft, millisFor90Degrees);
+    int rightAngle = calcAngleFromEdgeToTape(false, infraredBase.edgeRight, millisFor90Degrees);
+    int deltaAngle = abs(leftAngle - rightAngle);  // Delta between the left and right angles
+
+    if (DEBUGINFRARED) {        
+      Serial.print("(apol),l<:");
+      Serial.print(leftAngle);
+      Serial.print(",r<:");
+      Serial.print(rightAngle);
+      Serial.print(",delt:");
+      Serial.print(deltaAngle);
+      Serial.print(",adj:");
+      Serial.println((deltaAngle + 1)/2 + 1);
+      Serial.flush();
+    }
+    
+    if (deltaAngle > INFRARED_DRIFT_ADJUSTMENT_DEGREES) {
+      deltaAngle = (deltaAngle + 1)/2 + 1;  // Move 1 degree more than 1/2 way
+      // We want the localization object updated so we'll use movementsObj to adjust angle
+      if (leftAngle > rightAngle)
+        movementsObj->turnRight(deltaAngle);
+      else
+        movementsObj->turnLeft(deltaAngle);
+      distance2Check = 1;  // Made adjustment go back to 1
+    }
+    else // No drift increase the distance to check
+      distance2Check += distance2Check;
+  }
+  else { 
+    // On an instersection or not on a line
+    distance2Check = getLineWidth() + 2;
+    if (DEBUGINFRARED) {
+      Serial.println("aPOL,NotOnline or am at Intersection");
+    }
+  }
+    
+  return distance2Check;
+  */
+}
+
+
+
+
 
 // -----------------------------------------------------------------------------------------
 // Assigning structs is just reference assignment, this does the byname... didn't overload assignment
@@ -137,6 +245,89 @@ void InfraredClass::assignSourceAttributesToTarget(const InfraredAttributes &sou
   target.endRightPath   = source.endRightPath;
   target.atEntrance     = source.atEntrance;  
 }
+
+// -------------------------------------------------------------------------------------------------
+// Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
+// the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
+// of milliseconds needed to turn 90 degrees (I use that to calculate the angle)       
+// NOTE: The sparki is back at it's original position after this routine so it doesn't affect 
+//       localization.
+int InfraredClass::calcAngleFromEdgeToTape(const bool &leftEdge, const int &baseReading, const int &millisFor90Degrees, const bool &isRecall=false) {
+  unsigned long startTime;
+  unsigned long endTime;
+  unsigned int theReading;
+  unsigned int millisForAngle;
+  
+  byte consecutiveReadingsOn;
+
+  if (DEBUGINFRARED) Serial.println("calcAngleFromEdgeToTape");
+  
+  // millisForAngle = millisFor90Degrees/2;
+
+  if (leftEdge) 
+    sparki.moveRight();
+  else
+    sparki.moveLeft();
+    
+  startTime = millis();
+
+  // Loop till we have several consecutive on readings, or we've moved 45' (we shouldn't have to go that far)
+  consecutiveReadingsOn = 0;
+  endTime = millis();
+  while ( (consecutiveReadingsOn < INFRARED_CONSECUTIVE_EDGE_READINGS) && ((endTime-startTime) < (millisFor90Degrees/2)) ) {
+    if (leftEdge == true) {
+      theReading = sparki.edgeLeft();      
+      if (DEBUGINFRARED) Serial.print("Lft:,");
+    }
+    else {      
+      theReading = sparki.edgeRight();
+      if (DEBUGINFRARED) Serial.print("Rt:,");
+    }
+
+    if (DEBUGINFRARED) {
+      unsigned long temp = endTime-startTime;
+      Serial.print(",Reading:");
+      Serial.print(theReading);
+      Serial.print(",endTime:");
+      Serial.print(endTime);
+      Serial.print("<:");
+      Serial.println((temp * 90)/millisFor90Degrees);
+      Serial.flush();
+      delay(8);
+    }
+      
+    if (lineFlagHelper(theReading,baseReading) == true) 
+      consecutiveReadingsOn++;
+    else
+      consecutiveReadingsOn = 0;
+    delay(2);
+    endTime = millis();
+  }
+  endTime = millis();
+  sparki.moveStop();
+  delay(5);
+  
+  // Calculate the degrees you turned, then turn back to that value
+  // we'll reuse the 'theReading' variable it's not needed any longer here
+  theReading = ((endTime - startTime) * 90)/millisFor90Degrees;
+  if (theReading > 0) {
+    if (DEBUGINFRARED) {
+      Serial.print("Moving back,angle:");
+      Serial.println(theReading);
+    }
+    if (leftEdge) 
+      sparki.moveLeft(theReading);
+    else
+      sparki.moveRight(theReading);
+    delay(5);
+  }
+  // If we didn't get consecutive readings we'll try one more time
+  if ((consecutiveReadingsOn < INFRARED_CONSECUTIVE_EDGE_READINGS) && (isRecall == false))
+    return calcAngleFromEdgeToTape(leftEdge, baseReading, millisFor90Degrees, true);
+  else
+    return theReading;
+}
+
 
 // Clear infrared readings for the argument passed in
 void InfraredClass::clearInfraredAttributes(InfraredAttributes &attr2Clear) {
@@ -221,64 +412,41 @@ Pose InfraredClass::getPoseOfCenterSensor() {
 }
  
 
-// Helper routine to return a boolean (true) if the 
-boolean InfraredClass::lineFlagHelper(const int &currentReading, const int &baseReading) {
+// Helper routine to return a bool (true) if the 
+bool InfraredClass::lineFlagHelper(const int &currentReading, const int &baseReading) {
   if (baseReading < INFRARED_MIN_READING) {
     return false;
   }
   // We got a reading; if it's more than the the threshold amount, NOTE: did arithmatic this
   // way to ensure there's not an overflow.. it's basically saying the difference is greater than
   // N% of the base
+  /*Serial.print("lFH:");
+  Serial.print(baseReading);
+  Serial.print(",");
+  Serial.print(currentReading);
+  Serial.print(","); */
   if ((baseReading - currentReading) > (baseReading * INFRARED_LINE_THRESHOLD)) {
+    // Serial.println("T"); 
     return true;
   }
   else {
+    // Serial.println("F");
     return false;
   }
 }
 
 // -------------------------------------------------------------------------------------------------
-// Little routine to return boolean if we're on an intersection... both edge readings are on
-boolean InfraredClass::onIntersection(const int &baseReading) {
-  return (lineFlagHelper(sparki.edgeLeft(),baseReading) && lineFlagHelper(sparki.edgeRight(),baseReading));
+// Little routine to return bool if we're on an intersection... both edge readings are on
+bool InfraredClass::onIntersection(const int &baseReading) {
+  return (lineFlagHelper(sparki.edgeLeft(),baseReading) || lineFlagHelper(sparki.edgeRight(),baseReading));
 }
 
-// -------------------------------------------------------------------------------------------------
-// Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
-// the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
-// of milliseconds needed to turn 90 degrees (I use that to calculate the angle)       
-int InfraredClass::calcAngleFromEdgeToTape(const boolean &leftEdge, const int &baseReading, const int &millisFor90Degrees) {
-  unsigned int startTime;
-  unsigned int endTime;
-  unsigned int theReading;
-  int consecutiveReadingsOn = 0;
 
-  startTime = millis();
-  if (leftEdge) 
-    sparki.moveRight();
-  else
-    sparki.moveLeft();
-    
-  while ((consecutiveReadingsOn < INFRARED_CONSECUTIVE_EDGE_READINGS) && ((millis()-startTime) < millisFor90Degrees)) {
-    if (leftEdge) 
-      theReading = sparki.edgeLeft();
-    else
-      theReading = sparki.edgeRight();
-    
-    if (lineFlagHelper(theReading,baseReading) == true) 
-      consecutiveReadingsOn++;
-    else
-      consecutiveReadingsOn = 0;
-    delay(3);
-  }
-  endTime = millis();
-  sparki.moveStop();
-  unsigned int degrees2Return = (int)( ( (float)(endTime-startTime)/(float)(millisFor90Degrees) ) * 90.0 + 0.5);
-  if (leftEdge) 
-    sparki.moveLeft(degrees2Return);
-  else
-    sparki.moveRight(degrees2Return);
-  return degrees2Return;
+// -------------------------------------------------------------------------------------------------
+// Little routine to return bool if we're on an intersection... both edge readings are on
+bool InfraredClass::onLine(const int &baseReading) {
+  return (lineFlagHelper(sparki.lineLeft(),baseReading) || lineFlagHelper(sparki.lineCenter(),baseReading) ||
+                                                               lineFlagHelper(sparki.lineRight(),baseReading));
 }
 
 
@@ -481,7 +649,7 @@ String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queu
     for ( size_t i = 0; i < num_parameters; i++ ) {
        Serial.print("szParams[");
        Serial.print(i);
-       Serial.print("]: ");
+       Serial.print("]:");
        Serial.println(szParams[i]);
     }
   }
@@ -494,28 +662,28 @@ String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queu
       case 0:
         theInstructions.instruction = szParams[i][0];
         if (DEBUGINFRARED) {
-          Serial.print("ins: " );
+          Serial.print("ins:");
           Serial.println(theInstructions.instruction);
         }
         break;
       case 2: // x
         theInstructions.pose.xPos = atof(szParams[i]);
         if (DEBUGINFRARED) {
-          Serial.print("xPos: " );
+          Serial.print("xPos:");
           Serial.println(theInstructions.pose.xPos);
         }
         break;
       case 4: // y
         theInstructions.pose.yPos = atof(szParams[i]);
         if (DEBUGINFRARED) {        
-          Serial.print("yPos: " );
+          Serial.print("yPos:");
           Serial.println(theInstructions.pose.yPos);
         }
         break;
       case 6: // angle
         theInstructions.pose.angle = atoi(szParams[i]);
         if (DEBUGINFRARED) {        
-          Serial.print("angle: " );
+          Serial.print("<:");
           Serial.println(theInstructions.pose.angle);
         }
         queueOfInstructions.push(theInstructions);
