@@ -230,14 +230,14 @@ void loop() {
           startDistanceInMM   = (int)(currDistanceTraveled*10);
         }
 
-        
- Serial.print(currDistanceTraveled);
- Serial.print(",");
- Serial.println(startDistanceInMM);
- 
+ if (DEBUGINFRARED == false) {     
+   Serial.print((int)(currDistanceTraveled*10));
+   Serial.print(",");
+   Serial.println(startDistanceInMM);
+ }
         // See if we should be checking if on a line
-        if ((adjustedLine == false) && (((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
-          Serial.println("*A*");
+        if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
+          Serial.println("*A*"); localizationObj->showPose(poseOfSensor);
           
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
           movementsObj->stopMoving();                                       // Stop moving

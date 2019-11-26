@@ -437,7 +437,7 @@ def processValueErrorHelper(typeRecord, dictItem, errorList2Add2, errMessage):
 # array 'pathValueList', each row in that is a dictionary item
 # State legend: sas-EntranceOfMaze, sol-OnALine, sae-AtExit, slp-StartLeftPath,
 #               srp-StartRightPath, sel-EndLeftPath, ser-EndRightPath, sgl-Goal
-def processValueList():
+def processValueList(logFile):
   try:
     initValues = True
     tempList   = []
@@ -543,6 +543,10 @@ def processValueList():
       if tempNodeId != -1:
         lastDict["NODEID"] = tempNodeId
 
+      logFile.write("--------------- P R O C E S S   V A L U E    L I S T -------------------\n")
+      logFile.write("gv.sensorPoseAtStart: {0} \n".format(str(lastDict)))
+      logFile.write("getNodeActualPose(gv.sensorPoseAtStart): {0}".format(getNodeActualPose(lastDict.copy())))
+
       for dictItem in tempList:
         gv.worldXMin = min(gv.worldXMin, dictItem["x"])
         gv.worldXMax = max(gv.worldXMax, dictItem["x"])
@@ -591,7 +595,7 @@ def processValueList():
         else:
           gv.closestNodePose = dictItem.copy()  # Save the current pose (the last one seen)
 
-        # Save this item as the last one looked at if not sgl
+        # Save this item as the last one looked at if not sgl... sgl has sae also and we'll log that one
         if dictItem["TYPE"] != "sgl":
           lastDict = dictItem.copy()
   except:

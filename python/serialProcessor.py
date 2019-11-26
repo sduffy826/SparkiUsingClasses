@@ -9,7 +9,7 @@ import sharedVars as gv
 import sparkiStats
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 pickleFile    = "pickFile_withSensors.bin" 
@@ -71,7 +71,7 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
     if insMode == gv.C_GOAL:
       sparkiStats.checkAndSetGoalStatus(insGoalFlag)
     elif insMode == gv.C_EXPLORE:      
-      sparkiStats.processValueList()
+      sparkiStats.processValueList(logFileHandle)
       sparkiStats.writeVariables()  # For debugging
       # Should update map
       
