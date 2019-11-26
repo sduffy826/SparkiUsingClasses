@@ -102,9 +102,9 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
 # Checks if the instruction is a start or end state
 def isSparkiStartStopInstruction(theInstruction2Check):
   # Format of start/end state is:
-  # 0    1             2                           3  4  5  6  7  8 9  10   11
-  # IR,INSTART|INSTOP,mode(explore,goal,goto,done),PO,x,n.n,y,m.m,<,l,OBST,TRUE|FALSE
-  # The OBST is only on INSTOP records
+  # 0    1             2                           3  4  5  6  7  8 9  10  11
+  # IR,INSTART|INSTOP,mode(explore,goal,goto,done),PO,x,n.n,y,m.m,<,l,OBST,T|F
+  # The OBST is only on INSTOP records (T=True, F=False)
   dumArray = theInstruction2Check.upper().split(',')
   if (gv.DEBUGGING): print(str(dumArray))
   flgToRtn = False
@@ -119,7 +119,7 @@ def isSparkiStartStopInstruction(theInstruction2Check):
         if dumArray[1] == "INSSTART":
           rtnDict["GOAL"] = False 
         else:
-          rtnDict["GOAL"] = (dumArray[11] == "TRUE")
+          rtnDict["GOAL"] = (dumArray[11] == "T")
   return flgToRtn, rtnDict
 
 

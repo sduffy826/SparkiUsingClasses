@@ -80,7 +80,7 @@ void InfraredClass::adjustForDrifting(const bool &driftingLeft) {
 int InfraredClass::adjustPositionOnLine(const int &lastIntervalDistance) {
 
   int distance2Check = lastIntervalDistance;
-  Serial.println("AdjustPosOnLine (apol)");
+  if (DEBUGINFRARED) Serial.println("AdjustPosOnLine (apol)");
 
   if ((onLine(infraredBase.lineCenter) == true) && (onIntersection(infraredBase.edgeLeft) == false)) {
     int leftAngle  = calcAngleFromEdgeToTape(true, infraredBase.edgeLeft, millisFor90Degrees);
@@ -139,7 +139,7 @@ void InfraredClass::adjustToLineCenter() {
     if ((deltaAngle > INFRARED_DRIFT_ADJUSTMENT_DEGREES) || (theFlag == 2)) {
       deltaAngle = (deltaAngle + 1)/2 + 1;  // Move 1 degree more than 1/2 way
       // We want the localization object updated so we'll use movementsObj to adjust angle
-      if (theFlag == 2) {
+      if (theFlag == 2) {  // Forward
         if (leftAngle > rightAngle)
           movementsObj->turnRight(deltaAngle);
         else
@@ -151,23 +151,23 @@ void InfraredClass::adjustToLineCenter() {
           movementsObj->turnRight(deltaAngle);
         theFlag = 1;  // Next mode is reverse
       }
-      else {
+      else {  // Backward
         if (leftAngle > rightAngle)
           movementsObj->turnLeft(deltaAngle);
         else
           movementsObj->turnRight(deltaAngle);
-        while (movementsObj->moveBackward(4.0, ULTRASONIC_MIN_SAFE_DISTANCE, false));
+        while (movementsObj->moveBackward(5.0, ULTRASONIC_MIN_SAFE_DISTANCE, false));
         if (leftAngle > rightAngle)
           movementsObj->turnRight(deltaAngle);
         else
           movementsObj->turnLeft(deltaAngle);
-        theFlag = 2;
+        while (movementsObj->moveForward(5.0, ULTRASONIC_MIN_SAFE_DISTANCE, false));
+        //theFlag = 2;
       }
     }
     else theFlag = 0;  // No adjustment needed and no repositioning required
   } 
-
-
+  
   /*
   int distance2Check = lastIntervalDistance;
   Serial.println("AdjustPosOnLine (apol)");
@@ -211,11 +211,148 @@ void InfraredClass::adjustToLineCenter() {
     
   return distance2Check;
   */
+} 
+
+void InfraredClass::adjustToTapeHelper(bool &leftEdge, bool &rightEdge) {
+  byte leftOn = 128, rightOn = 128;
+  int theLReading, theRReading;
+  for (byte idx = 0; idx < INFRARED_TAPE_SAMPLE_SIZE; idx++) {
+    theLReading = sparki.edgeLeft();
+    theRReading = sparki.edgeRight();
+    if (DEBUGINFRARED) {
+      Serial.print("aTTH,l,"); Serial.print(theLReading);
+      Serial.print(",r,"); Serial.print(theRReading);
+    }
+    leftOn += (lineFlagHelper(theLReading,infraredBase.edgeLeft) ? 1 : -1);  // add 1 if edge indicator is on
+    rightOn += (lineFlagHelper(theRReading,infraredBase.edgeRight) ? 1 : -1); 
+    if (DEBUGINFRARED) {
+      Serial.print(",leftOn:"); Serial.print(leftOn);
+      Serial.print(",rightOn:"); Serial.println(rightOn);
+    }
+    delay(3);
+  }
+  leftEdge = (leftOn > 128 ? true : (leftOn < 128 ? false : leftEdge));  // If > 128 it's on, if less it's off, if equal return existing value
+  rightEdge = (rightOn > 128 ? true : (rightOn < 128 ? false : rightEdge));  // If > 128 it's on, if less it's off, if equal return existing value
+  
+  if ((DEBUGINFRARED) && (leftEdge || rightEdge)) {
+    Serial.println(" ");
+    Serial.print("leftEdge:");
+    Serial.print((leftEdge ? "T" : "F"));
+    Serial.print(" rightEdge:");
+    Serial.println((rightEdge ? "T" :"F"));    
+  }
 }
 
+bool InfraredClass::adjustToTape() {
+  // Logic
+  //   turn 90'
+  //   backup and log difference between edge sensor time they went on (this is edge of tape)
+  //   keep backing up till sensors go off... log delta... the time between them should be same, if not repeat
+  //   u know the tape width and how long you've travelled... move forward to middle of tape and turn
+  
+  unsigned long edgeLeftTime = 0, edgeRightTime = 0;
+  float distanceTraveled1 = 0.0, distanceTraveled2 = 0.0, totalDistance = 0.0;
+  bool leftIndicator, rightIndicator;
+  int startDelta = 0, endDelta = 0;
 
+  // Move backward a little, turn right and move forward a little just to ensure we're not on the tape
+  while (movementsObj->moveBackward(1.0,ULTRASONIC_MIN_SAFE_DISTANCE, false)); 
+  movementsObj->turnRight(90);
+  while (movementsObj->moveForward(1.0,ULTRASONIC_MIN_SAFE_DISTANCE, false)); 
+  
+  // Stay in loop for up to twice the tape width or we found the distance traveled (used 1.0 as it should never be less than that but coulda used 0.1 too)
+  while (movementsObj->moveBackward((2*INFRARED_LINE_WIDTH),ULTRASONIC_MIN_SAFE_DISTANCE, false) && (distanceTraveled2 < 0.01)) {
+    adjustToTapeHelper(leftIndicator, rightIndicator);
+    if (DEBUGINFRARED) {
+      Serial.print("leftIndicator:"); Serial.print(leftIndicator);
+      Serial.print(" rightIndicator:"); Serial.println(rightIndicator);
+    }
+    if (startDelta == 0) { // Trying to find start of tape
+      if (leftIndicator == true && edgeLeftTime == 0) edgeLeftTime = millis();
+      if (rightIndicator == true && edgeRightTime == 0) edgeRightTime = millis();
+      if (edgeLeftTime > 0 && edgeRightTime > 0) {
+        distanceTraveled1 = movementsObj->getDistanceTraveledSoFar();
+        totalDistance += distanceTraveled1;
+        movementsObj->stopMoving();
+        startDelta = ((edgeLeftTime - edgeRightTime) != 0) ? (edgeLeftTime - edgeRightTime) : 1; // want startDelta to not be 0        
+        edgeLeftTime = edgeRightTime = 0;
+        sparki.beep(); // Tell em we found the start of the tape
+        if (DEBUGINFRARED) {        
+          Serial.print("startDelta != 0, startDelta:"); Serial.print(startDelta);
+          Serial.print(" distanceTraveled1:"); Serial.println(distanceTraveled1);
+        }
+      }
+    }
+    else {      
+      if (leftIndicator == false && edgeLeftTime == 0) edgeLeftTime = millis();
+      if (rightIndicator == false && edgeRightTime == 0) edgeRightTime = millis();
+      if (edgeLeftTime > 0 && edgeRightTime > 0) {
+        distanceTraveled2 = movementsObj->getDistanceTraveledSoFar() + 0.01;
+        totalDistance += distanceTraveled2;
+        movementsObj->stopMoving();
+        sparki.beep();  // Tell em we found the end of the tape
+        endDelta = ((edgeLeftTime - edgeRightTime) != 0) ? (edgeLeftTime - edgeRightTime) : 1; // want startDelta to not be 0        
+      }
+    }
+    // delay(2);  // adjustTapeHelper has a delay in it, don't think we need this one
+  }
+  totalDistance += movementsObj->getDistanceTraveledSoFar(); // If not moving this method returns 0 so no worry about overcounting
+  
+  movementsObj->stopMoving();
+  if (DEBUGINFRARED) {
+    Serial.print("out, endDelta:"); Serial.print(endDelta);
+    Serial.print(" totalDistance:"); Serial.print(totalDistance);
+    Serial.print(" distanceTraveled2:");  Serial.println(distanceTraveled2);
+  }
+  // If found tape 
+  if (distanceTraveled2 > 0.0) {
+    distanceTraveled1 = 0.3;  // The sensor is .3 cm from the tape when it stops so we need to add that back on
+    // If 3' or more adjustment required then make it
+    if (abs(startDelta) >= (millisFor90Degrees / 30)) {
+      // If the delta amounts are close to eachother (within 2' time) (this is done to avoid when we have a
+      // wide variation in deltas... which would signify a noisy reading)
+      if (abs(startDelta - endDelta) <= (millisFor90Degrees / 45)) {
+        endDelta = (startDelta + endDelta) / 4;
+        if (endDelta > 0) {
+          // If delta is positive it means the left sensor was seen after the right one, turn left
+          sparki.moveLeft();
+          edgeLeftTime = millis();
+          while ((millis()-edgeLeftTime) < endDelta);
+          sparki.moveStop();
+        }
+        else
+          if (endDelta < 0) {
+            sparki.moveRight();
+            edgeLeftTime = millis();
+            while ((millis()-edgeLeftTime) < (-endDelta));
+            sparki.moveStop();        
+          }
 
+       // We add 1/2 the endDelta, the distanceTraveled2 is based on the second sensor
+       // triggering so we'll assume after repositioning it's 1/2 delta time back further
+       // than what the sensor says
+       distanceTraveled1 += (float)(VELOCITY_CM_P_SEC * abs(endDelta)/2) / 1000.0;
+          
+      } // end checking that delta's are within 1' 
+      else 
+        if (DEBUGINFRARED) Serial.print("Deltas not close (within 2'))");
+    }
 
+    // Now the sensor should be on the tape... move forward so robot center is over the tape... it's
+    // distance from sensor to center of bot + 1/2 distanceTraveled2, we'll assign this to distanceTraveled1 :)
+    distanceTraveled1 += INFRARED_SENSOR_FORWARD_OF_CENTER + (.5 * distanceTraveled2);
+    while (movementsObj->moveForward(distanceTraveled1,ULTRASONIC_MIN_SAFE_DISTANCE, false));  
+    leftIndicator = true; // We'll reuse this for return variable, this signifies that we adjusted
+  }
+  else {    
+    // didn't find valid values so move back to start
+    while (movementsObj->moveForward(totalDistance,ULTRASONIC_MIN_SAFE_DISTANCE, false));  
+    leftIndicator = false;
+  }
+  movementsObj->turnLeft(90);  // Turn back
+  while (movementsObj->moveForward(1.0,ULTRASONIC_MIN_SAFE_DISTANCE, false)); // Move back to original position
+  return leftIndicator;  // Not the left indicator, it's reused to signify if we adjusted angle :)
+}
 
 // -----------------------------------------------------------------------------------------
 // Assigning structs is just reference assignment, this does the byname... didn't overload assignment
@@ -420,17 +557,19 @@ bool InfraredClass::lineFlagHelper(const int &currentReading, const int &baseRea
   // We got a reading; if it's more than the the threshold amount, NOTE: did arithmatic this
   // way to ensure there's not an overflow.. it's basically saying the difference is greater than
   // N% of the base
-  /*Serial.print("lFH:");
-  Serial.print(baseReading);
-  Serial.print(",");
-  Serial.print(currentReading);
-  Serial.print(","); */
+  if (DEBUGINFRARED) {
+    Serial.print("lFH:");
+    Serial.print(baseReading);
+    Serial.print(",");
+    Serial.print(currentReading);
+    Serial.print(",");
+  }
   if ((baseReading - currentReading) > (baseReading * INFRARED_LINE_THRESHOLD)) {
-    // Serial.println("T"); 
+    if (DEBUGINFRARED) Serial.println("T"); 
     return true;
   }
   else {
-    // Serial.println("F");
+    if (DEBUGINFRARED)  Serial.println("F");
     return false;
   }
 }

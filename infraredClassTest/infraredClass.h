@@ -15,6 +15,7 @@
 #define INFRARED_MIN_READING 300
 #define INFRARED_LINE_WIDTH 4.7     // Width of tape... have it use method
 #define INFRARED_SAMPLE_SIZE 7      // Number of samples to take
+#define INFRARED_TAPE_SAMPLE_SIZE 3  // Number of samples to take when adjusting width base on tape
 #define INFRARED_DELAY_BETWEEN_SAMPLES 6  // Milliseconds to delay between samples
 #define INFRARED_SENSOR_FORWARD_OF_CENTER 4
 #define INFRARED_DRIFT_ADJUSTMENT_DEGREES 3  // Amount of degrees to adjust when drifting off line
@@ -22,6 +23,8 @@
 #define INFRARED_MAX_DISTANCE_TO_TRAVEL 100.0  
 #define INFRARED_CONSECUTIVE_EDGE_READINGS 3 
 #define INFRARED_INTERVAL_2_CHECK_ON_LINE 1    // Interval to check that we're on the line after a position change
+#define INFRARED_SPACE_BEFORE_LINE_CHECK 12.0  // Need to move this amount before we'll try to adjust for line (1/2 width + tape width) about
+
 
 #define EXPLORE_MODE 'X'  // eXplore
 #define GOAL_MODE 'G'     // Goal
@@ -88,6 +91,9 @@ class InfraredClass {
 
            // Another method to adjust to center of line :)
            void adjustToLineCenter();
+
+           void InfraredClass::adjustToTapeHelper(bool &leftEdge, bool &rightEdge);
+           bool adjustToTape();
 
            // Struct assignments
            void assignSourceAttributesToTarget(const InfraredAttributes &source, InfraredAttributes &target);

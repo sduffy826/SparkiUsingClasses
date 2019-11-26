@@ -152,7 +152,7 @@ float MovementsClass::getDistanceAtAngle(const int &angle) {
 
 // --------------------------------------------------------------------------------------
 // Return distance travelled for duration
-float MovementsClass::getDistanceTraveledForTime(const int &milliseconds) {
+float MovementsClass::getDistanceTraveledForTime(const unsigned long &milliseconds) {
   return ((milliseconds * VELOCITY_CM_P_SEC) / 1000.0);
 }
 
@@ -167,8 +167,8 @@ float MovementsClass::getDistanceTraveledSoFar() {
 
 // --------------------------------------------------------------------------------------
 // Routine to return elapsed time... older version below in case you need it
-unsigned int MovementsClass::getElapsedSinceStartedMoving() {
-  return millis() - movementState.startTime;
+unsigned long MovementsClass::getElapsedSinceStartedMoving() {
+  return (millis() - movementState.startTime);
 }
 
 // --------------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ void MovementsClass::moveToPose(const Pose &targetPose) {
 // update the pos based on last time we localized
 void MovementsClass::setLocalizationPosition(const boolean &inReverse) {
   if (movementState.amMoving == true) {
-    unsigned int deltaTime = millis() - movementState.timeSinceLocalized;
+    unsigned long deltaTime = millis() - movementState.timeSinceLocalized;
     // Set your position, the angle delta is 0 since we're going in a straight line
     if (inReverse) {
       localizationObj->setNewPosition(-getDistanceTraveledForTime(deltaTime), 0.0);
@@ -368,6 +368,15 @@ void MovementsClass::turnRight(const int &degrees) {
   localizationObj->setCurrentAngle(localizationObj->calculateRealAngleWithAdjustment(degrees));
 }
 
+// --------------------------------------------------------------------------------------
+// Helper routine to call one of the methods above :), it won't do anything if angle is 0
+void MovementsClass::turn(const int &degrees) {
+  if (degrees < 0) 
+    turnLeft(-degrees);
+  else
+    if (degrees > 0)
+      turnRight(degrees);
+}
 // --------------------------------------------------------------------------------------
 void MovementsClass::turnToAngle(const int &theAngle) {
   // We call getAngle on arg to make sure it's a positive angle we checking

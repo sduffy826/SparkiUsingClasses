@@ -8,9 +8,9 @@
 #include "determineWorldClass.h"
 
 struct MovementAttributes {
-  unsigned int startTime;
-  unsigned int elapsedStateChange;  // Log what the elapsed time was when the state changed
-  unsigned int timeSinceLocalized;  // Has the time last localized... use this to localize while moving
+  unsigned long startTime;
+  unsigned long elapsedStateChange;  // Log what the elapsed time was when the state changed
+  unsigned long timeSinceLocalized;  // Has the time last localized... use this to localize while moving
   unsigned int amMoving : 1;
   unsigned int wallOpening : 1;
   unsigned int rightWall : 1;
@@ -41,13 +41,13 @@ class MovementsClass {
           float getDistanceAtAngle(const int &angle);
           
           // Get the distance you'd travel if moving for this number of milliseconds
-          float getDistanceTraveledForTime(const int &milliseconds);
+          float getDistanceTraveledForTime(const unsigned long &milliseconds);
 
           // Get the distance traveled since you started started moving... this returns 0 if you aren't currently moving
           float getDistanceTraveledSoFar();
          
           // Get the elapsed time since you started moving
-          unsigned int getElapsedSinceStartedMoving();
+          unsigned long getElapsedSinceStartedMoving();
 
           // Return the number of milliseconds it'll take to cover a given distance
           unsigned int getMillisToGetThere(const float &distanceInCM);
@@ -74,6 +74,7 @@ class MovementsClass {
 
           void turnLeft(const int &degrees);
           void turnRight(const int &degrees);
+          void turn(const int &degrees);
           
           void turnToAngle(const int &theAngle);
           void turnToZero();

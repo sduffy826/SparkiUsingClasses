@@ -8,7 +8,7 @@ void setup() {
     sparki.clearLCD();
     delay(500);
   #else
-    Serial.begin(SERIAL_SPEED);
+    Serial.begin(57600); //SERIAL_SPEED);
     sparki.beep();
     delay(5);
     sparki.beep();
@@ -166,12 +166,12 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
-    #define TESTSTATECHANGE2 false
+    #define TESTSTATECHANGE2 true
     #if TESTSTATECHANGE2
       QueueArray<InfraredInstructions> queueOfInstructions;
       InfraredInstructions currentInstruction;
     
-      localizationObj->writeMsg2Serial("IR,ProgStrt");
+      //localizationObj->writeMsg2Serial("IR,ProgStrt");
       delay(3000);
       sparki.beep();
 
@@ -180,10 +180,10 @@ void loop() {
       InfraredAttributes currAttributes, lastAttributes;
       
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
-      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes(),poseOfSensor,false);
+      if (DEBUGINFRARED) infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes(),poseOfSensor,false);
       
       infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
-      infraredObj->showInfraredAttributes("last",lastAttributes,poseOfSensor,false);
+      if (DEBUGINFRARED) infraredObj->showInfraredAttributes("last",lastAttributes,poseOfSensor,false);
 
       //int numStateChanges = 0;
       bool done = false;
@@ -196,9 +196,11 @@ void loop() {
       bool setLastAttributes = true;
       bool check4Obstacle = false;
       bool isMoving = false;
+      bool adjustedLine = false;
       char lastInstructionMode = ' ';
 
-      int distanceInterval2CheckLine = 1;
+      unsigned int startDistanceInMM = 0;
+      float currDistanceTraveled;
       
       //localizationObj->writeMsg2Serial("IR,PathStart");
       float distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;  // Just some long distance for the first time  
@@ -208,12 +210,13 @@ void loop() {
       if (currentInstruction.instruction == ' ') {
         distanceToTravel = 0.0;
         done             = true;
-        Serial.print("NoHandShake");
+        if (DEBUGINFRARED) Serial.print("!HndShk");
       }
       
       // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,(currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
-
+        currDistanceTraveled = movementsObj->getDistanceTraveledSoFar();
+        
         // See if the current instruction is different from the last one... if so send a message down the serial port
         if (lastInstructionMode != currentInstruction.instruction) {
           // Tell python program that we are at start of a new instruction, we do the 'end of instruction' down below 
@@ -223,21 +226,29 @@ void loop() {
           localizationObj->writeChar2Serial(',',false);
           localizationObj->showPose(poseOfSensor);
           lastInstructionMode = currentInstruction.instruction;
-          distanceInterval2CheckLine = INFRARED_INTERVAL_2_CHECK_ON_LINE;
+          adjustedLine        = false;
+          startDistanceInMM   = (int)(currDistanceTraveled*10);
         }
 
+        
+ Serial.print(currDistanceTraveled);
+ Serial.print(",");
+ Serial.println(startDistanceInMM);
+ 
         // See if we should be checking if on a line
-        if (movementsObj->getDistanceTraveledSoFar() > distanceInterval2CheckLine) {
+        if ((adjustedLine == false) && (((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
+          Serial.println("*A*");
+          
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
           movementsObj->stopMoving();                                       // Stop moving
-          distanceInterval2CheckLine = infraredObj->adjustPositionOnLine(distanceInterval2CheckLine);  // Call routine to re-center us on the line
-          continue;  // Go back to the start of the loop
+          adjustedLine = infraredObj->adjustToTape();
+          continue;  // Go back to the start of the loop, this will make us start moving again
         }
 
         // Get the attributes at the current pose
         currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
         isMoving       = movementsObj->isMoving();
-        if (DEBUGINFRARED && isMoving == false) Serial.println("isMovingIsFalse");
+        if (DEBUGINFRARED && (isMoving == false)) Serial.println("isMovingIsFalse");
         
         // This is just for debugging       
         #if DEBUGINFRARED
@@ -257,14 +268,16 @@ void loop() {
           // In this block we check the STATEs
           if (currAttributes.atExit) {  // We found an exit, stop moving and wait for instructions on where to go
             waitForInstructions = true;
-            check4Obstacle = true;
+            check4Obstacle      = true;
           }
           else if (currAttributes.startLeftPath || currAttributes.startRightPath) {  // Start of path that's to left or right
+            startDistanceInMM = (int)(currDistanceTraveled*10);
             // *********** CHANGE SO THAT IT ENSURES IT'S AT INTERSECTION AND NOT DRIFTED INTO LINE.... THINKING
             // YOU COULD BACKUP A LITTLE, TURN LEFT TILL U SEE LINE KEEP TRACK OF ANGLE, DO THE SAME THING TURNING RIGHT
             // IF THE ANGLES ARE DIFFERENT THEN YOU KNOW YOU'RE NOT ON CENTER...
           }
           else if (currAttributes.endLeftPath || currAttributes.endRightPath ) { 
+            startDistanceInMM = (int)(currDistanceTraveled*10);
             if (currAttributes.onLine == false) {
               // We're past the end of the intersection and there's no path in front of us
               waitForInstructions = true;
@@ -273,6 +286,7 @@ void loop() {
           }
           else if (currAttributes.atEntrance ) {   // At entrance of the maze, nothing to do but proceed, computer will log this
             // Don't need to do anything
+            startDistanceInMM = (int)(currDistanceTraveled*10);
           }
           else if (currAttributes.onLine) {  // If on a line nothing to do but keep going forward
             // Don't need to do anything
@@ -326,7 +340,7 @@ void loop() {
             localizationObj->writeChar2Serial(',',false);
             localizationObj->showPose(poseOfSensor,false);
             localizationObj->writeMsg2Serial(",Obst,",false);
-            localizationObj->writeMsg2Serial((check4Obstacle ? "true" : "false"));
+            localizationObj->writeMsg2Serial((check4Obstacle ? "t" : "f"));
 
             // Reset flag so that nex time thru the loop we give our state
             lastInstructionMode = ' ';
@@ -338,7 +352,7 @@ void loop() {
               // Get more instructions
               // NOTE: we are off the tape here... was going to backup till I see tape but the distance is probably
               //       so small it's not worth it... may revisit after testing
-       // localizationObj->writeMsg2Serial("IR,PathEnd");
+              // old cmd had   // localizationObj->writeMsg2Serial("IR,PathEnd");
               String instructions = infraredObj->waitForInstructions(queueOfInstructions);
               if (DEBUGINFRARED) {
                 localizationObj->writeMsg2Serial("GotInstructions");
@@ -351,14 +365,10 @@ void loop() {
                 Serial.print(queueOfInstructions.count());
                 if (queueOfInstructions.isEmpty() == false) {                  
                   theIns = queueOfInstructions.peek();
-                  Serial.print(" topItem,ins:");
-                  Serial.print(theIns.instruction);
-                  Serial.print(" x:");
-                  Serial.print(theIns.pose.xPos);
-                  Serial.print(" y:");
-                  Serial.print(theIns.pose.yPos);
-                  Serial.print(" <:");
-                  Serial.println(theIns.pose.angle); 
+                  Serial.print(" topItem,ins:"); Serial.print(theIns.instruction);
+                  Serial.print(" x:"); Serial.print(theIns.pose.xPos);
+                  Serial.print(" y:"); Serial.print(theIns.pose.yPos);
+                  Serial.print(" <:"); Serial.println(theIns.pose.angle); 
                 }
               }
             }  
@@ -374,14 +384,10 @@ void loop() {
               // We have instructions in the stack, do the top item
               currentInstruction = queueOfInstructions.pop();
               if (DEBUGINFRARED) {
-                Serial.print("Ins:");
-                Serial.print(currentInstruction.instruction);
-                Serial.print(" x:");
-                Serial.print(currentInstruction.pose.xPos);
-                Serial.print(" y:");
-                Serial.print(currentInstruction.pose.yPos);
-                Serial.print(" <:");
-                Serial.println(currentInstruction.pose.angle);
+                Serial.print("Ins:"); Serial.print(currentInstruction.instruction);
+                Serial.print(" x:"); Serial.print(currentInstruction.pose.xPos);
+                Serial.print(" y:"); Serial.print(currentInstruction.pose.yPos);
+                Serial.print(" <:"); Serial.println(currentInstruction.pose.angle);
               }
               switch (currentInstruction.instruction) {
                 case EXPLORE_MODE:
@@ -416,7 +422,6 @@ void loop() {
                 //delay(1000);
                 //waitForInstructions = true;
               }
-             
             }
           }
 
@@ -473,7 +478,7 @@ void loop() {
       
     #endif
 
-    #define TESTCENTERONLINE true
+    #define TESTCENTERONLINE false
     #if TESTCENTERONLINE   
 
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
@@ -481,7 +486,42 @@ void loop() {
       sparki.beep(); 
       delay(3000);
       infraredObj->adjustToLineCenter();
+      localizationObj->writeMsg2Serial("Done");
+      Serial.println("Done");
+      Serial.flush();
     #endif
+
+    #define TESTDISTANCE false
+    #if TESTDISTANCE
+      unsigned int start = millis();
+      float theDist = 0.0;
+      while(movementsObj->moveForward(200.0,5,false)) {
+        if ((millis() - start) >= 10000) {
+          Serial.println(millis() - start);
+          theDist = movementsObj->getDistanceTraveledSoFar();
+          Serial.println(theDist);
+          movementsObj->stopMoving();
+          break;
+        }
+      }
+
+      while(movementsObj->moveBackward(theDist,100,false));
+      
+    #endif
+
+
+    #define TESTADJUST2TAPE false
+    #if TESTADJUST2TAPE   
+
+      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
+      InfraredAttributes baseAttr = infraredObj->getBaseAttributes();
+      sparki.beep(); 
+      delay(3000);
+      infraredObj->adjustToTape();
+      Serial.println("Done");
+      Serial.flush();
+    #endif
+
 
     // ----------------------------------------------------------------------------------------
     // Test the logic for when we drift off a line... this should put sparki back in the center
