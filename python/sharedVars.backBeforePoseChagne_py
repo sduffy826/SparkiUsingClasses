@@ -12,13 +12,10 @@ INFRARED_SENSOR_FORWARD_OF_CENTER = 4
 # These are shared variables across different sparki modules
 DEBUGGING    = False
 TAPEWIDTH    = 4.7 # 2.5 # 4.7
-MINTAPEWIDTH = TAPEWIDTH - 0.7
-MAXTAPEWIDTH = TAPEWIDTH + 1.1
-
+MINTAPEWIDTH = TAPEWIDTH - 0.6
+MAXTAPEWIDTH = TAPEWIDTH + 0.6
 
 SERIALTERMINATOR = "|"
-
-logFile = None
 
 # Init to values that you know are outside range of min/maxe's you'll see
 worldXMin = 200.0
@@ -29,13 +26,6 @@ worldYMax = -200.0
 currentMode      = ' ' # Mode running (explore, goal, done, goto)
 goalBeingChecked = ' ' # The goal node that's being checked
 goalFound        = ' ' # When goal is found this has it's node id
-
-lastRobotDictItem = {}
-# Start after rewor
-robotPoseFromInstruction = {}
-robotPoseAtStart = {}
-robotPoseAtStop  = {}
-
 
 sensorPoseAtStart = {}  # Pose at the start/end of an instruction sequence
 sensorPoseAtStop  = {}
@@ -52,9 +42,11 @@ nodeList           = [] # List of nodes
 nodeConnectionList = [] # Nodes and node there connected, with angle and distance between them
 nodesToVisit       = [] # Nodes to visit and the angle they should visit
 
-startOfMaze        = {} # The starting position, also has NODEID which is the node id
+startDict          = {} # The starting position, also has NODEID which is the node id
 goalDict           = {} # The current goal, it has NODEID too
-
+closestNodePose    = {} # The closestNodePose to the current position (finalPose)
+finalPose          = {} # This is the last pose the robot reading took, we'll want to move from
+                        #   this position to closestNodePose to get it back to a node position
 potentialGoalNodes = []
 potentialGoalDicts = []
 goalsVisited       = [] # Goal nodes that have been visited

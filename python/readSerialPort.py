@@ -16,7 +16,7 @@ if useBluetooth == False:
 readLines = 0
 runTime   = 60          # Only runs for 2 minutes
 startTime = time.time()  # Returns time in seconds since epoch
-ser.write(b'Trigger')    # Push something on the serial port, this will activate it
+ser.write(b'Trigger|')    # Push something on the serial port, this will activate it
 
 fileHandle = open(outputFile,"at") # Append and text file
 currTime   = time.time() - startTime
@@ -25,12 +25,15 @@ leaveLoop  = False
 while ((currTime) < runTime) and (leaveLoop == False):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip() 
+    print("stringFromSparki: {0}".format(stringFromSparki))
     if stringFromSparki.upper() == "DONE":
       leaveLoop = True
+    else:
+      ser.write("Hi there at {0}|".format(time.time()).encode())
     fileHandle.write(stringFromSparki + "\n")
     print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
   except:
-    pass
+    print("in exception processing")
   readLines += 1
   currTime = time.time() - startTime
 

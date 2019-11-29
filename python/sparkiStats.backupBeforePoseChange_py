@@ -15,13 +15,16 @@ C_GOAL    = "G"
 C_DONE    = "Q"
 C_GOTO    = "M"
 
+
+
+
 To do:
     Check that when pass intersection it doesn't register sae unless it's online again, and may
     want to have some min distance
       DONE
         For instructions
           get the graph of nodeconnectionlist graph<-getGraphOfNodeConnectionList()
-          get the current node gv.lastRobotDictItem["NODEID"]
+          get the current node gv.closestNodePose["NODEID"]
           call dijkstra with currentNode and graph, it'll return array with costs
             to all the other nodes
           minCost = 99999999
@@ -60,41 +63,6 @@ def checkAndSetGoalStatus(sawObstacle):
     gv.goalFound = gv.goalBeingChecked
 
 
-# -------------------------------------------------------------------------
-# Takes a sensor pose and returns the pose of the center of the robot.  The
-# last arg is defaulted at True as the center of the robot is behind the
-# sensor... the only time this may not be the case is when you want to log
-# the pose when you first enter the maze in which case you may want 4cm
-# in front of the sensor 
-# NOTE: you can also use this to take a robot pose and return the sensor
-#       pose.. that's also good use of the second argument... so if you
-#       give it the robot pose, and False (arg) it'll give u the sensor pose
-def getActualPoseOfSensorPose(sensorPose, poseBehindSensor=True):
-  try:
-    tempDictItem = sensorPose.copy() # Make copy, this is the item we'll return
-    if "<" in tempDictItem:
-      theGoalAngle = tempDictItem["<"]  
-      if poseBehindSensor:
-        # Subtract the distance that the sensor is ahead of the body of the robot to get the new x and y position
-        tempDictItem["x"] = tempDictItem["x"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle))
-        tempDictItem["y"] = tempDictItem["y"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle))
-      else:
-        tempDictItem["x"] = tempDictItem["x"] + (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle))
-        tempDictItem["y"] = tempDictItem["y"] + (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle))
-    else:
-      raise NameError("getActualPoseOfSensorPose(No < in {0} )".format(str(tempDictItem)))
-
-    tempDictItem["x"] = round(tempDictItem["x"],2)
-    tempDictItem["y"] = round(tempDictItem["y"],2)
-    return tempDictItem
-  except:
-    print("Exception raised - getDirectionsForNodes")
-    exc_type, exc_obj, exc_tb = sys.exc_info()
-    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    print(exc_type, fname, exc_tb.tb_lineno)
-    sys.exit()  
-
-
 # --------------------------------------------------------------------------------------------------
 # This handles passing instructions to caller... what we do
 #   for all nodes in nodes2Target (except for the last node) we'll have 'GOTO' instructions
@@ -111,30 +79,48 @@ def getPotentialGoalNodeIndex(theNodeId):
       rtnValue = tempGidx
   return rtnValue
 
+# TEST THIS!!!!  
+def getNodeActualPose(theDictItem):
+  tempDict = theDictItem.copy() # Make copy, this is the item we'll return
+  if "NODEID" in theDictItem:
+    # See if the node is a goal node.. if it is then we need to adjust it's x/y pos, the pose recorded is the sensor's pose
+    if tempDict["NODEID"] in gv.potentialGoalNodes:
+      theGoalNodeIndex = getPotentialGoalNodeIndex(tempDict["NODEID"])
+      if theGoalNodeIndex != -1:  # We found the record, get it's angle
+        if (gv.DEBUGGING): print("getNodeActualPose, index: {0}".format(theGoalNodeIndex))
+        theGoalAngle = gv.potentialGoalDicts[theGoalNodeIndex]["<"]
+      else:
+        theGoalAngle = tempDict["<"]  # Use the angle in the node itself (not great but this should never happen)
+      # Subtract the distance that the sensor is ahead of the body of the robot to get the new x and y position
+      tempDict["x"] = tempDict["x"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesCos(theGoalAngle))
+      tempDict["y"] = tempDict["y"] - (gv.INFRARED_SENSOR_FORWARD_OF_CENTER * utilities.degreesSin(theGoalAngle))
+  tempDict["x"] = round(tempDict["x"],2)
+  tempDict["y"] = round(tempDict["y"],2)
+  return tempDict
 
 # Returns a string that has the directions to go to the 'finalPath', the args are
 #  nodes2Target - This is an array of the nodes that we need to go thru to get to the final path
 #  finalPath - a dictionary item that has the final path and angle that we want to be at
 def getDirectionsForNodes(nodes2Target, finalPath, pathType):
   try:
-    if (gv.DEBUGGING == False): writeHelper("in getDirectionsForNodes")
+    print("in getDirectionsForNodes")
     if len(nodes2Target) > 1:
       rtnString = ""
       for nodeIdx in range(len(nodes2Target)):
         node2GoTo = nodes2Target[nodeIdx]
-        workNode  = gv.nodeList[node2GoTo]  # The index in nodeList is the node id
-        if (gv.DEBUGGING == False): writeHelper("  node2GoTo: {0} workNode: {1}".format(node2GoTo,str(workNode)))
+        workNode = getNodeActualPose(gv.nodeList[node2GoTo])  # The index in nodeList is the node id
+        print("node2GoTo: {0} workNode: {1}".format(node2GoTo,str(workNode)))
         rtnString += gv.C_GOTO + ",x," + str(workNode["x"]) + ",y," + str(workNode["y"]) + ",<,-1,"
       rtnString += pathType
     else:
-      if len(gv.robotPoseFromInstruction) > 0:   # $$$$$$$$$ CHECK WHY NEED THIS
-        # Have a goto so that we position from current robot pose to the 
-        rtnString = gv.C_GOTO + ",x," + str(finalPath["x"]) + ",y," + str(finalPath["y"]) + ",<,-1," + pathType
-      else:
-        rtnString = pathType
+      rtnString = pathType
     
+    # Handle the last record, this will adjust the x/y in case it's a goal node so that the pose to goto is
+    # the center of the robot
+    workNode = getNodeActualPose(finalPath)
+
     # Now we add the last item, it has the orientation the robot should be at for the 'pathType'
-    rtnString += ",x," + str(finalPath["x"]) + ",y," + str(finalPath["y"]) + ",<," + str(finalPath["<"])
+    rtnString += ",x," + str(workNode["x"]) + ",y," + str(workNode["y"]) + ",<," + str(workNode["<"])
     return rtnString
   except:
     print("Exception raised - getDirectionsForNodes")
@@ -162,8 +148,8 @@ def getGraphOfNodeConnectionList():
       if neighbor not in graphToReturn[nodeId1]:
         graphToReturn[nodeId1][neighbor] = nodeDict["len"]
     if (gv.DEBUGGING): 
-      writeHelper("getGraphOfNodeConnectionList, graph is:")
-      writeHelper("  " + str(graphToReturn))
+      print("getGraphOfNodeConnectionList, graph is:")
+      print("  " + str(graphToReturn))
     return graphToReturn.copy()
   except:
     print("Exception raised - getGraphOfNodeConnectionList")
@@ -179,7 +165,7 @@ def getNodeAtPosition(x, y, createIfNonExistant=True):
   try:
     nodeIdToReturn = -1
     for idx in range(len(gv.nodeList)):
-      if utilities.getDistanceBetweenPoints(x,y,gv.nodeList[idx]["x"],gv.nodeList[idx]["y"]) <= (gv.TAPEWIDTH/2):
+      if utilities.getDistanceBetweenPoints(x,y,gv.nodeList[idx]["x"],gv.nodeList[idx]["y"]) <= gv.TAPEWIDTH:
         nodeIdToReturn = idx
     if nodeIdToReturn == -1 and createIfNonExistant: # Not found, add it
       nodeIdToReturn = len(gv.nodeList) # Len is 1 greater than index position, so can use it without any modification
@@ -214,13 +200,12 @@ def getNodeConnectionPositionInList(node2Check):
 # Get the next goal to visit, return a the list of nodes to get there, and the final item pose
 def getNextGoal2Visit():
   try:
-    if "NODEID" in gv.lastRobotDictItem:
-      currentNodeId = gv.lastRobotDictItem["NODEID"]
+    if "NODEID" in gv.closestNodePose:
+      currentNodeId = gv.closestNodePose["NODEID"]
     else:
       currentNodeId = ''
-    print("in getNextGoal2Visit, currentNodeId {0}".format(currentNodeId))
-    currentGraph = getGraphOfNodeConnectionList()
-    dijkstrasObj = dijkstrasClass.dijkstraGraphPoints(currentGraph, currentNodeId)
+    currentGraph  = getGraphOfNodeConnectionList()
+    dijkstrasObj  = dijkstrasClass.dijkstraGraphPoints(currentGraph, currentNodeId)
     gv.goalBeingChecked = ' ' # Clear existing value if set
 
     # If there is a goal node and we didn't visit it then return that
@@ -236,8 +221,6 @@ def getNextGoal2Visit():
         theDictItem = gv.potentialGoalDicts[gidx]
         if (theDictItem["NODEID"] not in gv.goalsVisited):
           cost2GetThere = dijkstrasObj.getDistanceToNode(theDictItem["NODEID"])
-          if True:
-            print("getNextGoal2Visit, From: {0} to {1} costs:{2}".format(currentNodeId,theDictItem["NODEID"],cost2GetThere))
           if cost2GetThere < minCost:
             minCost = cost2GetThere
             minPos  = gidx
@@ -261,10 +244,10 @@ def getNextGoal2Visit():
 # also the dictionary item for the final location
 def getNextPath2Visit():
   try:
-    if (gv.DEBUGGING):  writeHelper("getNextPath2Vistit (gNP2V)")
+    if (gv.DEBUGGING):  print("getNextPath2Vistit (gNP2V)")
       
-    if "NODEID" in gv.lastRobotDictItem:
-      currentNodeId = gv.lastRobotDictItem["NODEID"]
+    if "NODEID" in gv.closestNodePose:
+      currentNodeId = gv.closestNodePose["NODEID"]
     else:
       currentNodeId = ''
     currentGraph  = getGraphOfNodeConnectionList()
@@ -284,7 +267,7 @@ def getNextPath2Visit():
         cost2GetThere = -1
       else:
         cost2GetThere = dijkstrasObj.getDistanceToNode(path2Check["NODEID"])
-      if (gv.DEBUGGING): writeHelper("  (gNP2V) cost2GetThere: " + str(cost2GetThere))
+      if (gv.DEBUGGING): print("  (gNP2V) cost2GetThere: " + str(cost2GetThere))
       if cost2GetThere < minCost:
         minCost     = cost2GetThere
         pidxWithMin = pidx
@@ -296,10 +279,10 @@ def getNextPath2Visit():
         thePath2Goal = dijkstrasObj.getShortestPathToGoal(thePath2Visit["NODEID"])
       else:
         thePath2Goal = []
-      if (gv.DEBUGGING): writeHelper("  (gNP2V) thePath2Visit: " + str(thePath2Visit))
+      if (gv.DEBUGGING): print("  (gNP2V) thePath2Visit: " + str(thePath2Visit))
       return thePath2Goal, thePath2Visit
     else:
-      if (gv.DEBUGGING): writeHelper("  (gNP2V) pidxWithMin < 0, no path")
+      if (gv.DEBUGGING): print("  (gNP2V) pidxWithMin < 0, no path")
       return [], {}
   except:
     print("Exception raised - getNextPath2Visit")
@@ -314,25 +297,24 @@ def getNextPath2Visit():
 def getPose(arrayValues):
   try:
     if gv.DEBUGGING:
-      writeHelper("in getPose, len of args: {0}".format(len(arrayValues)))
+      print("in getPose, len of args: {0}".format(len(arrayValues)))
     poseToReturn = { "RECTYPE" : "POSE" }
     idx = 1
     while (idx < len(arrayValues)):
       if gv.DEBUGGING:
-        writeHelper("getPose key: {0} value:{1}:".format(arrayValues[idx],arrayValues[idx+1]))
+        print("getPose key: {0} value:{1}:".format(arrayValues[idx],arrayValues[idx+1]))
       if arrayValues[idx] == "x" or arrayValues[idx] == "y":
         theValu = float(arrayValues[idx+1])
       else:
         theValu = int(arrayValues[idx+1])
       poseToReturn[arrayValues[idx]] = theValu
       if gv.DEBUGGING:
-        writeHelper(poseToReturn)
+        print(poseToReturn)
       idx += 2
-    # Convert sensor pose to robot pose
-    poseToReturn = getActualPoseOfSensorPose(poseToReturn)
+    
     if gv.DEBUGGING:
-      writeHelper("poseToReturn: ")
-      writeHelper(poseToReturn)
+      print("poseToReturn: ")
+      print(poseToReturn)
     return poseToReturn
   except:
     print("Exception raised - getPose")
@@ -391,7 +373,7 @@ def hasPathBeenVisited(dictOfPath2Check):
 def nodeConnectionHelper(lastDict,currDict,point2Self=False):
   try:
     if (gv.DEBUGGING):
-      writeHelper("nodeConnectionHelper, last: {0} curr: {1}".format(str(lastDict),str(currDict)))
+      print("nodeConnectionHelper, last: {0} curr: {1}".format(str(lastDict),str(currDict)))
     if ((lastDict["NODEID"] != currDict["NODEID"]) or (point2Self == True)):
       # Write routine to add these two nodes as connected into the node connection list
       distanceBetweenPts = utilities.getDistanceBetweenPoints(lastDict["x"],lastDict["y"],
@@ -449,65 +431,59 @@ def processValueErrorHelper(typeRecord, dictItem, errorList2Add2, errMessage):
     print(exc_type, fname, exc_tb.tb_lineno)
     sys.exit()
 
-
-# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 # --------------------------------------------------------------------------------------------------    
 # This is called when we've read the 'start' 'end' block of data from the sparki
 # The block of data sent represents a line segment, the values are stored in
 # array 'pathValueList', each row in that is a dictionary item
 # State legend: sas-EntranceOfMaze, sol-OnALine, sae-AtExit, slp-StartLeftPath,
 #               srp-StartRightPath, sel-EndLeftPath, ser-EndRightPath, sgl-Goal
-def processValueList():
+def processValueList(logFile):
   try:
     initValues = True
     tempList   = []
     # tempError  = []
     leftFlag   = False
     rightFlag  = False
-    print(" ")
-    print("IN PROCESSVALUELIST............. LEN: {0}".format(len(gv.pathValueList)))
-    print(" ")
+    
     # We do this in two passes, during the first pass we prep the tempList array with formatted
     # data; we also do validation during this phase.  If there are no errors then we'll process
     # the tempList array and update the global variables.
-    # NOTE: the poses in the first pass are the sensor poses
     for dictItem in gv.pathValueList:
-      sensorPose = { "x" : dictItem["x"], "y" : dictItem["y"], "<" : dictItem["<"] }
-      robotPose = getActualPoseOfSensorPose(sensorPose)
+      recPose = { "x" : dictItem["x"], "y" : dictItem["y"], "<" : dictItem["<"] }
+      gv.finalPose = recPose.copy()
       
       if initValues: # Save first record just in case we have to do a doover
-        firstRobotPose = robotPose.copy()
+        firstPose = recPose.copy()
 
       # If it's a pose record skip it... we only have it for setting position
       if dictItem["RECTYPE"] == "POSE":
         continue 
 
       if dictItem["sas"] == 1:
-        # This 'getRobotPose' is in front of the sensor that's why a diff call
-        processValueHelper("sas",getActualPoseOfSensorPose(robotPose,False),tempList)
+        processValueHelper("sas",recPose,tempList)
       
       if dictItem["sae"] == 1:
-        processValueHelper("sae",robotPose,tempList)
+        processValueHelper("sae",recPose,tempList)
       
       if dictItem["sgl"] == 1:
-        processValueHelper("sgl",robotPose,tempList)
+        processValueHelper("sgl",recPose,tempList)
       
       # Start of left intersection
       if dictItem["slp"] == 1:
         if leftFlag: # We seeing a new start without closing old end
-          processValueErrorHelper("slp",sensorPose,gv.errorList,"Open slp record")
+          processValueErrorHelper("slp",recPose,gv.errorList,"Open slp record")
         else:
           leftFlag     = True
-          leftDictItem = sensorPose.copy()
+          leftDictItem = recPose.copy()
 
       # End of left intersection  NOTE the ending position should probably be adjusted by SENSORDISTANCEPASTTAPE
       # since it's past the tape when sensor goes off... do the same for ser
       if dictItem["sel"] == 1:
         if leftFlag == False:  # didn't see start of intersection
-          processValueErrorHelper("sel",sensorPose,gv.errorList,"No preceeding slp record")
+          processValueErrorHelper("sel",recPose,gv.errorList,"No preceeding slp record")
         else:
           leftFlag                = False
-          tempDict                = sensorPose.copy()
+          tempDict                = recPose.copy()
           widthBetweenStartAndEnd = getDistanceBetweenNodes(leftDictItem,tempDict) 
           if widthBetweenStartAndEnd < gv.MINTAPEWIDTH or widthBetweenStartAndEnd > gv.MAXTAPEWIDTH:
             # Invalid tape width
@@ -525,18 +501,18 @@ def processValueList():
       # Start of right intersection
       if dictItem["srp"] == 1:
         if rightFlag: # We seeing a new start without closing old end
-          processValueErrorHelper("srp",sensorPose,gv.errorList,"Open srp record")
+          processValueErrorHelper("srp",recPose,gv.errorList,"Open srp record")
         else:
           rightFlag     = True
-          rightDictItem = sensorPose.copy()
+          rightDictItem = recPose.copy()
 
       # End of left intersection
       if dictItem["ser"] == 1:
         if rightFlag == False:  # didn't see start of intersection
-          processValueErrorHelper("ser",sensorPose,gv.errorList,"No preceeding srp record")
+          processValueErrorHelper("ser",recPose,gv.errorList,"No preceeding srp record")
         else:
           rightFlag               = False
-          tempDict                = sensorPose.copy()
+          tempDict                = recPose.copy()
           widthBetweenStartAndEnd = getDistanceBetweenNodes(rightDictItem,tempDict) 
           if widthBetweenStartAndEnd < gv.MINTAPEWIDTH or widthBetweenStartAndEnd > gv.MAXTAPEWIDTH:
             # Invalid tape width
@@ -551,81 +527,77 @@ def processValueList():
             tempDict["dest<"] = utilities.getAngleAfterAdjustment(tempDict["<"],90)  # Turn right 90'
             processValueHelper("sri",tempDict,tempList)
 
-    # When down here the pose's have been adjusted
-
     # If error's we'll put the path we were just on back onto the list of paths to visit
     if len(gv.errorList) > 0:   
-      angle2Travel = utilities.getAngleAfterAdjustment(firstRobotPose["<"],180)    
-      path2Travel  = { "x" : firstRobotPose["x"], "y" : firstRobotPose["y"], "<" : angle2Travel, 
+      angle2Travel = utilities.getAngleAfterAdjustment(firstPose["<"],180)    
+      path2Travel  = { "x" : firstPose["x"], "y" : firstPose["y"], "<" : angle2Travel, 
                         "TYPE" : "CORRECTION", "INFO" : "Had errors on path" }
-
-      # $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ this needs to be adjusted it has sensorPose
       gv.paths2Visit.append(path2Travel)
     else:
       # No errors process the data in tempList
 
-      # Use the robotPoseFromInstruction for lastRobotDictItem, this is needed because we need another node as the base to calculate
+      # Use the sensorPoseAtStart for lastDict, this is needed because we need another node as the base to calculate
       # the distance being processed... mainly comes into play when calling exploration for the second time :)
-      #lastRobotDictItem = gv.robotPoseFromInstruction.copy()  
-      #tempNodeId        = getNodeAtPosition(lastRobotDictItem["x"],lastRobotDictItem["y"],False)
-      #if tempNodeId != -1:
-      #  gv.lastRobotDictItem["NODEID"] = tempNodeId
+      lastDict   = gv.sensorPoseAtStart.copy()  
+      tempNodeId = getNodeAtPosition(lastDict["x"],lastDict["y"],False)
+      if tempNodeId != -1:
+        lastDict["NODEID"] = tempNodeId
 
-      writeHelper("--------------- P R O C E S S   V A L U E    L I S T -------------------\n")
-      writeHelper("gv.lastRobotDictItem from last processValueList: {0} \n".format(str(gv.lastRobotDictItem)))
-      for robotDictItem in tempList:
-        writeHelper("  robotDictItem: {0}".format(str(robotDictItem)))
+      logFile.write("--------------- P R O C E S S   V A L U E    L I S T -------------------\n")
+      logFile.write("gv.sensorPoseAtStart: {0} \n".format(str(lastDict)))
+      logFile.write("getNodeActualPose(gv.sensorPoseAtStart): {0}".format(getNodeActualPose(lastDict.copy())))
 
-      for robotDictItem in tempList:
-        writeHelper("proc tempList, gv.lastRobotDictItem {0}".format(str(gv.lastRobotDictItem)))
-        gv.worldXMin = min(gv.worldXMin, robotDictItem["x"])
-        gv.worldXMax = max(gv.worldXMax, robotDictItem["x"])
-        gv.worldYMin = min(gv.worldYMin, robotDictItem["y"])
-        gv.worldYMax = max(gv.worldYMax, robotDictItem["y"])
+      for dictItem in tempList:
+        gv.worldXMin = min(gv.worldXMin, dictItem["x"])
+        gv.worldXMax = max(gv.worldXMax, dictItem["x"])
+        gv.worldYMin = min(gv.worldYMin, dictItem["y"])
+        gv.worldYMax = max(gv.worldYMax, dictItem["y"])
 
-        currNodeId = getNodeAtPosition(robotDictItem["x"],robotDictItem["y"])
+        currNodeId = getNodeAtPosition(dictItem["x"],dictItem["y"])
         # Add the node id to the dict item, better than repeating everywhere below, note tempList will reflect
-        # this as robotDictItem is a reference variable
-        robotDictItem["NODEID"] = currNodeId
-        gv.pathsVisited.append(robotDictItem.copy())
+        # this as dictItem is a reference variable
+        dictItem["NODEID"] = currNodeId
+        gv.pathsVisited.append(dictItem.copy())
 
-        if robotDictItem["TYPE"] == "sas":  # At start of maze
+        if dictItem["TYPE"] == "sas":  # At start of maze
           if len(gv.startPosition) == 0:
-            gv.startOfMaze = robotDictItem.copy()
-            writeHelper("Found SAS: {0}".format(gv.startOfMaze))
+            gv.startDict = dictItem.copy()
 
         # At exit, add this to the list of potential goals
-        if robotDictItem["TYPE"] == "sae":      
+        if dictItem["TYPE"] == "sae":      
           gv.potentialGoalNodes.append(currNodeId)
-          gv.potentialGoalDicts.append(robotDictItem.copy())
-          nodeConnectionHelper(gv.lastRobotDictItem,robotDictItem)  # Add this node and the last one to the nodeConnectionList
-          writeHelper("Found SAE: {0}".format(robotDictItem))
-
+          gv.potentialGoalDicts.append(dictItem.copy())
+          nodeConnectionHelper(lastDict,dictItem)  # Add this node and the last one to the nodeConnectionList
+          
         # If it is a goal then set the goal node identifier
-        if robotDictItem["TYPE"] == "sgl":        
-          gv.goalDict = robotDictItem.copy()
-          writeHelper("Found SGL: {0}".format(robotDictItem))
+        if dictItem["TYPE"] == "sgl":        
+          gv.goalDict = dictItem.copy()
 
-        if robotDictItem["TYPE"] == "sli" or robotDictItem["TYPE"] == "sri":   
+        if dictItem["TYPE"] == "sli" or dictItem["TYPE"] == "sri":   
           if (gv.DEBUGGING):
-            writeHelper("calling nodeConnectionHelper: ")
-            writeHelper(str(gv.lastRobotDictItem))
-            writeHelper(str(robotDictItem))     
-          nodeConnectionHelper(gv.lastRobotDictItem,robotDictItem)  
-          intersectDict = robotDictItem.copy()
+            print("calling nodeConnectionHelper: ")
+            print(str(lastDict))
+            print(str(dictItem))     
+          nodeConnectionHelper(lastDict,dictItem)  
+          intersectDict = dictItem.copy()
           # Want to put the destination angle into the < element, we'll
           # save orig< just in case :)
           intersectDict["orig<"] = intersectDict["<"]
           intersectDict["<"]     = intersectDict["dest<"]
-          writeHelper("Found {0}: {1}".format(robotDictItem["TYPE"],intersectDict))
-
           # Check that it hasn't already been visited, if not add it to the list
-          if hasPathBeenVisited(intersectDict) == False:
+          if hasPathBeenVisited(intersectDict)  == False:
             gv.paths2Visit.append(intersectDict.copy()) 
-     
+          # Don't know why I had this here... it was making the current pose the wrong angle... I changed
+          # by commenting out this and using dictItem.copy()... if after testing you find no issues then
+          # change this so that it's only done in one spot.. not here and then in the else
+          # gv.closestNodePose = intersectDict.copy()
+          gv.closestNodePose = dictItem.copy()
+        else:
+          gv.closestNodePose = dictItem.copy()  # Save the current pose (the last one seen)
+
         # Save this item as the last one looked at if not sgl... sgl has sae also and we'll log that one
-        if robotDictItem["TYPE"] != "sgl":
-          gv.lastRobotDictItem = robotDictItem.copy()
+        if dictItem["TYPE"] != "sgl":
+          lastDict = dictItem.copy()
   except:
     print("Exception raised - processValueList")
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -644,18 +616,18 @@ def setPathValueListFromString(stringFromSparki):
     if len(arrayOfValues) > 2:  # Has to has more than two values
       keyWord = arrayOfValues[0]
       if keyWord == "IR" and arrayOfValues[1].upper() == "STATECHG":
-        if gv.DEBUGGING: writeHelper("in setPathValueListFromString")
+        if gv.DEBUGGING: print("in setPathValueListFromString")
         stateObj = getState(arrayOfValues)
         gv.pathValueList.append(stateObj)
       
       if keyWord == "PO":  # This is still here but I moved the pose info into the IR record so 
         if gv.DEBUGGING:        #   it's probably not needed.... left in case :)
-          writeHelper("In POSE processing")
+          print("In POSE processing")
         logPose = getPose(arrayOfValues)
         gv.pathValueList.append(logPose)
         if gv.DEBUGGING:
-          writeHelper(logPose)
-      if gv.DEBUGGING: writeHelper("Leaving setPathValueListFromString, len of array {0}".format(len(gv.pathValueList)))
+          print(logPose)
+      if gv.DEBUGGING: print("Leaving setPathValueListFromString, len of array {0}".format(len(gv.pathValueList)))
   except:
     print("Exception raised - setPathValueListFromString")
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -668,16 +640,13 @@ def setPathValueListFromString(stringFromSparki):
 # if there aren't any paths then start checking goals
 def tellSparkiWhatToDo():
   try:
-    writeHelper("In tellSparkiWhatToDo (TS)")
+    print("In tellSparkiWhatToDo (TS)")
     movementType = gv.C_EXPLORE
     nodes2Target, gv.pathBeingVisited = getNextPath2Visit()
     if len(gv.pathBeingVisited) == 0:  # No paths left to visit see if there's a goal
-      print("TSW2D: pathBeingVisited is empty, check goal")
-      if gv.goalFound == ' ':
+      if gv.goalFound != ' ':
         movementType = gv.C_GOAL
         nodes2Target, gv.pathBeingVisited = getNextGoal2Visit()
-      else:
-        print("gv.goalFound is: {0}".format(gv.goalFound))
 
     if len(gv.pathBeingVisited) == 0: # No nodes or goals to vist tell em we're done
       return gv.C_DONE + ",x,-1.0,y,-1.0,<,-1"  # Need to pass all the elements that sparki expects, it'll ignore them"
@@ -692,67 +661,64 @@ def tellSparkiWhatToDo():
 
 # --------------------------------------------------------------------------------------------------
 # Write all the variables of interest out to the console
-def writeHelper(theString):
-  print(theString)
-  gv.logFile.write(theString+"\n")
-# --------------------------------------------------------------------------------------------------
-# Write all the variables of interest out to the console
 def writeVariables():
   try:
-    writeHelper("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-    writeHelper("gv.startOfMaze (start position): {0}".format(str(gv.startOfMaze)))
-    writeHelper("World xMin: {0} yMin: {1} xMax: {2} yMax: {3}".format(gv.worldXMin,gv.worldYMin,gv.worldXMax,gv.worldYMax))
+    print("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    print("gv.startDict (start position): {0}".format(str(gv.startDict)))
+    print("gv.finalPose (current pose): {0}".format(str(gv.finalPose)))
+    print("gv.closestNodePose: {0}".format(str(gv.closestNodePose)))
+    print("World xMin: {0} yMin: {1} xMax: {2} yMax: {3}".format(gv.worldXMin,gv.worldYMin,gv.worldXMax,gv.worldYMax))
     
-    writeHelper("gv.currentMode: {0}".format(gv.currentMode))
-    writeHelper("gv.lastRobotDictItem: {0}".format(gv.lastRobotDictItem))
-    writeHelper("gv.robotPoseFromInstruction: {0}".format(str(gv.robotPoseFromInstruction)))
-    writeHelper("gv.sensorPoseAtStop: {0}".format(str(gv.sensorPoseAtStop)))
+    print("gv.currentMode: {0}".format(gv.currentMode))
+    print("gv.sensorPoseAtStart: {0}".format(str(gv.sensorPoseAtStart)))
+    print("gv.sensorPoseAtStop: {0}".format(str(gv.sensorPoseAtStop)))
 
-    writeHelper("gv.pathsVisited:")
+    print("gv.pathsVisited:")
     for aPathVisited in gv.pathsVisited:
-      writeHelper("  {0}".format(str(aPathVisited)))
+      print("  {0}".format(str(aPathVisited)))
     
-    writeHelper("gv.paths2Visit:")
+    print("gv.paths2Visit:")
     for aPath2Visit in gv.paths2Visit:
-      writeHelper("  {0}".format(str(aPath2Visit)))
+      print("  {0}".format(str(aPath2Visit)))
     
-    writeHelper("pathBeingVisited")
-    writeHelper("  {0}".format(str(gv.pathBeingVisited)))
+    print("pathBeingVisited")
+    print("  {0}".format(str(gv.pathBeingVisited)))
 
     if len(gv.goalDict) > 0:
-      writeHelper("gv.goalDict {0}".format(str(gv.goalDict)))
+      print("gv.goalDict {0}".format(str(gv.goalDict)))
     else:
-      writeHelper("gv.goalDict is empty")
+      print("gv.goalDict is empty")
 
     if gv.goalBeingChecked != ' ':
-      writeHelper("gv.goalBeingChecked: {0}".format(gv.goalBeingChecked))
+      print("gv.goalBeingChecked: {0}".format(gv.goalBeingChecked))
     if gv.goalFound != ' ':
-      writeHelper("*** gv.goalFound: {0}".format(gv.goalFound))
+      print("*** gv.goalFound: {0}".format(gv.goalFound))
 
     if len(gv.potentialGoalDicts) > 0:
-      writeHelper("gv.potentialGoalDicts")
+      print("gv.potentialGoalDicts")
       for aPotentialGoal in gv.potentialGoalDicts:
-        writeHelper("  {0}".format(str(aPotentialGoal)))        
+        print("  {0}".format(str(aPotentialGoal)))
+        print("  Robot pose: {0}".format(getNodeActualPose(aPotentialGoal)))
     else:
-      writeHelper("gv.potentialGoalDicts is empty")
+      print("gv.potentialGoalDicts is empty")
 
     if len(gv.nodeList) > 0:
-      writeHelper("gv.nodeList")
+      print("gv.nodeList")
       for nodeId in range(len(gv.nodeList)):
-        writeHelper("  NodeId: {0} value: {1}".format(nodeId,str(gv.nodeList[nodeId])))
+        print("  NodeId: {0} value: {1}".format(nodeId,str(gv.nodeList[nodeId])))
     
     if len(gv.nodeConnectionList) > 0:
-      writeHelper("gv.nodeConnectionList")
+      print("gv.nodeConnectionList")
       for aNodeConnection in gv.nodeConnectionList:
-        writeHelper("  {0}".format(str(aNodeConnection)))
-      writeHelper("  As a graph: {0}".format(str(getGraphOfNodeConnectionList())))
+        print("  {0}".format(str(aNodeConnection)))
+      print("  As a graph: {0}".format(str(getGraphOfNodeConnectionList())))
 
     if (len(gv.nodesToVisit) > 0):
-      writeHelper("gv.NodesToVisit")
+      print("gv.NodesToVisit")
       for aNode in gv.nodesToVisit:
-        writeHelper("  {0}".format(str(aNode)))
+        print("  {0}".format(str(aNode)))
     
-    writeHelper("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    print("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
   except:
     print("Exception raised - writeVariables")

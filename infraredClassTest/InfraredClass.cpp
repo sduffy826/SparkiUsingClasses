@@ -31,9 +31,9 @@ float InfraredClass::adjustAngleToPose(const Pose &targetPose) {
   
   if (DEBUGINFRARED) {
     Serial.print("(aa2p)cur");
-     localizationObj->showPose(currentPose);
-     Serial.print("(aa2p)tar");
-     localizationObj->showPose(targetPose);
+    localizationObj->showPose(currentPose);
+    Serial.print("(aa2p)tar");
+    localizationObj->showPose(targetPose);
   }
  
   int targetAngle = localizationObj->calculateAngleBetweenPoints(currentPose.xPos, currentPose.yPos, targetPose.xPos, targetPose.yPos);
@@ -357,6 +357,8 @@ bool InfraredClass::adjustToTape() {
 // -----------------------------------------------------------------------------------------
 // Assigning structs is just reference assignment, this does the byname... didn't overload assignment
 // as not sure if arduino c++ handles it and this was easy
+/* Commented out... we don't need to do this... originally thought assignment would be a reference assignment
+ *  but struct assigments are a memberwise value assignment
 void InfraredClass::assignSourceAttributesToTarget(const InfraredAttributes &source, InfraredAttributes &target) {
   target.edgeLeft   = source.edgeLeft;
   target.lineLeft   = source.lineLeft;
@@ -382,7 +384,7 @@ void InfraredClass::assignSourceAttributesToTarget(const InfraredAttributes &sou
   target.endRightPath   = source.endRightPath;
   target.atEntrance     = source.atEntrance;  
 }
-
+*/
 // -------------------------------------------------------------------------------------------------
 // Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
 // the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
@@ -393,14 +395,11 @@ int InfraredClass::calcAngleFromEdgeToTape(const bool &leftEdge, const int &base
   unsigned long startTime;
   unsigned long endTime;
   unsigned int theReading;
-  unsigned int millisForAngle;
   
   byte consecutiveReadingsOn;
 
   if (DEBUGINFRARED) Serial.println("calcAngleFromEdgeToTape");
   
-  // millisForAngle = millisFor90Degrees/2;
-
   if (leftEdge) 
     sparki.moveRight();
   else
@@ -511,8 +510,9 @@ InfraredAttributes InfraredClass::getBaseAttributes() {
 // -----------------------------------------------------------------------------------------
 // Gets the infrared light attributes at the current pose.  This also will use the base
 // state to see if the sensor are on a line or note... it sets the flags appropriately.
-InfraredAttributes InfraredClass::getInfraredAttributesAtCurrentPose() {
-  InfraredAttributes reading;
+//InfraredAttributes InfraredClass::getInfraredAttributesAtSensorPose() {
+void InfraredClass::getInfraredAttributesAtSensorPose(InfraredAttributes &reading) {
+  //InfraredAttributes reading;
   clearInfraredAttributes(reading);
   for (int i = 0; i < INFRARED_SAMPLE_SIZE; i++) {
     reading.edgeLeft   += (sparki.edgeLeft()/INFRARED_SAMPLE_SIZE);   // measure the left edge IR sensor
@@ -528,8 +528,8 @@ InfraredAttributes InfraredClass::getInfraredAttributesAtCurrentPose() {
   reading.lc_line = lineFlagHelper(reading.lineCenter, infraredBase.lineCenter);
   reading.lr_line = lineFlagHelper(reading.lineRight, infraredBase.lineRight);
   reading.er_line = lineFlagHelper(reading.edgeRight, infraredBase.edgeRight);
-  
-  return reading;
+  return;
+  //return reading;
 }
 
 // Return the tape width
@@ -622,7 +622,8 @@ void InfraredClass::parmCountAndLength(const char* str_data, unsigned int& num_p
 // Right now this just gets the one reading... but thinking this will be expaned to move
 // around, take readings and average them out.
 void InfraredClass::setInfraredBaseReadings() {
-  infraredBase = getInfraredAttributesAtCurrentPose();
+  //infraredBase = getInfraredAttributesAtSensorPose();
+  getInfraredAttributesAtSensorPose(infraredBase);
 }
 
 // ==========================================================================================
@@ -760,10 +761,26 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
 // we get the 'serial termination' character (|)
 String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions) {
   // This will wait for the instructions from the computer
-  localizationObj->writeMsg2Serial("IR,INS");
   
-  delay(1000);                                        // CHANGE THESE TO CONSTANTS 
-  String rtnString = Serial.readStringUntil('|');
+  localizationObj->writeMsg2Serial("IR,INS");
+
+  // Old code here from debuggin issues with communicating with sparky... appears was memory related
+  // more than anything
+  // Serial.flush();
+  // delay(100);                                        // CHANGE THESE TO CONSTANTS 
+  
+  // Serial.print("#");
+  // Serial.println(Serial.available());
+  // while (Serial.available() == 0) {
+  //   delay(300);
+  //   sparki.beep();
+  // }
+  
+  String rtnString = ""; //Serial.readStringUntil('|');
+  if (DEBUGINFRARED) {
+    Serial.print("r$:");
+    Serial.println(rtnString);
+  }
 
   // Format of the data returned is similar to comment on right, we get -1 values for angles on GOTO (M)
   // (the X is eXplore, Q is done/quit, G is Goal)
@@ -800,6 +817,8 @@ String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queu
     switch( i % 7) {
       case 0:
         theInstructions.instruction = szParams[i][0];
+        //Serial.print("s$");
+        //Serial.println(szParams[i][0]);
         if (DEBUGINFRARED) {
           Serial.print("ins:");
           Serial.println(theInstructions.instruction);

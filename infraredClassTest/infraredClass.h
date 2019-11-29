@@ -11,7 +11,7 @@
 
 #define DEBUGINFRARED false
 
-#define INFRARED_LINE_THRESHOLD .10  // .10 Means 10%, so if 10% diff from base it'll register as a line
+#define INFRARED_LINE_THRESHOLD .05  // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 300
 #define INFRARED_LINE_WIDTH 4.7     // Width of tape... have it use method
 #define INFRARED_SAMPLE_SIZE 7      // Number of samples to take
@@ -23,7 +23,7 @@
 #define INFRARED_MAX_DISTANCE_TO_TRAVEL 100.0  
 #define INFRARED_CONSECUTIVE_EDGE_READINGS 3 
 #define INFRARED_INTERVAL_2_CHECK_ON_LINE 1    // Interval to check that we're on the line after a position change
-#define INFRARED_SPACE_BEFORE_LINE_CHECK 12.0  // Need to move this amount before we'll try to adjust for line (1/2 width + tape width) about
+#define INFRARED_SPACE_BEFORE_LINE_CHECK 12  // Need to move this amount before we'll try to adjust for line (1/2 width + tape width) about
 
 
 #define EXPLORE_MODE 'X'  // eXplore
@@ -95,8 +95,8 @@ class InfraredClass {
            void InfraredClass::adjustToTapeHelper(bool &leftEdge, bool &rightEdge);
            bool adjustToTape();
 
-           // Struct assignments
-           void assignSourceAttributesToTarget(const InfraredAttributes &source, InfraredAttributes &target);
+           // Struct assignments, don't need structs are value types so assiging them is a member wise value assignment
+           // void assignSourceAttributesToTarget(const InfraredAttributes &source, InfraredAttributes &target);
             
            // Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate
            // the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number
@@ -113,7 +113,8 @@ class InfraredClass {
            InfraredAttributes getBaseAttributes();
 
            // Get infrared attributes at the current pose
-           InfraredAttributes getInfraredAttributesAtCurrentPose();  
+           //InfraredAttributes getInfraredAttributesAtSensorPose();  
+           void getInfraredAttributesAtSensorPose(InfraredAttributes &infraAttr);
 
            // Return tape width in cm (as float)
            float getLineWidth();

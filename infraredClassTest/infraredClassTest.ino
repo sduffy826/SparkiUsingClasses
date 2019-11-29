@@ -1,7 +1,16 @@
 #include "infraredClass.h"
 
-byte counter = 0;
-     
+byte counter;
+/* ==========================================================================  
+ * *****  N O T E ****
+ * 
+ * When we send the 'pose' values to the python program they are the pose
+ * of the sensor.  The python program converts them to the pose of the
+ * robot (4cm behind), when it tells us to go to a position it is telling
+ * use the pose of the robot, not the sensor pose (which wouldn't make sense
+ * since that's not on the line)
+ * ==========================================================================
+ */
 void setup() {
   // put your setup code here, to run once:
   #if USE_LCD 
@@ -13,7 +22,7 @@ void setup() {
     delay(5);
     sparki.beep();
     delay(DELAY_AFTER_SERIAL_STARTUP);  
-    Serial.setTimeout(10000);  // Set serial timeout to 10 seconds
+    Serial.setTimeout(120000);  // Set serial timeout to 2 minutes 
    
     // Clear anything on the serial port
     if (Serial.available() > 0)  {
@@ -52,7 +61,11 @@ char handShakeWithComputer(LocalizationClass &locObj) {
   return rtnChar;      
 }
 
-
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
 
 void loop() {
   // Just want to test once :)
@@ -100,7 +113,7 @@ void loop() {
       lastAttributes = infraredObj->getBaseAttributes();
       bool done = false;
       while ( (movementsObj->moveForward(4,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
-        currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
+        currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
         infraredObj->showInfraredAttributes("Curr",currAttributes);
         localizationObj->showLocation();
         delay(50);
@@ -120,8 +133,9 @@ void loop() {
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
       infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes());
       
-      infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
-      infraredObj->showInfraredAttributes("last",lastAttributes);
+      //infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
+      lastAttributes = infraredObj->getBaseAttributes();
+      //infraredObj->showInfraredAttributes("last",lastAttributes);
 
       int numStateChanges = 0;
       bool done = false;
@@ -129,7 +143,7 @@ void loop() {
       unsigned int currTimer;
       
       while ( (movementsObj->moveForward(13,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
-        currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
+        currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
         currTimer = millis();
         Serial.print("time to measure:");
         Serial.println((float)(currTimer-baseTimer)/1000.0);
@@ -142,7 +156,7 @@ void loop() {
           // Move forward half the line width and check that the state is still different
           while (movementsObj->moveForward((infraredObj->getLineWidth()/2.0),ULTRASONIC_MIN_SAFE_DISTANCE,false));
           delay(2000);
-          currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
+          currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
           if (infraredObj->stateChanged(currAttributes, lastAttributes)) {
             localizationObj->writeMsg2Serial("2nd check state changed - true");
             // State is still different... handle it
@@ -171,7 +185,6 @@ void loop() {
       QueueArray<InfraredInstructions> queueOfInstructions;
       InfraredInstructions currentInstruction;
     
-      //localizationObj->writeMsg2Serial("IR,ProgStrt");
       delay(3000);
       sparki.beep();
 
@@ -182,9 +195,6 @@ void loop() {
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
       if (DEBUGINFRARED) infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes(),poseOfSensor,false);
       
-      infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
-      if (DEBUGINFRARED) infraredObj->showInfraredAttributes("last",lastAttributes,poseOfSensor,false);
-
       //int numStateChanges = 0;
       bool done = false;
       #if DEBUGINFRARED
@@ -193,20 +203,19 @@ void loop() {
       #endif
 
       bool waitForInstructions = false;  
-      bool setLastAttributes = true;
-      bool check4Obstacle = false;
-      bool isMoving = false;
-      bool adjustedLine = false;
+      //bool setLastAttributes = true;
+      bool check4Obstacle      = false;
+      bool isMoving            = false;
+      bool adjustedLine        = false;
       char lastInstructionMode = ' ';
 
       unsigned int startDistanceInMM = 0;
       float currDistanceTraveled;
-      
-      //localizationObj->writeMsg2Serial("IR,PathStart");
+   
       float distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;  // Just some long distance for the first time  
-      //currentInstruction.instruction = EXPLORE_MODE;
 
       currentInstruction.instruction = handShakeWithComputer(localizationObject);  // The python program will tell us the mode we're in
+      //currentInstruction.instruction = handShakeWithComputer();  // The python program will tell us the mode we're in
       if (currentInstruction.instruction == ' ') {
         distanceToTravel = 0.0;
         done             = true;
@@ -214,42 +223,61 @@ void loop() {
       }
       
       // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
-      while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,(currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
+      //   changed for memory... while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,
+      //                                    (currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
+      while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) || (done == false) ) {  
         currDistanceTraveled = movementsObj->getDistanceTraveledSoFar();
+        //   Serial.print("mem"); Serial.println(freeRam());   this didn't seem to be accurate... left for reference
+        
+        // Get the attributes at the current pose, changed so pass in variable to be modified to the getter... it saves memory
+        infraredObj->getInfraredAttributesAtSensorPose(currAttributes);
+        
+        isMoving = movementsObj->isMoving();
+        if (DEBUGINFRARED && (isMoving == false)) Serial.println("isMovingIsFalse");
         
         // See if the current instruction is different from the last one... if so send a message down the serial port
+        //   to let the program know that we started a new instruction
         if (lastInstructionMode != currentInstruction.instruction) {
+          lastAttributes = currAttributes;  // Don't trigger state change when we just got a new instruction
+          
           // Tell python program that we are at start of a new instruction, we do the 'end of instruction' down below 
           // because when it changes we're always at 'waitForInstruction'
-          localizationObj->writeMsg2Serial("IR,INSSTART,",false);
-          localizationObj->writeChar2Serial(currentInstruction.instruction,false);
-          localizationObj->writeChar2Serial(',',false);
+
+          // Note because of memory limitations I'm not using the localizationObj to write to the serial port (ugh), it's strange
+          // changing the other reference to user Serial.print actually increased memory
+          //   localizationObj->writeMsg2Serial("IR,INSSTART,",false);
+          //   localizationObj->writeChar2Serial(currentInstruction.instruction,false);
+          //   localizationObj->writeChar2Serial(',',false);
+          
+          Serial.print("IR,INSSTART,");
+          Serial.print(currentInstruction.instruction);
+          Serial.print(',');
           localizationObj->showPose(poseOfSensor);
           lastInstructionMode = currentInstruction.instruction;
           adjustedLine        = false;
-          startDistanceInMM   = (int)(currDistanceTraveled*10);
+          startDistanceInMM   = (int)(currDistanceTraveled*10);          
+        }
+        else
+          if ((int)currDistanceTraveled*10 < startDistanceInMM) // Ensure that we don't generate - number which causes an overflow
+            startDistanceInMM = (int)currDistanceTraveled*10;
+
+        if (DEBUGINFRARED) {     
+          Serial.print((int)(currDistanceTraveled*10));
+          Serial.print(",");
+          Serial.println(startDistanceInMM);
         }
 
- if (DEBUGINFRARED == false) {     
-   Serial.print((int)(currDistanceTraveled*10));
-   Serial.print(",");
-   Serial.println(startDistanceInMM);
- }
-        // See if we should be checking if on a line
+        // Due to running out of memory I'm not going to do the 'adjust to line' code... setting flag to true will bypass this.
+        adjustedLine = true;
         if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
-          Serial.println("*A*"); localizationObj->showPose(poseOfSensor);
+          if (DEBUGINFRARED) { Serial.println("*A*"); localizationObj->showPose(poseOfSensor); }
           
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
           movementsObj->stopMoving();                                       // Stop moving
           adjustedLine = infraredObj->adjustToTape();
           continue;  // Go back to the start of the loop, this will make us start moving again
         }
-
-        // Get the attributes at the current pose
-        currAttributes = infraredObj->getInfraredAttributesAtCurrentPose();
-        isMoving       = movementsObj->isMoving();
-        if (DEBUGINFRARED && (isMoving == false)) Serial.println("isMovingIsFalse");
-        
+      
         // This is just for debugging       
         #if DEBUGINFRARED
           currTimer = millis();
@@ -260,6 +288,7 @@ void loop() {
 
         // We continue moving till the state changes or we're done moving
         if (infraredObj->stateChanged(currAttributes, lastAttributes) || (isMoving==false)) {
+          lastAttributes = currAttributes;
           if (DEBUGINFRARED) localizationObj->writeMsg2Serial("StateChange");
 
           waitForInstructions = false;  // We want the computer to tell us where to go next
@@ -331,10 +360,15 @@ void loop() {
           if (waitForInstructions) {            
             if (DEBUGINFRARED) Serial.println("in waitForInstructions");
             // Stop so you can act on whatever instructions you're given
+            
             movementsObj->stopMoving();          
-
+            Serial.println("stop");
+            sparki.beep();
+            delay(1000);
+            
             // Tell the python program that the prior instructions completed, we'll write out tag to say
             // INSSTOP,instructionCode,POSEValues...,Obst,ObstacleIndicator (obstacle only really valid on goas)
+            // Strange, using locationObj->write* methods here is less memory than Serial.print... but it's move up above
             localizationObj->writeMsg2Serial("IR,INSSTOP,",false);
             localizationObj->writeChar2Serial(currentInstruction.instruction,false);
             localizationObj->writeChar2Serial(',',false);
@@ -342,6 +376,16 @@ void loop() {
             localizationObj->writeMsg2Serial(",Obst,",false);
             localizationObj->writeMsg2Serial((check4Obstacle ? "t" : "f"));
 
+            /*
+            Serial.print("IR,INSSTOP,");
+            Serial.print(currentInstruction.instruction);
+            Serial.print(',');
+            localizationObj->showPose(poseOfSensor,false);
+            Serial.print(",Obst,");
+            if (check4Obstacle) Serial.println("t");
+            else Serial.println("f");
+            */
+            
             // Reset flag so that nex time thru the loop we give our state
             lastInstructionMode = ' ';
 
@@ -349,11 +393,11 @@ void loop() {
             // if had two explores in a row the first set of values would be lost
             
             if (queueOfInstructions.isEmpty() == true) {
-              // Get more instructions
-              // NOTE: we are off the tape here... was going to backup till I see tape but the distance is probably
-              //       so small it's not worth it... may revisit after testing
-              // old cmd had   // localizationObj->writeMsg2Serial("IR,PathEnd");
+              if (DEBUGINFRARED) Serial.println("c1");              // Show checkpoint 1
+              
+              // Get more instructions NOTE: This adds them to the QUEUE of instructions
               String instructions = infraredObj->waitForInstructions(queueOfInstructions);
+              
               if (DEBUGINFRARED) {
                 localizationObj->writeMsg2Serial("GotInstructions");
                 char buffer[instructions.length()+1];
@@ -375,6 +419,7 @@ void loop() {
             
             waitForInstructions = false;
             if (queueOfInstructions.isEmpty() == true) {
+              if (DEBUGINFRARED) Serial.println("c2");  // Checkpoint 2
               // Tell python we're done
               localizationObj->writeMsg2Serial("IR,Done");
               distanceToTravel = 0.0;
@@ -383,12 +428,13 @@ void loop() {
             else {
               // We have instructions in the stack, do the top item
               currentInstruction = queueOfInstructions.pop();
-              if (DEBUGINFRARED) {
+              if (DEBUGINFRARED == false) {
                 Serial.print("Ins:"); Serial.print(currentInstruction.instruction);
                 Serial.print(" x:"); Serial.print(currentInstruction.pose.xPos);
                 Serial.print(" y:"); Serial.print(currentInstruction.pose.yPos);
                 Serial.print(" <:"); Serial.println(currentInstruction.pose.angle);
               }
+              if (DEBUGINFRARED) { Serial.println("c3"); delay(10000); } // Checkpoint 3 and also delay for 10 seconds so you can read console :)
               switch (currentInstruction.instruction) {
                 case EXPLORE_MODE:
                     //  if (localizationObj->closeEnuf(localizationObj->getCurrentAngle(),currentInstruction.pose.angle,5.0,true) == false) {
@@ -397,9 +443,8 @@ void loop() {
                   //localizationObj->writeMsg2Serial("IR,PathStart");     // Send trigger to python that we're starting a new path
                   //localizationObj->showPose(infraredObj->getPoseOfCenterSensor());  // Tell it our current pose... this is the start position
                   break;
-                case GOAL_MODE:
-                  // The goal_mode is the pose of the sensor, we need to go to pose of center of bot so we remove INFRARED_SENSOR_FORWARD_OF_CENTER
-                  distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose) - INFRARED_SENSOR_FORWARD_OF_CENTER;
+                case GOAL_MODE:                  
+                  distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose);
                   //localizationObj->writeMsg2Serial("IR,GoalStart");
                   break;
                 case DONE_MODE:
@@ -414,6 +459,9 @@ void loop() {
                 default:
                   break;
               }
+              // We changed position in switch statement, get the pose of the sensor
+              poseOfSensor = infraredObj->getPoseOfCenterSensor();
+
               if ((distanceToTravel < 0.1) && (done == false)) {
                 // make the distance 0, we don't need to move that minimal amt, that'll cause loop to come
                 // back in and as for another instruction
@@ -425,7 +473,7 @@ void loop() {
             }
           }
 
-          if (setLastAttributes) {
+/*          if (setLastAttributes) {
             // Move the currentAttributes into lastAttributes
             infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
             //numStateChanges++;
@@ -433,7 +481,7 @@ void loop() {
           }
           else {
             setLastAttributes = true;
-          }
+          } */
         }
       }
       movementsObj->stopMoving();
@@ -546,7 +594,7 @@ void loop() {
     #define SHOWREADINGS false
     #if SHOWREADINGS
       while (true) {
-        infraredObj->showInfraredAttributes("MoveMe",infraredObj->getInfraredAttributesAtCurrentPose());
+        infraredObj->showInfraredAttributes("MoveMe",infraredObj->getInfraredAttributesAtSensorPose());
         delay(500);
       }
     #endif
