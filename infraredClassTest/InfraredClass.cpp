@@ -618,6 +618,20 @@ void InfraredClass::parmCountAndLength(const char* str_data, unsigned int& num_p
 }
 
 
+// Read a character from the serial port, we'll wait 10 seconds
+int InfraredClass::readFromSerialPort() {
+  int theCnt = 0;
+  while (theCnt < 10000) { 
+    if (Serial.available() > 0) {
+      return (int)Serial.read();
+    }
+    theCnt +=5;
+    delay(5);
+  }
+  return -1;
+}
+ 
+
 // -----------------------------------------------------------------------------------------
 // Right now this just gets the one reading... but thinking this will be expaned to move
 // around, take readings and average them out.
@@ -649,60 +663,60 @@ void InfraredClass::showInfraredAttributes(char *msgStr, const InfraredAttribute
     sparki.println(attr.edgeRight);
     sparki.updateLCD();
   #else
-    Serial.print("IR,");
+    Serial.print(F("IR,"));
     Serial.print(msgStr);
 
     // Show the pose before you put out the values
-    Serial.print(",x,");
+    Serial.print(F(",x,"));
     Serial.print(poseOfCenterSensor.xPos);
-    Serial.print(",y,");
+    Serial.print(F(",y,"));
     Serial.print(poseOfCenterSensor.yPos);
-    Serial.print(",<,");
+    Serial.print(F(",<,"));
     Serial.print(poseOfCenterSensor.angle);
     
     // Now output sensor values
-    Serial.print(",el,");
+    Serial.print(F(",el,"));
     Serial.print(attr.edgeLeft);
-    Serial.print(",ll,");
+    Serial.print(F(",ll,"));
     Serial.print(attr.lineLeft);
-    Serial.print(",lc,");
+    Serial.print(F(",lc,"));
     Serial.print(attr.lineCenter);
-    Serial.print(",lr,");
+    Serial.print(F(",lr,"));
     Serial.print(attr.lineRight);
-    Serial.print(",er,");
+    Serial.print(F(",er,"));
     Serial.print(attr.edgeRight);
 
-    Serial.print(",ell,");
+    Serial.print(F(",ell,"));
     Serial.print(attr.el_line);
-    Serial.print(",lll,");
+    Serial.print(F(",lll,"));
     Serial.print(attr.ll_line);
-    Serial.print(",lcl,");
+    Serial.print(F(",lcl,"));
     Serial.print(attr.lc_line);
-    Serial.print(",lrl,");
+    Serial.print(F(",lrl,"));
     Serial.print(attr.lr_line);
-    Serial.print(",erl,");
+    Serial.print(F(",erl,"));
     Serial.print(attr.er_line);
       
-    Serial.print(",sdl,");  
+    Serial.print(F(",sdl,"));  
     Serial.print(attr.driftLeft);      
-    Serial.print(",sdr,");
+    Serial.print(F(",sdr,"));
     Serial.print(attr.driftRight);     
-    Serial.print(",sol,");
+    Serial.print(F(",sol,"));
     Serial.print(attr.onLine);         
-    Serial.print(",sae,");
+    Serial.print(F(",sae,"));
     Serial.print(attr.atExit);         
-    Serial.print(",slp,");
+    Serial.print(F(",slp,"));
     Serial.print(attr.startLeftPath);  
-    Serial.print(",srp,");
+    Serial.print(F(",srp,"));
     Serial.print(attr.startRightPath); 
-    Serial.print(",sel,");
+    Serial.print(F(",sel,"));
     Serial.print(attr.endLeftPath);    
-    Serial.print(",ser,");
+    Serial.print(F(",ser,"));
     Serial.print(attr.endRightPath);   
-    Serial.print(",sas,");
+    Serial.print(F(",sas,"));
     Serial.print(attr.atEntrance);
     
-    Serial.print(",sgl,");          // Is a goal node
+    Serial.print(F(",sgl,"));          // Is a goal node
     Serial.println(isGoalPosition);
     delay(DELAY_FOR_SERIAL_COMM);
   #endif  
@@ -759,10 +773,143 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
 
 // Wait for instructions on the serial port... we'll continue in this loop till
 // we get the 'serial termination' character (|)
-String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions) {
-  // This will wait for the instructions from the computer
+bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions) {
+
+  if (Serial.available() > 0) {
+    while (Serial.available() > 0) {
+      Serial.read();
+      delay(2);
+    }
+  }
+
+  Serial.println(F("IR,INS"));
   
-  localizationObj->writeMsg2Serial("IR,INS");
+  //localizationObj->writeMsg2Serial("IR,INS");
+
+  // Python will first tell us how many characters will follow we'll use that to allocate the array
+  // The routine below will wait up to 10 seconds
+  int bytes2Read = readFromSerialPort();
+  
+  if (DEBUGINFRARED) Serial.print(F("bytes2Read:")); Serial.println(bytes2Read);
+  
+  char *str_data = NULL;
+  if (bytes2Read > 0) {
+    if (DEBUGINFRARED) Serial.println(F("w1"));
+    char inputBuffer[bytes2Read+1];
+    int indexPos       = 0;
+    int maxLen         = 0;
+    int num_parameters = 0;
+    int currLen        = 0;
+    int valueRead;
+    while (indexPos < bytes2Read) {
+      valueRead = readFromSerialPort();
+      if (valueRead < 0) {
+        // Didn't get a value... we'll exit
+        bytes2Read = 0; 
+      }
+      else {        
+        inputBuffer[indexPos] = (char)valueRead;
+        if (inputBuffer[indexPos] == ',') {
+          if (currLen > maxLen) 
+            maxLen = currLen;
+          currLen = 0;
+          num_parameters++;
+        }
+        else currLen++;
+        indexPos++;
+      }
+    }
+    inputBuffer[indexPos] = '\0';
+ 
+    // Take any junk off port
+    while (Serial.available() > 0) {
+      Serial.read();
+      delay(2);
+    }
+
+    // bytes2Read is set to zero if encountered a problem
+    if (bytes2Read > 0) {
+      if (DEBUGINFRARED) Serial.println(F("w2")); 
+      // Process the last record from above... if currLen is > 0 we need to process it
+      if (currLen > 0) {
+        num_parameters++;
+        if (currLen > maxLen) 
+          maxLen = currLen;
+      }
+      // Assign pointer to address of array (same as str_data = &inputBuffer[0];)
+      str_data = inputBuffer;
+      
+      // Now put into string array
+      //const size_t PARAMS_MAX = num_parameters;
+      //const size_t LENGTH_MAX = len_parameter;
+      //char szParams[PARAMS_MAX][LENGTH_MAX + 1];
+      char szParams[num_parameters][maxLen+1];
+  
+      // This setups the 0'the row and sets pnext to point to the next address
+      char* pnext = (char*)extractToken(&szParams[0][0], str_data);
+      for (indexPos = 1; indexPos < num_parameters; indexPos++) {  
+         pnext = (char*)extractToken(&szParams[indexPos][0], pnext);
+      }
+    
+      if (DEBUGINFRARED) {
+        for ( size_t i = 0; i < num_parameters; i++ ) {
+           Serial.print("szParams[");
+           Serial.print(i);
+           Serial.print("]:");
+           Serial.println(szParams[i]);
+        }
+      }
+    
+      // Put the instructions into the stack
+      indexPos = 0;
+      InfraredInstructions theInstructions;
+      while (indexPos < num_parameters) {
+        switch( indexPos % 7) {
+          case 0:
+            theInstructions.instruction = szParams[indexPos][0];
+            //Serial.print("s$");
+            //Serial.println(szParams[indexPos][0]);
+            if (DEBUGINFRARED) {
+              Serial.print("ins:");
+              Serial.println(theInstructions.instruction);
+            }
+            break;
+          case 2: // x
+            theInstructions.pose.xPos = atof(szParams[indexPos]);
+            if (DEBUGINFRARED) {
+              Serial.print("xPos:");
+              Serial.println(theInstructions.pose.xPos);
+            }
+            break;
+          case 4: // y
+            theInstructions.pose.yPos = atof(szParams[indexPos]);
+            if (DEBUGINFRARED) {        
+              Serial.print("yPos:");
+              Serial.println(theInstructions.pose.yPos);
+            }
+            break;
+          case 6: // angle
+            theInstructions.pose.angle = atoi(szParams[indexPos]);
+            if (DEBUGINFRARED) {        
+              Serial.print("<:");
+              Serial.println(theInstructions.pose.angle);
+            }
+            queueOfInstructions.push(theInstructions);
+            break;
+        }
+        indexPos++;
+      }
+      return true;
+    }
+    else {
+      if (DEBUGINFRARED) Serial.println(F("w8"));
+      return false;
+    }
+  }
+  else {
+    if (DEBUGINFRARED) Serial.println(F("w9"));
+    return false; // Serial.println("No records to read on serial port");
+  }
 
   // Old code here from debuggin issues with communicating with sparky... appears was memory related
   // more than anything
@@ -776,81 +923,25 @@ String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queu
   //   sparki.beep();
   // }
   
-  String rtnString = ""; //Serial.readStringUntil('|');
-  if (DEBUGINFRARED) {
-    Serial.print("r$:");
-    Serial.println(rtnString);
-  }
+  // String rtnString = Serial.readStringUntil('|');
+  // if (DEBUGINFRARED) {
+  //   Serial.print("r$:");
+  //   Serial.println(rtnString);
+  // }
 
   // Format of the data returned is similar to comment on right, we get -1 values for angles on GOTO (M)
   // (the X is eXplore, Q is done/quit, G is Goal)
   // since it's not relevant... we get -1.0, -1,0, -1 on the DONE verb too
+  
+  /*
   const char*  str_data = rtnString.c_str();  //"M,x,9.2,y,4.3,<,-1,X,x,4.52,y,5.21,34,<,90"
   size_t num_parameters = 0;
   size_t len_parameter = 0;
     
   parmCountAndLength(str_data, num_parameters, len_parameter);
-
-  const size_t PARAMS_MAX = num_parameters;
-  const size_t LENGTH_MAX = len_parameter;
-  char szParams[PARAMS_MAX][LENGTH_MAX + 1];
-
-  // This setups the 0'the row and sets pnext to point to the next address
-  char* pnext = (char*)extractToken(&szParams[0][0], str_data);
-  for ( size_t i = 1; i < num_parameters; i++ ) {  
-     pnext = (char*)extractToken(&szParams[i][0], pnext);
-  }
-
-  if (DEBUGINFRARED) {
-    for ( size_t i = 0; i < num_parameters; i++ ) {
-       Serial.print("szParams[");
-       Serial.print(i);
-       Serial.print("]:");
-       Serial.println(szParams[i]);
-    }
-  }
-
-  // Put the instructions into the stack
-  int i = 0;
-  InfraredInstructions theInstructions;
-  while (i < num_parameters) {
-    switch( i % 7) {
-      case 0:
-        theInstructions.instruction = szParams[i][0];
-        //Serial.print("s$");
-        //Serial.println(szParams[i][0]);
-        if (DEBUGINFRARED) {
-          Serial.print("ins:");
-          Serial.println(theInstructions.instruction);
-        }
-        break;
-      case 2: // x
-        theInstructions.pose.xPos = atof(szParams[i]);
-        if (DEBUGINFRARED) {
-          Serial.print("xPos:");
-          Serial.println(theInstructions.pose.xPos);
-        }
-        break;
-      case 4: // y
-        theInstructions.pose.yPos = atof(szParams[i]);
-        if (DEBUGINFRARED) {        
-          Serial.print("yPos:");
-          Serial.println(theInstructions.pose.yPos);
-        }
-        break;
-      case 6: // angle
-        theInstructions.pose.angle = atoi(szParams[i]);
-        if (DEBUGINFRARED) {        
-          Serial.print("<:");
-          Serial.println(theInstructions.pose.angle);
-        }
-        queueOfInstructions.push(theInstructions);
-        // theInstructions = new InfraredInstructions;
-        break;
-    }
-    i++;
-  }
-
+  */
+  
+  
   /*
   String rtnString = "";
   bool keepReading = true;
@@ -867,6 +958,6 @@ String InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queu
     }
   }
   */
-  return rtnString;
+  //return *str_data;
 }
 

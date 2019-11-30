@@ -17,7 +17,7 @@ void setup() {
     sparki.clearLCD();
     delay(500);
   #else
-    Serial.begin(57600); //SERIAL_SPEED);
+    Serial.begin(19200); //SERIAL_SPEED);
     sparki.beep();
     delay(5);
     sparki.beep();
@@ -38,7 +38,8 @@ void setup() {
 
 char handShakeWithComputer(LocalizationClass &locObj) {
   LocalizationClass *locPtr = &locObj;
-  locPtr->writeMsg2Serial("IR,HNDSHK");
+  //locPtr->writeMsg2Serial("IR,HNDSHK");
+  Serial.println(F("IR,HNDSHK"));
   char rtnChar = ' ';
   char lastChar = ' ';
   byte iteration = 0;
@@ -97,85 +98,6 @@ void loop() {
     
     // We don't need to calculate the world... we'll update it as we move
     // thru the world
-
-    
-    #define TESTINIT false
-    #if TESTINIT
-      // Calculate world
-      localizationObj->writeMsg2Serial("Have the sparki on a 'clean' area");
-      delay(5000);
-      sparki.beep();
-    
-      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
-      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes());
-
-      InfraredAttributes currAttributes, lastAttributes;
-      lastAttributes = infraredObj->getBaseAttributes();
-      bool done = false;
-      while ( (movementsObj->moveForward(4,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
-        currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
-        infraredObj->showInfraredAttributes("Curr",currAttributes);
-        localizationObj->showLocation();
-        delay(50);
-      }      
-      localizationObj->writeMsg2Serial("Done with TESTINIT");
-    #endif
-
-   
-    #define TESTSTATECHANGE1 false
-    #if TESTSTATECHANGE1
-      localizationObj->writeMsg2Serial("Put sparki in front of door");
-      delay(5000);
-      sparki.beep();
-
-      InfraredAttributes currAttributes, lastAttributes;
-      
-      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
-      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes());
-      
-      //infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
-      lastAttributes = infraredObj->getBaseAttributes();
-      //infraredObj->showInfraredAttributes("last",lastAttributes);
-
-      int numStateChanges = 0;
-      bool done = false;
-      unsigned int baseTimer = millis();
-      unsigned int currTimer;
-      
-      while ( (movementsObj->moveForward(13,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
-        currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
-        currTimer = millis();
-        Serial.print("time to measure:");
-        Serial.println((float)(currTimer-baseTimer)/1000.0);
-        baseTimer = currTimer;
-        if (infraredObj->stateChanged(currAttributes, lastAttributes)) {
-          localizationObj->writeMsg2Serial("state changed");
-          movementsObj->stopMoving();
-          
-          delay(2000);
-          // Move forward half the line width and check that the state is still different
-          while (movementsObj->moveForward((infraredObj->getLineWidth()/2.0),ULTRASONIC_MIN_SAFE_DISTANCE,false));
-          delay(2000);
-          currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
-          if (infraredObj->stateChanged(currAttributes, lastAttributes)) {
-            localizationObj->writeMsg2Serial("2nd check state changed - true");
-            // State is still different... handle it
-            infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
-            numStateChanges++;
-            done = (numStateChanges > 2);
-          }
-          else localizationObj->writeMsg2Serial("2nd check state changed - false");
-        }
-        //currState = infraredObj->getStateForAttributes(currAttributes);
-        infraredObj->showInfraredAttributes("Curr",currAttributes);
-        localizationObj->showLocation();
-        delay(50);
-      }
-      movementsObj->stopMoving();
-      
-      localizationObj->writeMsg2Serial("Done");
-    #endif
-
 
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
@@ -249,7 +171,7 @@ void loop() {
           //   localizationObj->writeChar2Serial(currentInstruction.instruction,false);
           //   localizationObj->writeChar2Serial(',',false);
           
-          Serial.print("IR,INSSTART,");
+          Serial.print(F("IR,INSSTART,"));
           Serial.print(currentInstruction.instruction);
           Serial.print(',');
           localizationObj->showPose(poseOfSensor);
@@ -362,7 +284,7 @@ void loop() {
             // Stop so you can act on whatever instructions you're given
             
             movementsObj->stopMoving();          
-            Serial.println("stop");
+            if (DEBUGINFRARED) Serial.println("stop");
             sparki.beep();
             delay(1000);
             
@@ -396,13 +318,17 @@ void loop() {
               if (DEBUGINFRARED) Serial.println("c1");              // Show checkpoint 1
               
               // Get more instructions NOTE: This adds them to the QUEUE of instructions
-              String instructions = infraredObj->waitForInstructions(queueOfInstructions);
+              // It will return a boolean true if we got instructions and false otherwise... that's
+              // only being used here for console output
+              waitForInstructions = infraredObj->waitForInstructions(queueOfInstructions);
+              if (waitForInstructions == false) localizationObj->writeMsg2Serial("NoINS!");
+
               
               if (DEBUGINFRARED) {
                 localizationObj->writeMsg2Serial("GotInstructions");
-                char buffer[instructions.length()+1];
-                instructions.toCharArray(buffer, instructions.length()+1);
-                localizationObj->writeMsg2Serial(buffer);
+                //char buffer[instructions.length()+1];
+                //instructions.toCharArray(buffer, instructions.length()+1);
+                // localizationObj->writeMsg2Serial(*ptrInstructions);
   
                 InfraredInstructions theIns;
                 Serial.print("qOfIns,size:");
@@ -428,7 +354,7 @@ void loop() {
             else {
               // We have instructions in the stack, do the top item
               currentInstruction = queueOfInstructions.pop();
-              if (DEBUGINFRARED == false) {
+              if (DEBUGINFRARED) {
                 Serial.print("Ins:"); Serial.print(currentInstruction.instruction);
                 Serial.print(" x:"); Serial.print(currentInstruction.pose.xPos);
                 Serial.print(" y:"); Serial.print(currentInstruction.pose.yPos);
@@ -599,10 +525,86 @@ void loop() {
       }
     #endif
 
+    
+    #define TESTINIT false
+    #if TESTINIT
+      // Calculate world
+      localizationObj->writeMsg2Serial("Have the sparki on a 'clean' area");
+      delay(5000);
+      sparki.beep();
+    
+      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
+      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes());
+
+      InfraredAttributes currAttributes, lastAttributes;
+      lastAttributes = infraredObj->getBaseAttributes();
+      bool done = false;
+      while ( (movementsObj->moveForward(4,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
+        currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
+        infraredObj->showInfraredAttributes("Curr",currAttributes);
+        localizationObj->showLocation();
+        delay(50);
+      }      
+      localizationObj->writeMsg2Serial("Done with TESTINIT");
+    #endif
+
+
+   
+    #define TESTSTATECHANGE1 false
+    #if TESTSTATECHANGE1
+      localizationObj->writeMsg2Serial("Put sparki in front of door");
+      delay(5000);
+      sparki.beep();
+
+      InfraredAttributes currAttributes, lastAttributes;
+      
+      infraredObj->setInfraredBaseReadings();  // Just updates the base structure
+      infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes());
+      
+      //infraredObj->assignSourceAttributesToTarget(infraredObj->getBaseAttributes(), lastAttributes);
+      lastAttributes = infraredObj->getBaseAttributes();
+      //infraredObj->showInfraredAttributes("last",lastAttributes);
+
+      int numStateChanges = 0;
+      bool done = false;
+      unsigned int baseTimer = millis();
+      unsigned int currTimer;
+      
+      while ( (movementsObj->moveForward(13,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) && (done == false) ) {
+        currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
+        currTimer = millis();
+        Serial.print("time to measure:");
+        Serial.println((float)(currTimer-baseTimer)/1000.0);
+        baseTimer = currTimer;
+        if (infraredObj->stateChanged(currAttributes, lastAttributes)) {
+          localizationObj->writeMsg2Serial("state changed");
+          movementsObj->stopMoving();
+          
+          delay(2000);
+          // Move forward half the line width and check that the state is still different
+          while (movementsObj->moveForward((infraredObj->getLineWidth()/2.0),ULTRASONIC_MIN_SAFE_DISTANCE,false));
+          delay(2000);
+          currAttributes = infraredObj->getInfraredAttributesAtSensorPose();
+          if (infraredObj->stateChanged(currAttributes, lastAttributes)) {
+            localizationObj->writeMsg2Serial("2nd check state changed - true");
+            // State is still different... handle it
+            infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
+            numStateChanges++;
+            done = (numStateChanges > 2);
+          }
+          else localizationObj->writeMsg2Serial("2nd check state changed - false");
+        }
+        //currState = infraredObj->getStateForAttributes(currAttributes);
+        infraredObj->showInfraredAttributes("Curr",currAttributes);
+        localizationObj->showLocation();
+        delay(50);
+      }
+      movementsObj->stopMoving();
+      
+      localizationObj->writeMsg2Serial("Done");
+    #endif
+ 
   }
 
 
-
-
-  
 }

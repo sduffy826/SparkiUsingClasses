@@ -130,7 +130,10 @@ class InfraredClass {
 
            // Routine to get parms returned on serial device... may want to move this into a serial class down the road
            void parmCountAndLength(const char* str_data, unsigned int& num_params, unsigned int& theLen);
-           
+
+           // Util to read a char from the serial port (should move into a serialClass obj down the road)
+           int readFromSerialPort();
+ 
            // Routines to sample the infrared readings
            void setInfraredBaseReadings();  
 
@@ -140,7 +143,8 @@ class InfraredClass {
            // Return bool if the state changed 
            bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr);
 
-           String waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions);    
+           // Wait for instructions from the computer... it returns bool True if it got them :)
+           bool waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions);    
           
 };
 #endif

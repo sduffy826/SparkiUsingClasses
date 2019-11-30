@@ -29,17 +29,20 @@ def send2Sparki(theString):
   time.sleep(0.1)
 
 print("Sparki should init communication")
+numSent = 0
 while ((currTime) < runTime) and (leaveLoop == False):
   try:
     print("currTime {0}".format(currTime))
     stringFromSparki = ser.readline().decode('ascii').strip()
     print("stringFromSparki: {0}".format(stringFromSparki))
-    time.sleep(1.2)
+    time.sleep(0.1)
     if stringFromSparki.upper() == "DONE":
       leaveLoop = True
     else:
-      send2Sparki("M,x,1.2,y,-3.45,<,67,X,x,89.01,y,23.45,<,359")
-      time.sleep(0.2)
+      if numSent == 0:
+        send2Sparki("M,x,21.68,y,0.0,<,-1,M,x,14.39,y,0.0,<,-1,X,x,14.39,y,0.0,<,270")
+        time.sleep(0.1)
+        numSent += 1
   except:
     print("in exception processing")
     exc_type, exc_obj, exc_tb = sys.exc_info()

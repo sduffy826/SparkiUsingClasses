@@ -228,6 +228,7 @@ def getNextGoal2Visit():
       gv.goalsVisited.append(gv.goalDict["NODEID"])
       gv.goalBeingChecked = gv.goalDict["NODEID"]
       thePath2Goal = dijkstrasObj.getShortestPathToGoal(gv.goalDict["NODEID"])
+      print("in getNextGoal2Visit, gv.goalDict logic, path: {0}, dict: {1}".format(str(thePath2Goal),gv.goalDict))
       return thePath2Goal, gv.goalDict.copy()
     else:
       minPos  = -1
@@ -246,6 +247,8 @@ def getNextGoal2Visit():
         gv.goalsVisited.append(theDictItem["NODEID"])
         gv.goalBeingChecked = theDictItem["NODEID"]
         thePath2Goal = dijkstrasObj.getShortestPathToGoal(theDictItem["NODEID"])
+        print("in getNextGoal2Visit, node: {0}, path: {1}".format(theDictItem["NODEID"],str(thePath2Goal)))
+  
         return thePath2Goal, theDictItem
       else:
         return [], {}

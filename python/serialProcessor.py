@@ -16,7 +16,7 @@ pickleFile    = "pickFile_withSensors.bin"
 
 if useBluetooth == False:
   if isIBMMacBook:
-    ser = serial.Serial(port='/dev/cu.usbmodem14401', baudrate=57600)
+    ser = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=57600)
   else:
     ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=9600)
 
@@ -48,11 +48,24 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
   flgStopMainline = False
   gv.currentMode  = insMode  # Update the global which has our current mode 
   msg = "Start" if isStart else "Stop"
-  print("handleInstructions {0} :{1} :({2}) :{3}".format(msg,insMode,str(insPose),insGoalFlag))
+  print("handleInstructions (HI) (sensorPose) :{0} :{1} :({2}) :{3}".format(msg,insMode,str(insPose),insGoalFlag))
 
   if isStart:
+    # Save the pose the robot was at at the start of the instruction... we'll also set
+    # gv.lastRobotDictItem to this location; we need that when eXploring as it'll be the
+    # node that we're starting from during the exploration.
     gv.robotPoseFromInstruction = sparkiStats.getActualPoseOfSensorPose(insPose)
-  
+    robotNode = sparkiStats.getNodeAtPosition(gv.robotPoseFromInstruction["x"],gv.robotPoseFromInstruction["y"],False)
+    if (robotNode != -1):
+      gv.robotPoseFromInstruction["NODEID"] = robotNode
+    
+    gv.lastRobotDictItem = gv.robotPoseFromInstruction.copy()
+    print(" ")
+    print("HI: robotPoseFromInstruction: {0}".format(gv.robotPoseFromInstruction))
+    print("HI: lastRobotDictItem: {0}".format(gv.lastRobotDictItem))
+    print(" ")
+    
+
     # At start we'll clear the pathValueList and errorList
     gv.pathValueList.clear()  # Clear arrays
     gv.errorList.clear()
@@ -118,6 +131,14 @@ def isSparkiStartStopInstruction(theInstruction2Check):
           rtnDict["GOAL"] = (dumArray[11] == "T")
   return flgToRtn, rtnDict
 
+# Utility method to send a string to the sparki
+def send2Sparki(theString):
+  theLen = len(theString)
+  print("In send2Sparki, theLen: {0} string: {1}".format(theLen,theString))
+  ser.write(chr(theLen).encode())
+  time.sleep(0.05)
+  ser.write(theString.encode())
+  time.sleep(0.1)
 
 # ==================================================================================================
 # Mainline program
@@ -174,7 +195,7 @@ while ((currTime < runTime) and (leaveLoop == False)):
         print('sent dumdog')
 
       print(separator)
-      instructions2Send = sparkiStats.tellSparkiWhatToDo() + gv.SERIALTERMINATOR
+      instructions2Send = sparkiStats.tellSparkiWhatToDo() #+ gv.SERIALTERMINATOR
       print("*****************")
       print("Sending this to sparki: {0}".format(instructions2Send))
       print("*****************")
@@ -183,7 +204,9 @@ while ((currTime < runTime) and (leaveLoop == False)):
         print("Time: {0}  Serial is open".format(currTime))
       else:
         print("Serial port is NOT open")
-      ser.write(instructions2Send.encode())
+
+      send2Sparki(instructions2Send)
+
       currTime = time.time() - startTime
       print("Time: {0}  Instruction sent".format(currTime))
       #ser.write(b" ")
