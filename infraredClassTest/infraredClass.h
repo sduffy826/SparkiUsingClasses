@@ -30,6 +30,7 @@
 #define GOAL_MODE 'G'     // Goal
 #define DONE_MODE 'Q'     // done/Quit
 #define GOTO_MODE 'M'     // goto/Move
+#define SETPOSE_MODE 'P'  // set robot pose
 
 
 struct InfraredAttributes {

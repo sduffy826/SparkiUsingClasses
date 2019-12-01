@@ -6,6 +6,7 @@ C_EXPLORE = "X"
 C_GOAL    = "G"
 C_DONE    = "Q"  # quit
 C_GOTO    = "M"  # move to
+C_SETPOSE = "P"  # set pose of robot
 
 INFRARED_SENSOR_FORWARD_OF_CENTER = 4
 
@@ -18,6 +19,12 @@ MAXTAPEWIDTH = TAPEWIDTH + 1.1
 SERIALTERMINATOR = "|"
 
 logFile = None
+
+# Pickle files to save variables.
+pickleWithMap   = "pickleWithMap.bin"
+savedPickleMap  = False
+pickleWithGoal  = "pickleWithGoal.bin"
+savedPickleGoal = False
 
 # Map related elements, these should be saved as soon as you mapped the
 # configuration space
@@ -45,6 +52,8 @@ goalDict           = {} # The current goal, it has NODEID too
 
 # Vars for the current run, these should stay 'initial'
 # ------------------------------------------------------------------------------
+originalMode     = ' ' # Original run mode (explore or goal), if explore then we'll
+                       #   write out the map when we explored it
 currentMode      = ' ' # Mode running (explore, goal, done, goto)
 goalBeingChecked = ' ' # The goal node that's being checked
 goalFound        = ' ' # When goal is found this has it's node id
@@ -63,3 +72,7 @@ pathValueList = [] # The sparki gives us a bunch of values between start and end
 errorList     = [] # Work area to record errors that happend during a given path 
  
 pathBeingVisited = {} # Path being visited
+
+# Misc
+pendingInstructions = '' # Can't send sparki too many instructions at once this is
+                          # remaining instructions

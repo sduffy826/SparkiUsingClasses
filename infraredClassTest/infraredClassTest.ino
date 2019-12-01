@@ -146,6 +146,7 @@ void loop() {
       bool isMoving            = false;
       bool adjustedLine        = false;
       char lastInstructionMode = ' ';
+      bool resetStartPose      = false;
 
       unsigned int startDistanceInMM = 0;
       float currDistanceTraveled;
@@ -159,6 +160,9 @@ void loop() {
         done             = true;
         if (DEBUGINFRARED) Serial.print("!HndShk");
       }
+      else
+        if (currentInstruction.instruction == GOAL_MODE) // If we are starting in goal mode then we need to resetStartPose
+          resetStartPose = true;
       
       // the while is basically saying move forward a distance, the only time we check the ultrasonic distance is if we are in 'goal mode'
       //   changed for memory... while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,
@@ -293,8 +297,9 @@ void loop() {
           if (currentInstruction.instruction == EXPLORE_MODE)
             infraredObj->showInfraredAttributes("StateChg",currAttributes, poseOfSensor, check4Obstacle);
 
-          // If isMoving is off then we've reached destination, get the next destination
-          if (isMoving == false) {
+          // If isMoving is off then we've reached destination, get the next destination; if resetStartPose then we've had the first
+          //   state change... we need to reset our startPose to match the values from the mapping
+          if (isMoving == false || resetStartPose == true) {
             waitForInstructions = true;            
           }
           
@@ -374,7 +379,7 @@ void loop() {
             else {
               // We have instructions in the stack, do the top item
               currentInstruction = queueOfInstructions.pop();
-              if (DEBUGINFRARED) {
+              if (DEBUGINFRARED == false) {
                 Serial.print("Ins:"); Serial.print(currentInstruction.instruction);
                 Serial.print(" x:"); Serial.print(currentInstruction.pose.xPos);
                 Serial.print(" y:"); Serial.print(currentInstruction.pose.yPos);
@@ -391,6 +396,8 @@ void loop() {
                   break;
                 case GOAL_MODE:                  
                   distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose);
+                  // We should already be at goal... so set distanceToTravel to 0
+                  distanceToTravel = 0.0;
                   //localizationObj->writeMsg2Serial("IR,GoalStart");
                   break;
                 case DONE_MODE:
@@ -402,6 +409,11 @@ void loop() {
                   distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose);
                   //localizationObj->writeMsg2Serial("IR,GoToStart");
                   break;
+                case SETPOSE_MODE:
+                  distanceToTravel = 0.0;
+                  resetStartPose   = false;
+                  localizationObj->setCurrentXPosition(currentInstruction.pose.xPos);
+                  localizationObj->setCurrentYPosition(currentInstruction.pose.yPos);
                 default:
                   break;
               }

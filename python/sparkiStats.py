@@ -2,6 +2,7 @@
 from statistics import mean, median, mode, stdev
 import os
 import sys
+import pickle
 
 import sharedVars as gv
 import utilities
@@ -55,10 +56,13 @@ nodesToVisit = [] # Nodes to visit and the angle they should visit
 
 # Helper method, pass in the indicator as to whether we saw an obstacle (called after checking a goal)
 # if the flag is on then we'll set the global (goalFound) to be the goal that was being checked (goalBeingChecked)
+# We'll also set goalDict to have it's position and save the result to the pickle file for future runs
 def checkAndSetGoalStatus(sawObstacle):
   if ((gv.goalBeingChecked != ' ') and (sawObstacle == True)):
-    gv.goalFound = gv.goalBeingChecked
-
+    gv.goalFound   = gv.goalBeingChecked
+    posInGoalIndex = getPotentialGoalNodeIndex(gv.goalFound)
+    gv.goalDict    = gv.potentialGoalDicts[posInGoalIndex]
+    zSaveGoalElementToPickle()
 
 # -------------------------------------------------------------------------
 # Takes a sensor pose and returns the pose of the center of the robot.  The
@@ -666,15 +670,56 @@ def setPathValueListFromString(stringFromSparki):
     print(exc_type, fname, exc_tb.tb_lineno)
     sys.exit()
 
+# The sparki can't handle a lot of instructions (i.e. if string > 128 bytes) so this little
+# helper will only send up to (3-parm) instructions at a time... the remaining instructions
+# are put into 'gv.pendingInstructions' and the next time the sparki asks for instructions
+# it'll send those
+# You can call this with a set of instructions, or "" if you know there are pending ones and
+# want to send them.
+def tellSparkiHelper(currentInstructions, maxInstructions=3):
+  if len(gv.pendingInstructions) == 0:
+    gv.pendingInstructions = currentInstructions
+  elif len(currentInstructions) > 0:
+    gv.pendingInstructions += "," + currentInstructions
+  # We will at most send maxInstructions at once to the sparki
+  tempInstructions = gv.pendingInstructions.split(',')
+  numInstructions = int(len(tempInstructions)/7)
+  startIdx = 0
+  endIdx = (min(numInstructions,maxInstructions) * 7) # this is one past the end of element wanted
+  instruction2Return = ""
+  while (startIdx < endIdx):
+    instruction2Return += "," + tempInstructions[startIdx]
+    startIdx += 1
+  if len(instruction2Return) > 0:
+    instruction2Return = instruction2Return[1:] # strip off first ,
+  # Now reset the gv.pendingInstructions to be the remaining ones
+  newPending = ""
+  endIdx = numInstructions * 7
+  while (startIdx < endIdx):  # startIdx is at the start of next block of instructions already
+    newPending += "," + tempInstructions[startIdx]
+    startIdx += 1
+  if len(newPending) > 0:
+    newPending = newPending[1:]
+  gv.pendingInstructions = newPending
+  return instruction2Return
+
 # --------------------------------------------------------------------------------------------------
 # Sparki wants instructions; if there's paths to visit then give him the best one
 # if there aren't any paths then start checking goals
 def tellSparkiWhatToDo():
   try:
     writeHelper("In tellSparkiWhatToDo (TS)")
+    if len(gv.pendingInstructions) > 0:  # If there are pending instructions send them
+      return tellSparkiHelper("")
+
     movementType = gv.C_EXPLORE
     nodes2Target, gv.pathBeingVisited = getNextPath2Visit()
     if len(gv.pathBeingVisited) == 0:  # No paths left to visit see if there's a goal
+      # See if we should save the map (we started in explore mode and haven't saved before)
+      if gv.originalMode == gv.C_EXPLORE and gv.savedPickleMap == False:
+        zSaveMapElementsToPickle()
+        gv.savedPickleMap = True
+
       print("TSW2D: pathBeingVisited is empty, check goal")
       if gv.goalFound == ' ':
         movementType = gv.C_GOAL
@@ -685,7 +730,7 @@ def tellSparkiWhatToDo():
     if len(gv.pathBeingVisited) == 0: # No nodes or goals to vist tell em we're done
       return gv.C_DONE + ",x,-1.0,y,-1.0,<,-1"  # Need to pass all the elements that sparki expects, it'll ignore them"
     else:
-      return getDirectionsForNodes(nodes2Target, gv.pathBeingVisited, movementType)
+      return tellSparkiHelper(getDirectionsForNodes(nodes2Target, gv.pathBeingVisited, movementType))
   except:
     print("Exception raised - tellSparkiWhatToDo")
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -758,3 +803,36 @@ def writeVariables():
     print(exc_type, fname, exc_tb.tb_lineno)
     sys.exit()
   
+# --------------------------------------------------------------------------------------------------
+# Load the map elements from the pickle file
+def zLoadMapElementsFromPickle(pickleFile=gv.pickleWithMap):
+  if utilities.fileExists(pickleFile):
+    pickle_out = open(pickleFile,"rb") 
+    gv.worldXMin, gv.worldXMax, gv.worldYMin, gv.worldYMax, gv.startOfMaze, \
+      gv.nodeList, gv.nodeConnectionList, gv.potentialGoalNodes, \
+      gv.potentialGoalDicts, gv.pathsVisited = pickle.load(pickle_out)
+    pickle_out.close()
+
+# --------------------------------------------------------------------------------------------------
+# Load the goal dictionary element from the pickle file
+def zLoadGoalElementFromPickle(pickleFile=gv.pickleWithGoal):
+  if utilities.fileExists(pickleFile):
+    pickle_out = open(pickleFile,"rb") 
+    gv.goalDict = pickle.load(pickle_out)
+    pickle_out.close()  
+
+# --------------------------------------------------------------------------------------------------
+# Save elements to the pick file
+def zSaveMapElementsToPickle(pickleFile=gv.pickleWithMap):
+  pickle_out = open(pickleFile,"wb") 
+  pickle.dump([gv.worldXMin, gv.worldXMax, gv.worldYMin, gv.worldYMax, gv.startOfMaze, \
+               gv.nodeList, gv.nodeConnectionList, gv.potentialGoalNodes, \
+               gv.potentialGoalDicts, gv.pathsVisited], pickle_out)
+  pickle_out.close()
+
+# --------------------------------------------------------------------------------------------------
+# Save elements to the pick file
+def zSaveGoalElementToPickle(pickleFile=gv.pickleWithGoal):
+  pickle_out = open(pickleFile,"wb") 
+  pickle.dump(gv.goalDict, pickle_out)
+  pickle_out.close()  

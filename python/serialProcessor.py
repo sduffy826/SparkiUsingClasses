@@ -7,12 +7,12 @@ import pickle
 
 import sharedVars as gv
 import sparkiStats
+import utilities
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
-pickleFile    = "pickFile_withSensors.bin" 
 
 if useBluetooth == False:
   if isIBMMacBook:
@@ -49,13 +49,20 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
   gv.currentMode  = insMode  # Update the global which has our current mode 
   msg = "Start" if isStart else "Stop"
   print("handleInstructions (HI) (sensorPose) :{0} :{1} :({2}) :{3}".format(msg,insMode,str(insPose),insGoalFlag))
-
+  print("(HI) robotPose: {0}".format(sparkiStats.getActualPoseOfSensorPose(insPose)))
   if isStart:
     # Save the pose the robot was at at the start of the instruction... we'll also set
     # gv.lastRobotDictItem to this location; we need that when eXploring as it'll be the
     # node that we're starting from during the exploration.
-    gv.robotPoseFromInstruction = sparkiStats.getActualPoseOfSensorPose(insPose)
-    robotNode = sparkiStats.getNodeAtPosition(gv.robotPoseFromInstruction["x"],gv.robotPoseFromInstruction["y"],False)
+    # NOTE: If this is a pose instruction then lastRobotDictItem was already set, use it (that pose
+    #       is sensor pose which makes sense)
+    if insMode == "P":  # If this is a POSE instruction then use lastRobotDictItem
+      gv.robotPoseFromInstruction = gv.lastRobotDictItem.copy()
+      robotNode                   = gv.lastRobotDictItem["NODEID"]
+    else:
+      gv.robotPoseFromInstruction = sparkiStats.getActualPoseOfSensorPose(insPose)
+      robotNode = sparkiStats.getNodeAtPosition(gv.robotPoseFromInstruction["x"],gv.robotPoseFromInstruction["y"],False)
+    
     if (robotNode != -1):
       gv.robotPoseFromInstruction["NODEID"] = robotNode
     
@@ -149,18 +156,35 @@ for sepIdx in range(20): print(" ")
 for sepIdx in range(1,4):
   print(asterisk)
 
+gv.originalMode = 'X'  # Default mode to eXplore
+resetRobotPose  = False # If on we'll tell robot what his pose is on first instruction
+
+# If we have a map saved already ask the user which way they want to run it 
+# eXplore (find map) or Goal mode where we start searching for goals
+if utilities.fileExists(gv.pickleWithMap):
+  theResp = " "
+  while ((theResp != "X") and (theResp != "G")):
+    theResp = utilities.getInputChar("Enter mode: e'X'plore or 'G'oal").upper()
+  if theResp == "X":  # They want new exploration... save old files
+    utilities.fileArchive(gv.pickleWithMap)
+    utilities.fileArchive(gv.pickleWithGoal)
+  else:
+    gv.originalMode = theResp
+    resetRobotPose  = True
+    sparkiStats.zLoadMapElementsFromPickle()
+    sparkiStats.zLoadGoalElementFromPickle()
+
 while True:
   print("Waiting for handshake from sparki")
   ser.write(b' ')  # Poke the port
   stringFromSparki = ser.readline().decode('ascii').strip()
   if stringFromSparki == "IR,HNDSHK":
-    ser.write(("$"+gv.C_EXPLORE).encode())
+    ser.write(("$"+gv.originalMode).encode())
     break
   else:
     print("Ignoring this from sparki: {0}".format(stringFromSparki))
-print("Handshake complete, told sparki that we're in C_EXPLORE MODE  $$$CHANGE THIS$$ DOWN THE ROAD")
 
-dumdog = 0
+print("Handshake complete, told sparki that we're in {0} mode".format(gv.originalMode))
 
 # Enter main loop now
 while ((currTime < runTime) and (leaveLoop == False)):
@@ -190,17 +214,30 @@ while ((currTime < runTime) and (leaveLoop == False)):
     elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
       #shmoo = ser.readline().decode('ascii').strip()  
       #print("shmoo {0}".format(shmoo))
-   
       print(separator)
-      instructions2Send = sparkiStats.tellSparkiWhatToDo() #+ gv.SERIALTERMINATOR
+      if resetRobotPose:
+        # On first instruction we need to tell robot what his pose is
+        # The 'startOfMaze' has the pose of the sensor... the start always has that which
+        # makes sense when u think about it... we need to get the robot pose for that
+        # position
+        newPose = sparkiStats.getActualPoseOfSensorPose(gv.startOfMaze)
+        instructions2Send = gv.C_SETPOSE + ",x," + str(newPose["x"]) + \
+                                           ",y," + str(newPose["y"]) + \
+                                           ",<," + str(newPose["<"])
+        gv.lastRobotDictItem = gv.startOfMaze.copy() # Set the robot
+        resetRobotPose = False
+      else:  
+        instructions2Send = sparkiStats.tellSparkiWhatToDo() #+ gv.SERIALTERMINATOR
+      
       print("*****************")
       print("Sending this to sparki: {0}".format(instructions2Send))
       print("*****************")
       currTime = time.time() - startTime
-      if ser.is_open:
-        print("Time: {0}  Serial is open".format(currTime))
-      else:
-        print("Serial port is NOT open")
+      if (gv.DEBUGGING):
+        if ser.is_open:
+          print("Time: {0}  Serial is open".format(currTime))
+        else:
+          print("Serial port is NOT open")
 
       send2Sparki(instructions2Send)
 
@@ -246,8 +283,3 @@ sparkiStats.writeVariables()
 
 # Close the file with the strings
 gv.logFile.close()  
-
-# Save the list of dictionary items
-pickle_out = open(pickleFile,"wb")
-pickle.dump(gv.pathValueList, pickle_out)
-pickle_out.close()

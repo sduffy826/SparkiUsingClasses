@@ -1,4 +1,9 @@
+import os
+import time
+from datetime import datetime
 import math
+from getkey import getkey, keys
+
 
 # Constant for the maximum delta between two angles to still consider
 # them to be in the same direction
@@ -34,8 +39,34 @@ def getDistanceBetweenPoints(x1,y1,x2,y2):
   return round(math.sqrt((deltaX*deltaX)+(deltaY*deltaY)),2)
 
 # ----------------------------------------------------------------------
+# Prompt for a key from the user
+def getInputChar(message):
+  print(message)
+  return getkey()
+
+# ----------------------------------------------------------------------
 # Return the midpoint between two points (returns a tuple)
 def getMidpointBetweenPoints(x1,y1,x2,y2):
   xMid = round(((x1 + x2)/2.0),2)
   yMid = round(((y1 + y2)/2.0),2)
   return ( xMid, yMid )
+
+# ----------------------------------------------------------------------
+# Archive a file by renaming it to have a suffix, if you don't pass in the
+# suffix I'll use the iso date/time
+def fileArchive(fileName,suffix=""):
+  if len(suffix) == 0:
+    suffix = datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","")
+  newName = fileName.strip() + "_" + suffix
+  if fileExists(fileName):
+    renameFile(fileName, newName)
+
+# ----------------------------------------------------------------------
+# Return the midpoint between two points (returns a tuple)
+def fileExists(fileName):
+  return os.path.isfile(fileName)
+
+# ----------------------------------------------------------------------
+# Return the midpoint between two points (returns a tuple)
+def renameFile(oldName, newName):
+  return os.rename(oldName, newName)  

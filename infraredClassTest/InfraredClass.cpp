@@ -621,8 +621,10 @@ void InfraredClass::parmCountAndLength(const char* str_data, unsigned int& num_p
 // Read a character from the serial port, we'll wait 10 seconds
 int InfraredClass::readFromSerialPort() {
   int theCnt = 0;
+  sparki.RGB(RGB_RED);
   while (theCnt < 10000) { 
     if (Serial.available() > 0) {
+      sparki.RGB(RGB_GREEN);  
       return (int)Serial.read();
     }
     theCnt +=5;

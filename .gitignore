@@ -8,3 +8,5 @@ python/serialLog.*
 python/__*
 python/pickFile*
 testingCompile/
+pickle*
+
