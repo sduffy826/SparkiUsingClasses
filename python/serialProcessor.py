@@ -10,7 +10,7 @@ import sparkiStats
 import utilities
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
@@ -18,7 +18,7 @@ if useBluetooth == False:
   if isIBMMacBook:
     ser = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=57600)
   else:
-    ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=9600)
+    ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=19200)
 
 readLines = 0
 runTime   = 3600         # Run for 60 minutes

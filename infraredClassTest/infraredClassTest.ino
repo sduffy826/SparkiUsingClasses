@@ -210,7 +210,7 @@ void loop() {
         }
 
         // Due to running out of memory I'm not going to do the 'adjust to line' code... setting flag to true will bypass this.
-        adjustedLine = true;
+        //adjustedLine = true;
         if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
           if (DEBUGINFRARED) { Serial.println("*A*"); localizationObj->showPose(poseOfSensor); }
           
@@ -395,7 +395,7 @@ void loop() {
                   //localizationObj->showPose(infraredObj->getPoseOfCenterSensor());  // Tell it our current pose... this is the start position
                   break;
                 case GOAL_MODE:                  
-                  distanceToTravel = infraredObj->adjustAngleToPose(currentInstruction.pose);
+                  movementsObj->turnToAngle(currentInstruction.pose.angle);
                   // We should already be at goal... so set distanceToTravel to 0
                   distanceToTravel = 0.0;
                   //localizationObj->writeMsg2Serial("IR,GoalStart");
