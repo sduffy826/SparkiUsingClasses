@@ -9,7 +9,7 @@ import sharedVars as gv
 import sparkiStats
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 pickleFile    = "pickFile_withSensors.bin" 
@@ -26,8 +26,8 @@ startTime = time.time()  # Returns time in seconds since epoch
 ser.write(b'Trigger')    # Push something on the serial port, this will activate it
 
 gv.logFile = open(serialLogFile,"at") # Append and text file
-currTime      = time.time() - startTime
-leaveLoop     = False
+currTime   = time.time() - startTime
+leaveLoop  = False
 
 separator = '-' * 80  # Give 80 -'s (cool)
 asterisk  = '*' * 80
@@ -135,6 +135,7 @@ def isSparkiStartStopInstruction(theInstruction2Check):
 def send2Sparki(theString):
   theLen = len(theString)
   print("In send2Sparki, theLen: {0} string: {1}".format(theLen,theString))
+  ser.write(chr(1).encode())  # this is the trigger for the start... this would never appear in data normally
   ser.write(chr(theLen).encode())
   time.sleep(0.05)
   ser.write(theString.encode())
@@ -189,11 +190,7 @@ while ((currTime < runTime) and (leaveLoop == False)):
     elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
       #shmoo = ser.readline().decode('ascii').strip()  
       #print("shmoo {0}".format(shmoo))
-      dumdog += 1
-      if dumdog > 500:
-        ser.write(b'HiMom|')
-        print('sent dumdog')
-
+   
       print(separator)
       instructions2Send = sparkiStats.tellSparkiWhatToDo() #+ gv.SERIALTERMINATOR
       print("*****************")

@@ -5,7 +5,7 @@ import sys
 import os 
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 if useBluetooth == False:
   if isIBMMacBook:
@@ -13,7 +13,7 @@ if useBluetooth == False:
   else:
     ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=9600)
 
-runTime   = 10           # Limit run time
+runTime   = 20           # Limit run time
 startTime = time.time()  # Returns time in seconds since epoch
 ser.write(b' ')          # Push something on the serial port, this will activate it
 
@@ -39,9 +39,10 @@ while ((currTime) < runTime) and (leaveLoop == False):
     if stringFromSparki.upper() == "DONE":
       leaveLoop = True
     else:
-      if numSent == 0:
-        send2Sparki("M,x,21.68,y,0.0,<,-1,M,x,14.39,y,0.0,<,-1,X,x,14.39,y,0.0,<,270")
-        time.sleep(0.1)
+      if numSent <= 10:
+        send2Sparki("M,x,16.64,y,4.32,<,-1,G,x,16.64,y,4.32,<,90")
+        #send2Sparki("M,x,21.68,y,0.0,<,-1,M,x,14.39,y,0.0,<,-1,X,x,14.39,y,0.0,<,270")
+        time.sleep(1.1)
         numSent += 1
   except:
     print("in exception processing")

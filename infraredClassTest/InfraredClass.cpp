@@ -788,7 +788,13 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
 
   // Python will first tell us how many characters will follow we'll use that to allocate the array
   // The routine below will wait up to 10 seconds
-  int bytes2Read = readFromSerialPort();
+  int bytes2Read = 0;
+  while ((bytes2Read != 1) && (bytes2Read >= 0)) {
+    bytes2Read = readFromSerialPort();
+  }
+  // We processed trigger get the count of bytes to get
+  if (bytes2Read == 1)
+    bytes2Read = readFromSerialPort();
   
   if (DEBUGINFRARED) Serial.print(F("bytes2Read:")); Serial.println(bytes2Read);
   

@@ -593,7 +593,7 @@ def processValueList():
         gv.pathsVisited.append(robotDictItem.copy())
 
         if robotDictItem["TYPE"] == "sas":  # At start of maze
-          if len(gv.startPosition) == 0:
+          if len(gv.startOfMaze) == 0:
             gv.startOfMaze = robotDictItem.copy()
             writeHelper("Found SAS: {0}".format(gv.startOfMaze))
 
@@ -709,8 +709,7 @@ def writeVariables():
     writeHelper("gv.currentMode: {0}".format(gv.currentMode))
     writeHelper("gv.lastRobotDictItem: {0}".format(gv.lastRobotDictItem))
     writeHelper("gv.robotPoseFromInstruction: {0}".format(str(gv.robotPoseFromInstruction)))
-    writeHelper("gv.sensorPoseAtStop: {0}".format(str(gv.sensorPoseAtStop)))
-
+  
     writeHelper("gv.pathsVisited:")
     for aPathVisited in gv.pathsVisited:
       writeHelper("  {0}".format(str(aPathVisited)))
@@ -749,11 +748,6 @@ def writeVariables():
       for aNodeConnection in gv.nodeConnectionList:
         writeHelper("  {0}".format(str(aNodeConnection)))
       writeHelper("  As a graph: {0}".format(str(getGraphOfNodeConnectionList())))
-
-    if (len(gv.nodesToVisit) > 0):
-      writeHelper("gv.NodesToVisit")
-      for aNode in gv.nodesToVisit:
-        writeHelper("  {0}".format(str(aNode)))
     
     writeHelper("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 

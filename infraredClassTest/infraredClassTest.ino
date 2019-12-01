@@ -99,6 +99,22 @@ void loop() {
     // We don't need to calculate the world... we'll update it as we move
     // thru the world
 
+    #define TESTOBSTACLE false
+    #if TESTOBSTACLE
+      for (int i = 0; i < 10; i++) {
+        Serial.print(F("getFreeSpaceInFrontExcludingGripper(0)"));
+        Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
+        delay(200);
+        Serial.print(F("getDistanceFromCenterOfRobotToObstacle(0)"));
+        Serial.println(ultrasonicObj->getDistanceFromCenterOfRobotToObstacle(0));
+        delay(200);
+        Serial.print(F("getFreeSpaceInFrontOfGripper(0)"));
+        Serial.println(ultrasonicObj->getFreeSpaceInFrontOfGripper(0));
+        delay(200);
+      }
+    #endif
+
+
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
@@ -266,7 +282,11 @@ void loop() {
               Serial.print("spaceInFrontOfGripper: ");
               Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
             }
-            check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
+            float theNum = ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0);
+            Serial.print(F("Obst:"));
+            Serial.println(theNum);
+            if (theNum > INFRARED_MAX_GOAL_DISTANCE) check4Obstacle = false;
+            //check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
           }
             
           // If running in explor mode then send info to python program, we write out the state change, it's pose and the flag to say we found our goal
