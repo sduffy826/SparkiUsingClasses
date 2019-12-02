@@ -9,10 +9,10 @@
 #include "determineWorldClass.h"
 #include "QueueArray.h"
 
-#define DEBUGINFRARED false
+#define DEBUGINFRARED true
 
 #define INFRARED_LINE_THRESHOLD .05  // .10 Means 10%, so if 10% diff from base it'll register as a line
-#define INFRARED_MIN_READING 300
+#define INFRARED_MIN_READING 1       // Had to make it very small, on the gaffer tape the values are < 100
 #define INFRARED_LINE_WIDTH 4.7     // Width of tape... have it use method
 #define INFRARED_SAMPLE_SIZE 7      // Number of samples to take
 #define INFRARED_TAPE_SAMPLE_SIZE 3  // Number of samples to take when adjusting width base on tape
@@ -93,7 +93,11 @@ class InfraredClass {
            // Another method to adjust to center of line :)
            void adjustToLineCenter();
 
-           void InfraredClass::adjustToTapeHelper(bool &leftEdge, bool &rightEdge);
+           // Helper routine for 'adjustToTape'
+           void adjustToTapeHelper(bool &leftEdge, bool &rightEdge);
+           
+           // Routine to adjust to center of tape, this one rotates 90' and positions itself
+           // so it's perpenticular to the tape, then it rotates back onto the center of the tape
            bool adjustToTape();
 
            // Struct assignments, don't need structs are value types so assiging them is a member wise value assignment

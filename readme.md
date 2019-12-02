@@ -9,6 +9,7 @@
 - Here's a brief overview of includes you should be interested in.  I encapsulated the classes to expose public methods for dealing with a given area... i.e. any code that wants to find out the distance an obstacle is using the ultrasosnic sensor will do that by calling methods within the ulltrasonicClass.  The associated .cpp's have implementation of those methods.
   - **sparkiClassCommon.h** has common definitions and global variable definitions; you should be able to control a lot of functionality by just tweaking the 'defines' listed here
   - **determineWorldClass.h** code for managing the robots world, eventually will have map with all the attributes in it
+  - **infraredClass.h** code for working with the infrared sensors; mainly following tape/lines; has routines for centering on tape, determining state changes when following lines (i.e. intersections, drifting, ...)
   - **lightsClass.h** code related to dealing with the light sensors, calibration, sampling, calculating changes etc..
   - **localizationClass.h** code related to localization, has the robots pose and there are a lot of methods here to calculate positioning (more below).
   - **movementsClass.h** code to manage robot movements (forward, backward, turning...), has logic for following walls, adjusting positioning, etc...
@@ -39,6 +40,10 @@
     - To wiggle toward the wall (gripper should be wide), and continue to do that, what happens is one of the grippers hit the wall so it can't move forward in that direction, and eventually the robot will get in a position where he's 90' to the wall; you then just backup, and turn 90'... you're now parallel to the wall
     - You need to have enough distance to do this, so keep track of how long the wall has been next to you... when you see a state change in distance you log where you are... you continue to move forward till it hits the next increment; you now have a distance traveled in x direction, and delta in the y direction; you can calculate the angle that you are offset by.... you then backup till you're at desired distance to the wall (note may want to go little more to account for +- of the sensor), you then stop and turn using the angle you just calculated.
   
+## External code
+  - Due to memory constraints I developed python code for project 3 (infrared sensor mapping/goal searching).  The idea is that the sparki sends state information over the serial line and the python program reads/processes it.  When the sparki gets to a node (endpoint/intersection) it asks the python program for the next set of instructions; like GoTo, eXplore, check Goal etc...  See **python code** below for more, I just wanted to mention it here so you know it exists as you read thru the sparki code.
+
+
 ## LEGEND Serial communications
 **Memory** is critical and strings take up quite a bit of memory, I used the abbreviations below when outputting to the serial port.  The first letter is related to the class that generated the value (i.e D-Determine World, L-Lights, P-Localization, M-Movements U-Ultrasonic)
 - **DW** Define world, world dimensions (i.e. DW,x1,0.00,x2,115.40,y1,0.00,y2,151.40), it gives x1/x2 (min/max) so you know length of field, then y coordinates; note as it expllores the world these values could change and x1, y1 may go negative
@@ -153,6 +158,80 @@ I listed the classes alphabetically except for the first one... that has the con
 - Debugging
   - **void showWorld()** - This is just a helper to show your world... mainly for debugging.
 
+## InfraredClass
+**Code/logic related to the five infrared sensors underneath sparki** It also has routines to manage navigation using these sensors (i.e. following tape).
+```
+  // This struction has all the attributes related to infrared sensors; the max readings are
+  // 1000 so we represent that in 10bits; the *_line variables are flags to signify if we 
+  // detect a line for that sensor.  Below that are the flags for state... they are used
+  // to let the sparki take particular action when a particular state is raised.
+  // fyi: the state variables are triggered by comparing a given set of readings to a prior
+  //      set of readings.
+  struct InfraredAttributes {
+    unsigned int edgeLeft : 10;
+    unsigned int lineLeft : 10;
+    unsigned int lineCenter : 10;
+    unsigned int lineRight : 10;
+    unsigned int edgeRight : 10;
+    unsigned int el_line : 1;     // Flags that say if detect line
+    unsigned int ll_line : 1;     // It uses the base value to 
+    unsigned int lc_line : 1;     // determine this
+    unsigned int lr_line : 1;
+    unsigned int er_line : 1;
+
+    unsigned int driftLeft : 1;   // Flags for state
+    unsigned int driftRight : 1;
+    unsigned int onLine : 1;
+    unsigned int atExit : 1;
+    unsigned int startLeftPath : 1;
+    unsigned int startRightPath : 1;
+    unsigned int endLeftPath : 1;
+    unsigned int endRightPath : 1;
+    unsigned int atEntrance : 1;
+  };
+
+  // Struct for instructions, there's python code that sends a string representing instructions
+  // to the sparki; it has an instruction code and a pose related to it... i.e. the python
+  // code might send M,x,10.0,y,5.2,<,-1  The sparki code loads a variable of this 
+  // struct type, and the code uses that to naviate to a particular position
+  // The 'P'ose instruction comes into play when we're re-running program in 'G'oal mode;
+  // under this case we need to reset the pose of the robot to match the original pose
+  // from the mapping.
+  struct InfraredInstructions {
+    // InfraredInstructions();
+    char instruction;  // X-explore, G-goal, Q-quit/done, M-moveto (goto) and P-set robot Pose
+    Pose pose;         // has x, y (floats) and angle (int)
+  };
+```
+- **private methods**
+  - **bool lineFlagHelper(const int &currentReading, const int &baseReading)** helper routine, this takes in two 'reading' values and returns a boolean signifying whether the sensor is on or off.
+
+- **public methods**
+  - **InfraredClass(LocalizationClass &localizationObject, MovementsClass &movementsObject)** constructor
+
+  - **float adjustAngleToPose(const Pose &targetPose)** Move to an angle and return the distance to get from current pose to target pose (note: may want to move this into movementsClass (and change the move2Pose to use this.
+
+  - **int adjustPositionOnLine(const int &lastIntervalDistance)** Routine adjusts the position of the robot on the line, pass in the last interval that was used... it'll return the new interval that should be checked, NOTE: robot should not be moving when this is called.
+  - **void adjustForDrifting(const bool &driftingLeft)** Routine to handle when robot drifts off the line (this is sensed when one of the center sensors is on and the other two are off); this isn't used for 'wide' tape since the edge sensors would trigger before drift was sensed.
+  - **void adjustToLineCenter()** Another method to center the robot on the line... this uses back and forth movement to reposition robot... effective if tape is not reflective but not too accurate with reflective tape... the adjustToTape() was more accurate for that
+  - **void adjustToTapeHelper(bool &leftEdge, bool &rightEdge)** Helper routine for 'adjustToTape'; this samples the readings and returns status of 'edges'
+  - **bool adjustToTape()**  Routine to adjust to center of tape, this one rotates 90' and positions itself so it's perpenticular to the tape, then it rotates back onto the center of the tape.  The boolean returned indicates that an adjustment was made... it would only be 'off' if the readings were noisy and it couldn't determine an accurate angle of adjustment.
+  - **int calcAngleFromEdgeToTape(const bool &leftEdge, const int &baseReading, const int &millisFor90Degrees, const bool &isRecall=false)**  Calculate the angle from the edge reading to the tape, if firstArg is true then you want to calculate the left edge otherwise it'll do the right one, the other args are the 'base' reading and the number of milliseconds needed to turn 90 degrees (I use that to calculate the angle)
+  - **void clearInfraredAttributes(InfraredAttributes &attr2Clear)** Clear infrared readings for the argument passed in
+  - **const char* extractToken(char* dst, const char* src)** Extract value in src delimitted by , result goes into dst (this is for parsing string from computer so that sparki could use it)
+  - **InfraredAttributes getBaseAttributes()** Get the base attributes (the 'base sample')
+  - **void getInfraredAttributesAtSensorPose(InfraredAttributes &infraAttr)** Get infrared attributes at the current (sensors) pose
+  - **float getLineWidth()**  Return tape width in cm (as float)
+  - **Pose getPoseOfCenterSensor()**  Return the pose of the middle infrared sensor           
+  - **bool onIntersection(const int &baseReading)** Return bool if the robot is on an intersection (both edge readings on)
+  - **bool onLine(const int &baseReading)** Return bool if any of the three center infrared lights is on
+  - **void parmCountAndLength(const char* str_data, unsigned int& num_params, unsigned int& theLen)** Routine to get parms returned on serial device... may want to move this into a serial class down the road
+  - **int readFromSerialPort()** Reads a byte from the serial device (note - and + values (-128-127) not sure about range but u know what I mean)
+  - **void setInfraredBaseReadings()** Call this to set the 'base' infrared readings... should not be over any object when called.
+  - **void showInfraredAttributes(char *msgStr, const InfraredAttributes &attr, const Pose &poseOfCenterSensor, const bool &isGoalPosition)** Debugging method - show the attributes passed in 
+  - **bool stateChanged(InfraredAttributes &currAttr, const InfraredAttributes &priorAttr)** Helper routine to compare two sets of attributes, it'll update 'currAttr'; the boolean returned indicates if there has been as 'state' change.
+  - **bool waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions)** Wait for instructions from the computer... it returns bool True if it got them :)
+      
 
 
 ## LightsClass
@@ -417,5 +496,18 @@ Debugging/output methods
 
   - **void UltrasonicClass::showUltrasonic(const int &theAngle, const int &theDistance)** - Helper to show ultrasonic value
  
+---
+## Python Code
+  - Code related to infrared sensor: Due to memory limitations the mapping/searching functions required couldn't be implemented on the sparki.  The sparki communicates over the serial line to a set of python programs that handle the funcitonality.  Basically what you need to do is launch the sparki program, after it loads you then launch the python program; it connects to the sparki and the two will communicate till the goal is reached.  A little more on the code
+    - **serialProcessor.py** This is the program to launch; if you've already mapped the world then the program will ask you how you want to run, enter 'X' if you want to eXplore and re-map the world, or 'G' if you want to search for the Goal (i.e. and endpoint with a block in front of it).
+    - **sparkiStats.py** This has a lot of the functions/utilities supporting mapping/goal searching.  There are routines for maintaining nodes, potential goals, paths visited etc... 
+    - **utilities.py** Miscellaneous utility functions (i.e. calculating distance between points, file archiving, ...)
+    - **sharedVars.py** This has the global variables/constants.  Look this over, this is where you can alter how the program runs.  Note: when a 'map' has been determined then the variables needed to maintain the map information is written to a 'pickle' file... the variables for that are identified in this file.
+    - **dijkstrasClass.py** This code handles the searching the graph.  I looked into A* also but dijkstras is basically A* without the heuristic to determine cost to endpoint.  A* is faster but given that speed on our graph wasn't really a concern and the fact that A* requires another element (end point cost) associated with the node I chose dijkstras algorithm (the memory concern was spawned because I first wrote this for the sparki... moved it to python when sparki had other memory issues)
     
+  - Miscellaneous Programs
+    - **readSerialPort.py** Test program for serial communications
+    - **serialCommunication.py** Another serial port communication program
+    - **showPickleData.py** Shows the values stored in pickle files
+    - **testRoutines.py** Utility to test the routines; i.e. calling sparkiStats.getActualPoseOfSensorPose() to determine pose.  You should use this to test new routines... it's better than doing it when the sparki is eXploring or Goal searching.
     

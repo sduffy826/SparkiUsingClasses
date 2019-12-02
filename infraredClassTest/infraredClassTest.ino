@@ -118,7 +118,7 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
-    #define TESTSTATECHANGE2 true
+    #define TESTSTATECHANGE2 false
     #if TESTSTATECHANGE2
       QueueArray<InfraredInstructions> queueOfInstructions;
       InfraredInstructions currentInstruction;
@@ -516,7 +516,7 @@ void loop() {
     #endif
 
 
-    #define TESTADJUST2TAPE false
+    #define TESTADJUST2TAPE true
     #if TESTADJUST2TAPE   
 
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure

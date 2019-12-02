@@ -213,6 +213,8 @@ void InfraredClass::adjustToLineCenter() {
   */
 } 
 
+// Helper routine to sample the edge readings; will return appropriate flags for their
+//   state (based on samples taken)
 void InfraredClass::adjustToTapeHelper(bool &leftEdge, bool &rightEdge) {
   byte leftOn = 128, rightOn = 128;
   int theLReading, theRReading;
@@ -243,13 +245,16 @@ void InfraredClass::adjustToTapeHelper(bool &leftEdge, bool &rightEdge) {
   }
 }
 
+// Routine to adjust to the center of the tape... see logic below
 bool InfraredClass::adjustToTape() {
   // Logic
   //   turn 90'
   //   backup and log difference between edge sensor time they went on (this is edge of tape)
   //   keep backing up till sensors go off... log delta... the time between them should be same, if not repeat
+  //   the delta between time for left/right edges represent the amount of angle adjustment you 
+  //     need to make... correct the angle using those values
   //   u know the tape width and how long you've travelled... move forward to middle of tape and turn
-  
+  //     back 90'
   unsigned long edgeLeftTime = 0, edgeRightTime = 0;
   float distanceTraveled1 = 0.0, distanceTraveled2 = 0.0, totalDistance = 0.0;
   bool leftIndicator, rightIndicator;
@@ -294,9 +299,12 @@ bool InfraredClass::adjustToTape() {
         endDelta = ((edgeLeftTime - edgeRightTime) != 0) ? (edgeLeftTime - edgeRightTime) : 1; // want startDelta to not be 0        
       }
     }
+    totalDistance = movementsObj->getDistanceTraveledSoFar(); 
     // delay(2);  // adjustTapeHelper has a delay in it, don't think we need this one
   }
-  totalDistance += movementsObj->getDistanceTraveledSoFar(); // If not moving this method returns 0 so no worry about overcounting
+  // If distanceTraveled1 or distanceTraveled2 have been set then getDistanceTraveledSoFar was
+  // reset so we need to add those distances back in.
+  totalDistance += distanceTraveled1 + distanceTraveled2;
   
   movementsObj->stopMoving();
   if (DEBUGINFRARED) {
