@@ -8,9 +8,10 @@ import pickle
 import sharedVars as gv
 import sparkiStats
 import utilities
+import csv
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
@@ -148,15 +149,27 @@ def send2Sparki(theString):
   ser.write(theString.encode())
   time.sleep(0.1)
 
-def writePose(stringFromSparki):
-  if gv.writeDataCSV > 0:
-    if gv.writeDataCSV == 1:
-      gv.dataHandle = open(gv.dataCSV,"w")
-      gv.dataHandle.write("x_value,y_value\n")  # Put out column header
-      gv.writeDataCSV = 2                          # Set indicator that we opened/wrote file
+def writePose(stringFromSparki):  
+  if gv.writeCSVData > 0:
+    if gv.writeCSVData == 1:
+      if utilities.fileExists(gv.csvFileName):
+        utilities.fileArchive(gv.csvFileName)
+  
+      gv.csvFileHandle = open(gv.csvFileName,"w")
+      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+      gv.csvWriter.writeheader()
+      gv.csvFileHandle.close()
+      gv.csvFileHandle = open(gv.csvFileName,"a")
+      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+      gv.writeCSVData  = 2
     dumArray = stringFromSparki.split(',')
-    gv.dataHandle.write("{0},{1} \n".format(dumArray[2],dumArray[4]))
-
+    dataRec = { "x_value" : float(dumArray[2]),
+               "y_value" : float(dumArray[4]) }
+    print(dataRec)            
+    print(type(gv.csvWriter))
+    gv.csvWriter.writerow(dataRec)
+    print("here")
+      
 # ==================================================================================================
 # Mainline program
 # ==================================================================================================
@@ -182,7 +195,16 @@ if utilities.fileExists(gv.pickleWithMap):
     resetRobotPose  = True
     sparkiStats.zLoadMapElementsFromPickle()
     sparkiStats.zLoadGoalElementFromPickle()
-
+"""
+if gv.writeCSVData:
+  if utilities.fileExists(gv.csvFileName):
+    utilities.fileArchive(gv.csvFileName)
+  with open(gv.csvFileName, 'w') as csv_file:
+    gv.csvWriter = csv.DictWriter(csv_file, fieldnames=gv.csvFieldNames)
+    gv.csvWriter.writeheader()
+  with open(gv.csvFileName, 'a') as csv_file:
+    gv.csvWriter = csv.DictWriter(csv_file, fieldnames=gv.csvFieldNames)
+"""
 while True:
   print("Waiting for handshake from sparki")
   ser.write(b' ')  # Poke the port
@@ -294,6 +316,6 @@ sparkiStats.writeVariables()
 
 # Close the file with the strings
 gv.logFile.close()  
+
 if gv.writeDataCSV > 1:
-  gv.dataHandle.close()
-  
+  gv.csvFileHandle.close()  

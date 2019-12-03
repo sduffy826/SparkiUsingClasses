@@ -9,4 +9,7 @@ python/__*
 python/pickFile*
 testingCompile/
 pickle*
+data.csv*
+python/data.csv
+serialProcessor.back*
 

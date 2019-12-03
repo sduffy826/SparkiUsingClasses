@@ -4,10 +4,66 @@ import serial
 import time
 from datetime import datetime
 import pickle
+import csv
 
 import sharedVars as gv
 import sparkiStats
 import utilities
+
+"""
+if gv.writeCSVData:
+  if utilities.fileExists(gv.csvFileName):
+    utilities.fileArchive(gv.csvFileName)
+
+with open(gv.csvFileName, 'a') as csv_file:
+  gv.csvWriter = csv.DictWriter(csv_file, fieldnames=gv.csvFieldNames)
+  gv.csvWriter.writeheader()
+
+#with open(gv.csvFileName, 'a') as csv_file:
+#  gv.csvWriter = csv.DictWriter(csv_file, fieldnames=gv.csvFieldNames)
+
+theRecord = {"x_value" : 2, "y_value" : 3}
+gv.csvWriter.writerow(theRecord)
+def writePose(stringFromSparki):    
+  print("in writePose")
+  if gv.writeCSVData:
+    print("writePose1")
+    dumArray = stringFromSparki.split(',')
+    dataRec = { "x_value" : float(dumArray[2]),
+               "y_value" : float(dumArray[4]) }
+    print(dataRec)            
+    print(type(gv.csvWriter))
+    gv.csvWriter.writerow(dataRec)
+    print("here")
+"""
+def writePose(stringFromSparki):  
+ try:
+  if gv.writeCSVData > 0:
+    if gv.writeCSVData == 1:
+      if utilities.fileExists(gv.csvFileName):
+        utilities.fileArchive(gv.csvFileName)
+  
+      gv.csvFileHandle = open(gv.csvFileName,"w")
+      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+      gv.csvWriter.writeheader()
+      gv.csvFileHandle.close()
+      gv.csvFileHandle = open(gv.csvFileName,"a")
+      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+      gv.writeCSVData  = 2
+    dumArray = stringFromSparki.split(',')
+    dataRec = { "x_value" : float(dumArray[2]),
+               "y_value" : float(dumArray[4]) }
+    print(dataRec)            
+    print(type(gv.csvWriter))
+    gv.csvWriter.writerow(dataRec)
+    print("here")
+ except:
+   print("Exception raised - getNextGoal2Visit")
+   exc_type, exc_obj, exc_tb = sys.exc_info()
+   fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+   print(exc_type, fname, exc_tb.tb_lineno)
+   sys.exit()
+
 
 def saveMapElementsToPickle(pickleFile):
   pickle_out = open(pickleFile,"wb") 
@@ -85,11 +141,19 @@ if False:
     else:
       print(mapPickle + " does not exist")
 
-if True:
+if False:
   ins = "M,x,5.32,y,0.0,<,-1,M,x,39.98,y,0.0,<,-1,M,x,40.14,y,18.06,<,-1,M,x,14.8,y,17.7,<,-1,M,x,14.86,y,26.33,<,-1,G,x,14.86,y,26.33,<,90"
   print(sparkiStats.tellSparkiHelper(ins))
   print("gv.pendingInstructions: {0}".format(gv.pendingInstructions))
   print(sparkiStats.tellSparkiHelper(""))
+
+if True:
+  string = "PO,x,12.3,y,45.6,<,10" 
+  writePose(string)
+  writePose(string)
+
+
+
 
 """
 def testLoadPick(pickleFile):
