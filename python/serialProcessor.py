@@ -10,7 +10,7 @@ import sparkiStats
 import utilities
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
@@ -148,6 +148,15 @@ def send2Sparki(theString):
   ser.write(theString.encode())
   time.sleep(0.1)
 
+def writePose(stringFromSparki):
+  if gv.writeDataCSV > 0:
+    if gv.writeDataCSV == 1:
+      gv.dataHandle = open(gv.dataCSV,"w")
+      gv.dataHandle.write("x_value,y_value\n")  # Put out column header
+      gv.writeDataCSV = 2                          # Set indicator that we opened/wrote file
+    dumArray = stringFromSparki.split(',')
+    gv.dataHandle.write("{0},{1} \n".format(dumArray[2],dumArray[4]))
+
 # ==================================================================================================
 # Mainline program
 # ==================================================================================================
@@ -208,6 +217,8 @@ while ((currTime < runTime) and (leaveLoop == False)):
       # error on the initial 'explore' path (means a restart)
       # The routine below also converts the sensorPose into the robot pose
       leaveLoop = handleInstruction(isStartIns,insMode,insPose,insGoal)
+    elif ((len(stringFromSparki) > 3) and (stringFromSparki[0:3] == "PO,")):
+      writePose(stringFromSparki)
     elif stringFromSparki.upper() == "IR,DONE":
       print(asterisk)
       leaveLoop = True
@@ -283,3 +294,6 @@ sparkiStats.writeVariables()
 
 # Close the file with the strings
 gv.logFile.close()  
+if gv.writeDataCSV > 1:
+  gv.dataHandle.close()
+  

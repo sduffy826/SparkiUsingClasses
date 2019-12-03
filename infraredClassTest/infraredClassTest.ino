@@ -118,7 +118,7 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
-    #define TESTSTATECHANGE2 false
+    #define TESTSTATECHANGE2 true
     #if TESTSTATECHANGE2
       QueueArray<InfraredInstructions> queueOfInstructions;
       InfraredInstructions currentInstruction;
@@ -168,6 +168,9 @@ void loop() {
       //   changed for memory... while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,
       //                                    (currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) || (done == false) ) {  
+
+        if (WRITEMAPDATA == true) localizationObj->showLocation();
+        
         currDistanceTraveled = movementsObj->getDistanceTraveledSoFar();
         //   Serial.print("mem"); Serial.println(freeRam());   this didn't seem to be accurate... left for reference
         
@@ -516,7 +519,7 @@ void loop() {
     #endif
 
 
-    #define TESTADJUST2TAPE true
+    #define TESTADJUST2TAPE false
     #if TESTADJUST2TAPE   
 
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure

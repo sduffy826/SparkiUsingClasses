@@ -20,6 +20,11 @@ SERIALTERMINATOR = "|"
 
 logFile = None
 
+# Handle for writing csv file with poses...
+dataHandle   = None
+dataCSV      = "data.csv"
+writeDataCSV = 1           # Means write, when started writing we'll change to 2, 0 means don't write
+
 # Pickle files to save variables.
 pickleWithMap   = "pickleWithMap.bin"
 savedPickleMap  = False
