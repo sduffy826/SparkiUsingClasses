@@ -25,8 +25,8 @@
 #define INFRARED_MAX_DISTANCE_TO_TRAVEL 100.0  // Max distance to travel when exploring
 #define INFRARED_CONSECUTIVE_EDGE_READINGS 3   // Must see this many consecutive edge readings when calculating angle position to tape (for positioning) 
 #define INFRARED_INTERVAL_2_CHECK_ON_LINE 1    // Interval to check that we're on the line after a position change
-#define INFRARED_SPACE_BEFORE_LINE_CHECK 7     // changed from 12 to 5.. Need to move this amount before we'll try to adjust for line (1/2 width + tape width) about
-
+#define INFRARED_SPACE_BEFORE_LINE_CHECK_MM 70 // changed from 12 to 5.. Need to move this amount before we'll try to adjust for line (1/2 width + tape width) about
+#define INFRARED_SPACE_RECHECK_LINE_MM 200     // Recheck line if you travel this distance
 
 #define EXPLORE_MODE 'X'  // eXplore
 #define GOAL_MODE 'G'     // Goal

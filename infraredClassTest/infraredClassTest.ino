@@ -232,8 +232,14 @@ void loop() {
           }
         }
         */
+
+        int deltaMM = (int)(currDistanceTraveled*10) - startDistanceInMM;
+        // We need to recheck if we go a long distance :)
+        if ((adjustedLine == true) && ( deltaMM > INFRARED_SPACE_RECHECK_LINE_MM)) 
+          adjustedLine = false;
         
-        if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
+        //if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
+        if ((adjustedLine == false) && (deltaMM > INFRARED_SPACE_BEFORE_LINE_CHECK_MM)) {
           if (DEBUGINFRARED) { Serial.println("*A*"); localizationObj->showPose(poseOfSensor); }
           
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving

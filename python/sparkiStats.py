@@ -183,7 +183,8 @@ def getNodeAtPosition(x, y, createIfNonExistant=True):
   try:
     nodeIdToReturn = -1
     for idx in range(len(gv.nodeList)):
-      if utilities.getDistanceBetweenPoints(x,y,gv.nodeList[idx]["x"],gv.nodeList[idx]["y"]) <= (gv.TAPEWIDTH/2):
+      # Was using distance of gv.TAPEWIDTH/2 but changed to tapwidth
+      if utilities.getDistanceBetweenPoints(x,y,gv.nodeList[idx]["x"],gv.nodeList[idx]["y"]) <= (gv.TAPEWIDTH):
         nodeIdToReturn = idx
     if nodeIdToReturn == -1 and createIfNonExistant: # Not found, add it
       nodeIdToReturn = len(gv.nodeList) # Len is 1 greater than index position, so can use it without any modification
