@@ -21,7 +21,7 @@ def animate(i):
 
   plt.cla()  # Clears axis
 
-  plt.plot(x, y, label='My travels :)')
+  plt.plot(y, x, label='My travels :)')
 
   plt.legend(loc='upper left')
   plt.tight_layout()

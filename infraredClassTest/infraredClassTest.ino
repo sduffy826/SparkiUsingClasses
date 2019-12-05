@@ -118,8 +118,8 @@ void loop() {
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
-    #define TESTSTATECHANGE2 true
-    #if TESTSTATECHANGE2
+    #define TESTMAZE true
+    #if TESTMAZE
       QueueArray<InfraredInstructions> queueOfInstructions;
       InfraredInstructions currentInstruction;
     
@@ -131,6 +131,7 @@ void loop() {
       InfraredAttributes currAttributes, lastAttributes;
       
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
+      int baseEdgeLeft = infraredObj->getBaseAttributes().edgeLeft;  // Save edge reading, we'll use this to check for intersections
       if (DEBUGINFRARED) infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes(),poseOfSensor,false);
       
       //int numStateChanges = 0;
@@ -169,7 +170,7 @@ void loop() {
       //                                    (currentInstruction.instruction==GOAL_MODE)) == true) || (done == false) ) {
       while ( (movementsObj->moveForward(distanceToTravel,ULTRASONIC_MIN_SAFE_DISTANCE,false) == true) || (done == false) ) {  
 
-        if (WRITEMAPDATA == true) localizationObj->showLocation();
+        if (WRITEMAPDATA == true) localizationObj->showLocation("IP");
         
         currDistanceTraveled = movementsObj->getDistanceTraveledSoFar();
         //   Serial.print("mem"); Serial.println(freeRam());   this didn't seem to be accurate... left for reference
@@ -212,8 +213,26 @@ void loop() {
           Serial.println(startDistanceInMM);
         }
 
-        // Due to running out of memory I'm not going to do the 'adjust to line' code... setting flag to true will bypass this.
+        // If out of memory then you can disable the line adjusting by turning flag on below
+        // The logic for adjusting to tape is: if and edge sensor is one or we've traveled a given distance check
+        //   that we're on the center of the tape... note this doesn't work if intersections are too close to eachother..
+        //   if memory wasn't a concern I'd check that we traveled a minimum distance before checking the edge but 
+        //   there isn't enuf memory to add that now... if find a way to save more memory then add that here
         //adjustedLine = true;
+        /* COMMENTED OUT this block... thinking if change constants to be 5 cm we should be ok... when we make a turn
+         *  the robot is 2cm in front of the tape... we only need 7 cm of space to check if on a line... test this
+         *  out and see if it resolves issue
+        if (adjustedLine == false) {
+          if ( (infraredObj->onIntersection(baseEdgeLeft) == true) ||
+               ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10) ) ) {
+            distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
+            movementsObj->stopMoving();                                       // Stop moving
+            adjustedLine = infraredObj->adjustToTape();
+            continue;  // Go back to the start of the loop, this will make us start moving again
+          }
+        }
+        */
+        
         if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
           if (DEBUGINFRARED) { Serial.println("*A*"); localizationObj->showPose(poseOfSensor); }
           
@@ -222,7 +241,7 @@ void loop() {
           adjustedLine = infraredObj->adjustToTape();
           continue;  // Go back to the start of the loop, this will make us start moving again
         }
-      
+        
         // This is just for debugging       
         #if DEBUGINFRARED
           currTimer = millis();
@@ -382,7 +401,7 @@ void loop() {
             else {
               // We have instructions in the stack, do the top item
               currentInstruction = queueOfInstructions.pop();
-              if (DEBUGINFRARED == false) {
+              if (DEBUGINFRARED) {
                 Serial.print("Ins:"); Serial.print(currentInstruction.instruction);
                 Serial.print(" x:"); Serial.print(currentInstruction.pose.xPos);
                 Serial.print(" y:"); Serial.print(currentInstruction.pose.yPos);

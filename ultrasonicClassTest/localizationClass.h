@@ -41,8 +41,8 @@ class LocalizationClass {
           float calculateNewY(const float &distance, const int &angleDelta);
           void setNewPosition(const float &distance, const int &angleDelta);
           int getShortestAngleDeltaToGetToOrientation(const int &targetOrientation);
-          void showPose(const Pose &pos2Show, const boolean &newLine=true);
-          void showLocation();
+          void showPose(const Pose &pos2Show, const boolean &newLine=true, const char *theTag="PO");
+          void showLocation(const char *theTag="PO");
           void writeMsg2Serial(char *theMessage, const boolean &newLine=true);  // Write string to serial
           void writeChar2Serial(char theChar, const boolean &newLine=true);     // Write a char to the serial port
           float distanceBetweenPoses(const Pose &firstPose, const Pose &secondPose);

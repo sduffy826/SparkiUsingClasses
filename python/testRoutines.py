@@ -39,26 +39,26 @@ def writePose(stringFromSparki):
 def writePose(stringFromSparki):  
  try:
   if gv.writeCSVData > 0:
-    if gv.writeCSVData == 1:
+    if gv.writeCSVData == 1:  # First call, create file and put out header
       if utilities.fileExists(gv.csvFileName):
         utilities.fileArchive(gv.csvFileName)
   
       gv.csvFileHandle = open(gv.csvFileName,"w")
       gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
       gv.csvWriter.writeheader()
-      gv.csvFileHandle.close()
-      gv.csvFileHandle = open(gv.csvFileName,"a")
-      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+      #gv.csvFileHandle.close()
+      #gv.csvFileHandle = open(gv.csvFileName,"a")
+      #gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
       gv.writeCSVData  = 2
     dumArray = stringFromSparki.split(',')
     dataRec = { "x_value" : float(dumArray[2]),
-               "y_value" : float(dumArray[4]) }
-    print(dataRec)            
-    print(type(gv.csvWriter))
+                "y_value" : float(dumArray[4]) }
+    #print(dataRec)            
+    #print(type(gv.csvWriter))
     gv.csvWriter.writerow(dataRec)
-    print("here")
+    gv.csvFileHandle.flush()
  except:
-   print("Exception raised - getNextGoal2Visit")
+   print("Exception raised - writePose")
    exc_type, exc_obj, exc_tb = sys.exc_info()
    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
    print(exc_type, fname, exc_tb.tb_lineno)
@@ -149,8 +149,10 @@ if False:
 
 if True:
   string = "PO,x,12.3,y,45.6,<,10" 
-  writePose(string)
-  writePose(string)
+  for i in range(150):
+    writePose(string)
+    writePose(string)
+    time.sleep(0.1)
 
 
 

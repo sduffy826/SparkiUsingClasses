@@ -11,7 +11,7 @@ import utilities
 import csv
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
@@ -150,25 +150,33 @@ def send2Sparki(theString):
   time.sleep(0.1)
 
 def writePose(stringFromSparki):  
-  if gv.writeCSVData > 0:
-    if gv.writeCSVData == 1:
-      if utilities.fileExists(gv.csvFileName):
-        utilities.fileArchive(gv.csvFileName)
-  
-      gv.csvFileHandle = open(gv.csvFileName,"w")
-      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
-      gv.csvWriter.writeheader()
-      gv.csvFileHandle.close()
-      gv.csvFileHandle = open(gv.csvFileName,"a")
-      gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
-      gv.writeCSVData  = 2
-    dumArray = stringFromSparki.split(',')
-    dataRec = { "x_value" : float(dumArray[2]),
-               "y_value" : float(dumArray[4]) }
-    print(dataRec)            
-    print(type(gv.csvWriter))
+  try:
+    if gv.writeCSVData > 0:
+      if gv.writeCSVData == 1:  # First time call... create output file with header
+        if utilities.fileExists(gv.csvFileName):
+          utilities.fileArchive(gv.csvFileName)
+    
+        gv.csvFileHandle = open(gv.csvFileName,"w")
+        gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+        gv.csvWriter.writeheader()
+        #gv.csvFileHandle.close()
+        #gv.csvFileHandle = open(gv.csvFileName,"a")
+        #gv.csvWriter     = csv.DictWriter(gv.csvFileHandle, fieldnames=gv.csvFieldNames)
+        gv.writeCSVData  = 2
+
+      dumArray = stringFromSparki.split(',')
+      dataRec = { "x_value" : float(dumArray[2]),
+                  "y_value" : float(dumArray[4]) }
+      #print(dataRec)            
+      #print(type(gv.csvWriter))
     gv.csvWriter.writerow(dataRec)
-    print("here")
+    gv.csvFileHandle.flush()
+  except:
+    print("Exception raised - writePose")
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fname, exc_tb.tb_lineno)
+    sys.exit()
       
 # ==================================================================================================
 # Mainline program
@@ -221,8 +229,12 @@ print("Handshake complete, told sparki that we're in {0} mode".format(gv.origina
 while ((currTime < runTime) and (leaveLoop == False)):
   try:
     stringFromSparki = ser.readline().decode('ascii').strip()  
-    gv.logFile.write(stringFromSparki + "\n")
-    print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
+    if ((len(stringFromSparki) > 3) and (stringFromSparki[0:3] == "IP,")):
+      isPoseForMapping = True
+    else:
+      isPoseForMapping = False
+      gv.logFile.write(stringFromSparki + "\n")
+      print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
    
     # See if this is information from the sparki about start or stop instruction (this
     # is only for explore, goal, goto), the IR,DONE, IR,INS is also sent
@@ -239,7 +251,7 @@ while ((currTime < runTime) and (leaveLoop == False)):
       # error on the initial 'explore' path (means a restart)
       # The routine below also converts the sensorPose into the robot pose
       leaveLoop = handleInstruction(isStartIns,insMode,insPose,insGoal)
-    elif ((len(stringFromSparki) > 3) and (stringFromSparki[0:3] == "PO,")):
+    elif isPoseForMapping:  # Just data for mapping the world, we write it to file for mapping
       writePose(stringFromSparki)
     elif stringFromSparki.upper() == "IR,DONE":
       print(asterisk)
@@ -283,7 +295,7 @@ while ((currTime < runTime) and (leaveLoop == False)):
     
     # If in 'explore' mode then we'll update the path value list (it's used to determine map), we
     # don't do that when in goal mode or 'goto' mode
-    if gv.currentMode == gv.C_EXPLORE:
+    if ((gv.currentMode == gv.C_EXPLORE) and (isPoseForMapping == False)):
       sparkiStats.setPathValueListFromString(stringFromSparki)
     if gv.DEBUGGING:
       print("len pathValueList: {0}".format(len(gv.pathValueList)))
@@ -317,5 +329,5 @@ sparkiStats.writeVariables()
 # Close the file with the strings
 gv.logFile.close()  
 
-if gv.writeDataCSV > 1:
+if gv.writeCSVData > 1:
   gv.csvFileHandle.close()  

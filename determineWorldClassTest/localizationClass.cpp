@@ -335,7 +335,7 @@ void LocalizationClass::setPose(const float &x, const float &y, const int &angle
 
 // ---------------------------------------------------------------------------------------------------------
 // For debugging we may want to show values on lcd screen
-void LocalizationClass::showPose(const Pose &pos2Show, const boolean &newLine=true) {
+void LocalizationClass::showPose(const Pose &pos2Show, const boolean &newLine=true, const char *theTag="PO") {
    #if USE_LCD 
     sparki.clearLCD(); // wipe the LCD clear
     sparki.print("x: ");
@@ -346,7 +346,8 @@ void LocalizationClass::showPose(const Pose &pos2Show, const boolean &newLine=tr
     sparki.println(pos2Show.angle);
     sparki.updateLCD(); // put the drawings on the screen
   #else
-    Serial.print("PO,x,");
+    Serial.print(theTag);
+    Serial.print(",x,");
     Serial.print(pos2Show.xPos);
     Serial.print(",y,");
     Serial.print(pos2Show.yPos);
@@ -363,8 +364,8 @@ void LocalizationClass::showPose(const Pose &pos2Show, const boolean &newLine=tr
 
 // --------------------------------------------------------------------------------------------------------- 
 // Call routine to show my pose, just calls method above and passes current pose in
-void LocalizationClass::showLocation() {
-   showPose(pose);
+void LocalizationClass::showLocation(const char *theTag="PO") {
+   showPose(pose,true,theTag);
 }
 
 

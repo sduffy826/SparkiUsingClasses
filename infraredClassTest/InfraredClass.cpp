@@ -353,7 +353,8 @@ bool InfraredClass::adjustToTape() {
     leftIndicator = true; // We'll reuse this for return variable, this signifies that we adjusted
   }
   else {    
-    // didn't find valid values so move back to start
+    // didn't find valid values so move back to start (we subract 1cm for the original movement forward)
+    totalDistance -= 1.0;
     while (movementsObj->moveForward(totalDistance,ULTRASONIC_MIN_SAFE_DISTANCE, false));  
     leftIndicator = false;
   }
@@ -629,10 +630,10 @@ void InfraredClass::parmCountAndLength(const char* str_data, unsigned int& num_p
 // Read a character from the serial port, we'll wait 10 seconds
 int InfraredClass::readFromSerialPort() {
   int theCnt = 0;
-  sparki.RGB(RGB_RED);
+  if (DEBUGINFRARED) sparki.RGB(RGB_RED);
   while (theCnt < 10000) { 
     if (Serial.available() > 0) {
-      sparki.RGB(RGB_GREEN);  
+      if (DEBUGINFRARED) sparki.RGB(RGB_GREEN);  
       return (int)Serial.read();
     }
     theCnt +=5;
