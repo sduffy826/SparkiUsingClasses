@@ -267,6 +267,8 @@ def getNextGoal2Visit():
 # --------------------------------------------------------------------------------------------------
 # Return a list that has the path from the current position to the next path to visit and
 # also the dictionary item for the final location
+# NOTE, since we may have visited a path while exploring 180' from it we'll first check
+# if any of paths to visit were visited due to that...
 def getNextPath2Visit():
   try:
     if (gv.DEBUGGING):  writeHelper("getNextPath2Vistit (gNP2V)")
@@ -277,6 +279,18 @@ def getNextPath2Visit():
       currentNodeId = ''
     currentGraph  = getGraphOfNodeConnectionList()
     dijkstrasObj  = dijkstrasClass.dijkstraGraphPoints(currentGraph, currentNodeId)
+
+    # We may have visited the path from the other direction, if so remove it from the list
+    pidx = len(gv.paths2Visit) - 1
+    while pidx >= 0:      
+      path2Check = gv.paths2Visit[pidx].copy()
+      path2Check["<"] = utilities.getAngleAfterAdjustment(path2Check["<"],180)
+      if hasPathBeenVisited(path2Check):
+        print("Visited {0} from 180', we removed it".format(gv.paths2Visit[pidx]))
+        gv.paths2Visit.pop(pidx)  # Remove it from the list we visited from other direction
+      pidx -= 1
+
+    # Ok we've prunned th list, get the path :)
     minCost       = 9999999
     pidxWithMin   = -1
     for pidx in range(len(gv.paths2Visit)):
@@ -579,8 +593,9 @@ def processValueList():
       #if tempNodeId != -1:
       #  gv.lastRobotDictItem["NODEID"] = tempNodeId
 
-      writeHelper("--------------- P R O C E S S   V A L U E    L I S T -------------------\n")
+      writeHelper("--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------\n")
       writeHelper("gv.lastRobotDictItem from last processValueList: {0} \n".format(str(gv.lastRobotDictItem)))
+      writeHelper("Below is tempList (process value list items to process)")
       for robotDictItem in tempList:
         writeHelper("  robotDictItem: {0}".format(str(robotDictItem)))
 

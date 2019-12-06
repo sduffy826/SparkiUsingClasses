@@ -50,7 +50,7 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
   gv.currentMode  = insMode  # Update the global which has our current mode 
   msg = "Start" if isStart else "Stop"
   print("handleInstructions (HI) (sensorPose) :{0} :{1} :({2}) :{3}".format(msg,insMode,str(insPose),insGoalFlag))
-  print("(HI) robotPose: {0}".format(sparkiStats.getActualPoseOfSensorPose(insPose)))
+  print("  (HI) robotPose: {0}".format(sparkiStats.getActualPoseOfSensorPose(insPose)))
   if isStart:
     # Save the pose the robot was at at the start of the instruction... we'll also set
     # gv.lastRobotDictItem to this location; we need that when eXploring as it'll be the
@@ -68,9 +68,8 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
       gv.robotPoseFromInstruction["NODEID"] = robotNode
     
     gv.lastRobotDictItem = gv.robotPoseFromInstruction.copy()
-    print(" ")
-    print("HI: robotPoseFromInstruction: {0}".format(gv.robotPoseFromInstruction))
-    print("HI: lastRobotDictItem: {0}".format(gv.lastRobotDictItem))
+    print("  (HI): robotPoseFromInstruction: {0}".format(gv.robotPoseFromInstruction))
+    print("  (HI): lastRobotDictItem: {0}".format(gv.lastRobotDictItem))
     print(" ")
     
 
@@ -114,6 +113,24 @@ def handleInstruction(isStart,insMode,insPose,insGoalFlag):
     gv.currentMode = ' '
    
   return flgStopMainline  
+
+# --------------------------------------------------------------------------------------------------
+# Little helper to put out a message to the right of the string from the sparki... it helps
+# when reviewing the log
+def infoAboutString(stringThatSparkiSent):
+  rtnMsg = ""
+  dumArray = stringThatSparkiSent.upper().split(',')
+  if len(dumArray) >= 10:
+    if dumArray[0] == "IR":
+      if (dumArray[1] == "INSSTART"):
+        rtnMsg = "(already moving, sensor pose)"
+      elif (dumArray[1] == "INSSTOP"):
+        rtnMsg = "(not moving, sensor pose)"
+      elif (dumArray[1] == "INS"):
+        rtnMsg = "(need input :))"
+      else:
+        rtnMsg = "(u know this)"
+  return rtnMsg
 
 # --------------------------------------------------------------------------------------------------
 # Checks if the instruction is a start or end state
@@ -234,7 +251,8 @@ while ((currTime < runTime) and (leaveLoop == False)):
     else:
       isPoseForMapping = False
       gv.logFile.write(stringFromSparki + "\n")
-      print("Time: {0} SerialFromSparki: {1}".format(currTime,stringFromSparki))
+      suffixMsg = infoAboutString(stringFromSparki)
+      print("Time: {0} SerialFromSparki: {1} info:{2}".format(currTime,stringFromSparki,suffixMsg))
    
     # See if this is information from the sparki about start or stop instruction (this
     # is only for explore, goal, goto), the IR,DONE, IR,INS is also sent

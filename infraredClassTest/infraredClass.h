@@ -16,9 +16,9 @@
 #define INFRARED_LINE_THRESHOLD .05            // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 100               // Had to make it very small, on the gaffer tape the values are < 100
 #define INFRARED_LINE_WIDTH 4.7                // Width of tape... have it use method
-#define INFRARED_SAMPLE_SIZE 7                 // Number of samples to take
+#define INFRARED_SAMPLE_SIZE 7                 // Number of samples to take (number of infrared readings to take)
 #define INFRARED_TAPE_SAMPLE_SIZE 3            // Number of samples to take when adjusting width base on tape
-#define INFRARED_DELAY_BETWEEN_SAMPLES 6       // Milliseconds to delay between samples
+#define INFRARED_DELAY_BETWEEN_SAMPLES 6       // Milliseconds to delay between samples (this is on taking the attributes)
 #define INFRARED_SENSOR_FORWARD_OF_CENTER 4    // Distance sensor infront of center of robot
 #define INFRARED_DRIFT_ADJUSTMENT_DEGREES 3    // Amount of degrees to adjust when drifting off line
 #define INFRARED_MAX_GOAL_DISTANCE 10          // Max distance to be considered a goal (i.e. if obstacle detected < 10cm it's a goal position

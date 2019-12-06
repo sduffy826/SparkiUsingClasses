@@ -627,7 +627,7 @@ void InfraredClass::parmCountAndLength(const char* str_data, unsigned int& num_p
 }
 
 
-// Read a character from the serial port, we'll wait 10 seconds
+// Read a character (an int) from the serial port, we'll wait 10 seconds
 int InfraredClass::readFromSerialPort() {
   int theCnt = 0;
   if (DEBUGINFRARED) sparki.RGB(RGB_RED);
@@ -786,6 +786,7 @@ bool InfraredClass::stateChanged(InfraredAttributes &currAttr, const InfraredAtt
 // we get the 'serial termination' character (|)
 bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueOfInstructions) {
 
+  // Clear line in case anything on it
   if (Serial.available() > 0) {
     while (Serial.available() > 0) {
       Serial.read();
@@ -793,7 +794,7 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
     }
   }
 
-  Serial.println(F("IR,INS"));
+  Serial.println(F("IR,INS"));  // Tells python you want instructions
   
   //localizationObj->writeMsg2Serial("IR,INS");
 
@@ -807,7 +808,7 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
   if (bytes2Read == 1)
     bytes2Read = readFromSerialPort();
   
-  if (DEBUGINFRARED) Serial.print(F("bytes2Read:")); Serial.println(bytes2Read);
+  if (DEBUGINFRARED) { Serial.print(F("bytes2Read:")); Serial.println(bytes2Read); }
   
   char *str_data = NULL;
   if (bytes2Read > 0) {
@@ -836,7 +837,7 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
         indexPos++;
       }
     }
-    inputBuffer[indexPos] = '\0';
+    inputBuffer[indexPos] = '\0';  // null terminate it
  
     // Take any junk off port
     while (Serial.available() > 0) {
@@ -857,35 +858,28 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
       str_data = inputBuffer;
       
       // Now put into string array
-      //const size_t PARAMS_MAX = num_parameters;
-      //const size_t LENGTH_MAX = len_parameter;
-      //char szParams[PARAMS_MAX][LENGTH_MAX + 1];
       char szParams[num_parameters][maxLen+1];
   
       // This setups the 0'the row and sets pnext to point to the next address
       char* pnext = (char*)extractToken(&szParams[0][0], str_data);
       for (indexPos = 1; indexPos < num_parameters; indexPos++) {  
-         pnext = (char*)extractToken(&szParams[indexPos][0], pnext);
+        pnext = (char*)extractToken(&szParams[indexPos][0], pnext);
       }
     
       if (DEBUGINFRARED) {
         for ( size_t i = 0; i < num_parameters; i++ ) {
-           Serial.print("szParams[");
-           Serial.print(i);
-           Serial.print("]:");
+           Serial.print("szParams["); Serial.print(i); Serial.print("]:");
            Serial.println(szParams[i]);
         }
       }
     
-      // Put the instructions into the stack
+      // Put the instructions into the queue
       indexPos = 0;
       InfraredInstructions theInstructions;
       while (indexPos < num_parameters) {
         switch( indexPos % 7) {
           case 0:
             theInstructions.instruction = szParams[indexPos][0];
-            //Serial.print("s$");
-            //Serial.println(szParams[indexPos][0]);
             if (DEBUGINFRARED) {
               Serial.print("ins:");
               Serial.println(theInstructions.instruction);

@@ -339,7 +339,7 @@ void loop() {
             movementsObj->stopMoving();          
             if (DEBUGINFRARED) Serial.println("stop");
             sparki.beep();
-            delay(1000);
+            delay(300);
             
             // Tell the python program that the prior instructions completed, we'll write out tag to say
             // INSSTOP,instructionCode,POSEValues...,Obst,ObstacleIndicator (obstacle only really valid on goas)
