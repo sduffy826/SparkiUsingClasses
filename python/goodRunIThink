@@ -1,0 +1,943 @@
+ 23.33}, 7: {6: 23.33}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 248.62706899642944 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+in getDirectionsForNodes
+*****************
+Sending this to sparki: M,x,27.09,y,-60.43,<,-1,X,x,27.09,y,-60.43,<,0
+*****************
+In send2Sparki, theLen: 46 string: M,x,27.09,y,-60.43,<,-1,X,x,27.09,y,-60.43,<,0
+Time: 248.78761196136475  Instruction sent
+Time: 248.78775191307068 SerialFromSparki: IR,INSSTART,M,PO,x,27.16,y,-63.50,<,271 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 27.16, 'y': -63.5, '<': 271}) :False
+  (HI) robotPose: {'x': 27.09, 'y': -59.5, '<': 271}
+  (HI): robotPoseFromInstruction: {'x': 27.09, 'y': -59.5, '<': 271, 'NODEID': 7}
+  (HI): lastRobotDictItem: {'x': 27.09, 'y': -59.5, '<': 271, 'NODEID': 7}
+ 
+Time: 249.08377194404602 SerialFromSparki: IR,INSSTOP,M,PO,x,27.18,y,-64.82,<,271,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 27.18, 'y': -64.82, '<': 271}) :False
+  (HI) robotPose: {'x': 27.11, 'y': -60.82, '<': 271}
+Time: 249.86222290992737 SerialFromSparki: IR,INSSTART,X,PO,x,31.11,y,-60.82,<,0 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :X :({'x': 31.11, 'y': -60.82, '<': 0}) :False
+  (HI) robotPose: {'x': 27.11, 'y': -60.82, '<': 0}
+  (HI): robotPoseFromInstruction: {'x': 27.11, 'y': -60.82, '<': 0, 'NODEID': 7}
+  (HI): lastRobotDictItem: {'x': 27.11, 'y': -60.82, '<': 0, 'NODEID': 7}
+ 
+Time: 252.4407238960266 SerialFromSparki: IR,StateChg,x,53.93,y,-60.87,<,0,el,980,ll,97,lc,113,lr,88,er,226,ell,0,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,1,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 271.98216700553894 SerialFromSparki: IR,StateChg,x,58.70,y,-60.87,<,0,el,978,ll,133,lc,115,lr,79,er,969,ell,0,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,0,ser,1,sas,0,sgl,0 info:(u know this)
+Time: 273.6960699558258 SerialFromSparki: Obst:50.26 info:
+Time: 278.46851682662964 SerialFromSparki: IR,StateChg,x,71.63,y,-60.87,<,0,el,980,ll,980,lc,980,lr,980,er,973,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,1,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 278.4733638763428 SerialFromSparki: IR,INSSTOP,X,PO,x,71.63,y,-60.87,<,0,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :X :({'x': 71.63, 'y': -60.87, '<': 0}) :False
+  (HI) robotPose: {'x': 67.63, 'y': -60.87, '<': 0}
+ 
+IN PROCESSVALUELIST............. LEN: 3
+ 
+--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------
+
+gv.lastRobotDictItem from last processValueList: {'x': 27.11, 'y': -60.82, '<': 0, 'NODEID': 7} 
+
+Below is tempList (process value list items to process)
+  robotDictItem: {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri'}
+  robotDictItem: {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae'}
+proc tempList, gv.lastRobotDictItem {'x': 27.11, 'y': -60.82, '<': 0, 'NODEID': 7}
+Found sri: {'x': 56.31, 'y': -60.87, '<': 90, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8, 'orig<': 0}
+proc tempList, gv.lastRobotDictItem {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+Found SAE: {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode: X
+gv.lastRobotDictItem: {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+gv.robotPoseFromInstruction: {'x': 27.11, 'y': -60.82, '<': 0, 'NODEID': 7}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+gv.paths2Visit:
+  {'x': 26.53, 'y': -18.31, '<': 180, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -18.31, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -37.11, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6, 'orig<': 270}
+  {'x': 56.31, 'y': -60.87, '<': 90, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8, 'orig<': 0}
+pathBeingVisited
+  {'x': 27.09, 'y': -60.43, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7, 'orig<': 270}
+gv.goalDict is empty
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8}, 6: {5: 18.8, 7: 23.33}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32}, 9: {8: 11.32}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 278.78724098205566 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+in getDirectionsForNodes
+  node2GoTo: 9 workNode: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  node2GoTo: 8 workNode: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+*****************
+Sending this to sparki: M,x,67.63,y,-60.87,<,-1,M,x,56.31,y,-60.87,<,-1,X,x,56.31,y,-60.87,<,90
+*****************
+In send2Sparki, theLen: 71 string: M,x,67.63,y,-60.87,<,-1,M,x,56.31,y,-60.87,<,-1,X,x,56.31,y,-60.87,<,90
+Time: 278.9489588737488  Instruction sent
+Time: 278.9491059780121 SerialFromSparki: IR,INSSTART,M,PO,x,64.06,y,-60.80,<,179 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 64.06, 'y': -60.8, '<': 179}) :False
+  (HI) robotPose: {'x': 68.06, 'y': -60.87, '<': 179}
+  (HI): robotPoseFromInstruction: {'x': 68.06, 'y': -60.87, '<': 179, 'NODEID': 9}
+  (HI): lastRobotDictItem: {'x': 68.06, 'y': -60.87, '<': 179, 'NODEID': 9}
+ 
+Time: 284.0086598396301 SerialFromSparki: IR,INSSTOP,M,PO,x,63.59,y,-60.80,<,179,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 63.59, 'y': -60.8, '<': 179}) :False
+  (HI) robotPose: {'x': 67.59, 'y': -60.87, '<': 179}
+Time: 284.4775948524475 SerialFromSparki: IR,INSSTART,M,PO,x,63.59,y,-60.93,<,181 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 63.59, 'y': -60.93, '<': 181}) :False
+  (HI) robotPose: {'x': 67.59, 'y': -60.86, '<': 181}
+  (HI): robotPoseFromInstruction: {'x': 67.59, 'y': -60.86, '<': 181, 'NODEID': 9}
+  (HI): lastRobotDictItem: {'x': 67.59, 'y': -60.86, '<': 181, 'NODEID': 9}
+ 
+Time: 284.89862394332886 SerialFromSparki: IR,INSSTOP,M,PO,x,51.94,y,-61.14,<,181,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 51.94, 'y': -61.14, '<': 181}) :False
+  (HI) robotPose: {'x': 55.94, 'y': -61.07, '<': 181}
+Time: 289.3927297592163 SerialFromSparki: IR,INSSTART,X,PO,x,55.94,y,-57.07,<,90 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :X :({'x': 55.94, 'y': -57.07, '<': 90}) :False
+  (HI) robotPose: {'x': 55.94, 'y': -61.07, '<': 90}
+  (HI): robotPoseFromInstruction: {'x': 55.94, 'y': -61.07, '<': 90, 'NODEID': 8}
+  (HI): lastRobotDictItem: {'x': 55.94, 'y': -61.07, '<': 90, 'NODEID': 8}
+ 
+Time: 292.0263159275055 SerialFromSparki: IR,StateChg,x,56.49,y,-40.24,<,90,el,980,ll,107,lc,103,lr,96,er,499,ell,0,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,1,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 324.2864258289337 SerialFromSparki: IR,StateChg,x,56.49,y,-35.04,<,90,el,978,ll,922,lc,964,lr,957,er,973,ell,0,lll,1,lcl,0,lrl,0,erl,0,sdl,0,sdr,1,sol,0,sae,0,slp,0,srp,0,sel,0,ser,1,sas,0,sgl,0 info:(u know this)
+Time: 326.1574168205261 SerialFromSparki: IR,INSSTOP,X,PO,x,56.49,y,-35.04,<,90,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :X :({'x': 56.49, 'y': -35.04, '<': 90}) :False
+  (HI) robotPose: {'x': 56.49, 'y': -39.04, '<': 90}
+ 
+IN PROCESSVALUELIST............. LEN: 2
+ 
+--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------
+
+gv.lastRobotDictItem from last processValueList: {'x': 55.94, 'y': -61.07, '<': 90, 'NODEID': 8} 
+
+Below is tempList (process value list items to process)
+  robotDictItem: {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri'}
+proc tempList, gv.lastRobotDictItem {'x': 55.94, 'y': -61.07, '<': 90, 'NODEID': 8}
+Found sri: {'x': 56.49, 'y': -37.64, '<': 180, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10, 'orig<': 90}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode: X
+gv.lastRobotDictItem: {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+gv.robotPoseFromInstruction: {'x': 55.94, 'y': -61.07, '<': 90, 'NODEID': 8}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+gv.paths2Visit:
+  {'x': 26.53, 'y': -18.31, '<': 180, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -18.31, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -37.11, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6, 'orig<': 270}
+  {'x': 56.49, 'y': -37.64, '<': 180, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10, 'orig<': 90}
+pathBeingVisited
+  {'x': 56.31, 'y': -60.87, '<': 90, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8, 'orig<': 0}
+gv.goalDict is empty
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  NodeId: 10 value: {'x': 56.49, 'y': -37.64, 'NODEID': 10}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  {'id1': 8, '<': 90, 'id2': 10, 'len': 23.44}
+  {'id1': 10, '<': 270, 'id2': 8, 'len': 23.44}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8}, 6: {5: 18.8, 7: 23.33}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32, 10: 23.44}, 9: {8: 11.32}, 10: {8: 23.44}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 326.4719338417053 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+in getDirectionsForNodes
+*****************
+Sending this to sparki: M,x,56.49,y,-37.64,<,-1,X,x,56.49,y,-37.64,<,180
+*****************
+In send2Sparki, theLen: 48 string: M,x,56.49,y,-37.64,<,-1,X,x,56.49,y,-37.64,<,180
+Time: 326.6382427215576  Instruction sent
+Time: 326.6383800506592 SerialFromSparki: IR,INSSTART,M,PO,x,56.56,y,-34.58,<,89 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 56.56, 'y': -34.58, '<': 89}) :False
+  (HI) robotPose: {'x': 56.49, 'y': -38.58, '<': 89}
+  (HI): robotPoseFromInstruction: {'x': 56.49, 'y': -38.58, '<': 89, 'NODEID': 10}
+  (HI): lastRobotDictItem: {'x': 56.49, 'y': -38.58, '<': 89, 'NODEID': 10}
+ 
+Time: 326.8483018875122 SerialFromSparki: IR,INSSTOP,M,PO,x,56.58,y,-33.26,<,89,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 56.58, 'y': -33.26, '<': 89}) :False
+  (HI) robotPose: {'x': 56.51, 'y': -37.26, '<': 89}
+Time: 327.62726497650146 SerialFromSparki: IR,INSSTART,X,PO,x,52.51,y,-37.25,<,180 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :X :({'x': 52.51, 'y': -37.25, '<': 180}) :False
+  (HI) robotPose: {'x': 56.51, 'y': -37.25, '<': 180}
+  (HI): robotPoseFromInstruction: {'x': 56.51, 'y': -37.25, '<': 180, 'NODEID': 10}
+  (HI): lastRobotDictItem: {'x': 56.51, 'y': -37.25, '<': 180, 'NODEID': 10}
+ 
+Time: 330.2602939605713 SerialFromSparki: IR,StateChg,x,48.17,y,-37.25,<,180,el,882,ll,119,lc,139,lr,106,er,980,ell,1,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,1,srp,0,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 331.82189083099365 SerialFromSparki: IR,StateChg,x,42.97,y,-37.25,<,180,el,974,ll,103,lc,97,lr,90,er,973,ell,0,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,1,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 333.6924378871918 SerialFromSparki: IR,StateChg,x,30.02,y,-37.26,<,180,el,980,ll,298,lc,107,lr,107,er,856,ell,0,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,1,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 352.44430589675903 SerialFromSparki: IR,StateChg,x,29.55,y,-37.26,<,180,el,907,ll,243,lc,116,lr,111,er,116,ell,1,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,1,srp,0,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 352.61241483688354 SerialFromSparki: IR,StateChg,x,24.78,y,-37.26,<,180,el,453,ll,328,lc,540,lr,640,er,973,ell,1,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,0,ser,1,sas,0,sgl,0 info:(u know this)
+Time: 354.3282628059387 SerialFromSparki: IR,StateChg,x,24.32,y,-37.26,<,180,el,973,ll,977,lc,980,lr,975,er,973,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,0,slp,0,srp,0,sel,1,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 354.4963357448578 SerialFromSparki: IR,INSSTOP,X,PO,x,24.32,y,-37.26,<,180,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :X :({'x': 24.32, 'y': -37.26, '<': 180}) :False
+  (HI) robotPose: {'x': 28.32, 'y': -37.26, '<': 180}
+ 
+IN PROCESSVALUELIST............. LEN: 6
+ 
+--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------
+
+gv.lastRobotDictItem from last processValueList: {'x': 56.51, 'y': -37.25, '<': 180, 'NODEID': 10} 
+
+Below is tempList (process value list items to process)
+  robotDictItem: {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli'}
+  robotDictItem: {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri'}
+  robotDictItem: {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli'}
+proc tempList, gv.lastRobotDictItem {'x': 56.51, 'y': -37.25, '<': 180, 'NODEID': 10}
+Found sli: {'x': 45.57, 'y': -37.25, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11, 'orig<': 180}
+proc tempList, gv.lastRobotDictItem {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11}
+Found sri: {'x': 27.4, 'y': -37.26, '<': 270, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6, 'orig<': 180}
+proc tempList, gv.lastRobotDictItem {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6}
+Found sli: {'x': 26.94, 'y': -37.26, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6, 'orig<': 180}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode: X
+gv.lastRobotDictItem: {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6}
+gv.robotPoseFromInstruction: {'x': 56.51, 'y': -37.25, '<': 180, 'NODEID': 10}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+  {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11}
+  {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6}
+gv.paths2Visit:
+  {'x': 26.53, 'y': -18.31, '<': 180, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -18.31, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -37.11, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6, 'orig<': 270}
+  {'x': 45.57, 'y': -37.25, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11, 'orig<': 180}
+  {'x': 26.94, 'y': -37.26, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6, 'orig<': 180}
+pathBeingVisited
+  {'x': 56.49, 'y': -37.64, '<': 180, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10, 'orig<': 90}
+gv.goalDict is empty
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  NodeId: 10 value: {'x': 56.49, 'y': -37.64, 'NODEID': 10}
+  NodeId: 11 value: {'x': 45.57, 'y': -37.25, 'NODEID': 11}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  {'id1': 8, '<': 90, 'id2': 10, 'len': 23.44}
+  {'id1': 10, '<': 270, 'id2': 8, 'len': 23.44}
+  {'id1': 10, '<': 180, 'id2': 11, 'len': 10.94}
+  {'id1': 11, '<': 0, 'id2': 10, 'len': 10.94}
+  {'id1': 11, '<': 180, 'id2': 6, 'len': 18.17}
+  {'id1': 6, '<': 0, 'id2': 11, 'len': 18.17}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8}, 6: {5: 18.8, 7: 23.33, 11: 18.17}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32, 10: 23.44}, 9: {8: 11.32}, 10: {8: 23.44, 11: 10.94}, 11: {10: 10.94, 6: 18.17}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 354.81932187080383 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+Visited {'x': 26.94, 'y': -37.26, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6, 'orig<': 180} from 180', we removed it
+Visited {'x': 26.53, 'y': -37.11, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6, 'orig<': 270} from 180', we removed it
+in getDirectionsForNodes
+  node2GoTo: 6 workNode: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  node2GoTo: 11 workNode: {'x': 45.57, 'y': -37.25, 'NODEID': 11}
+*****************
+Sending this to sparki: M,x,26.53,y,-37.11,<,-1,M,x,45.57,y,-37.25,<,-1,X,x,45.57,y,-37.25,<,90
+*****************
+In send2Sparki, theLen: 71 string: M,x,26.53,y,-37.11,<,-1,M,x,45.57,y,-37.25,<,-1,X,x,45.57,y,-37.25,<,90
+Time: 354.9806101322174  Instruction sent
+Time: 354.9807538986206 SerialFromSparki: IR,INSSTART,M,PO,x,23.88,y,-36.77,<,173 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 23.88, 'y': -36.77, '<': 173}) :False
+  (HI) robotPose: {'x': 27.85, 'y': -37.26, '<': 173}
+  (HI): robotPoseFromInstruction: {'x': 27.85, 'y': -37.26, '<': 173, 'NODEID': 6}
+  (HI): lastRobotDictItem: {'x': 27.85, 'y': -37.26, '<': 173, 'NODEID': 6}
+ 
+Time: 355.35258388519287 SerialFromSparki: IR,INSSTOP,M,PO,x,22.14,y,-36.56,<,173,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 22.14, 'y': -36.56, '<': 173}) :False
+  (HI) robotPose: {'x': 26.11, 'y': -37.05, '<': 173}
+Time: 356.2857229709625 SerialFromSparki: IR,INSSTART,M,PO,x,30.11,y,-37.04,<,0 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 30.11, 'y': -37.04, '<': 0}) :False
+  (HI) robotPose: {'x': 26.11, 'y': -37.04, '<': 0}
+  (HI): robotPoseFromInstruction: {'x': 26.11, 'y': -37.04, '<': 0, 'NODEID': 6}
+  (HI): lastRobotDictItem: {'x': 26.11, 'y': -37.04, '<': 0, 'NODEID': 6}
+ 
+Time: 361.2663998603821 SerialFromSparki: IR,INSSTOP,M,PO,x,49.92,y,-37.04,<,0,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 49.92, 'y': -37.04, '<': 0}) :False
+  (HI) robotPose: {'x': 45.92, 'y': -37.04, '<': 0}
+Time: 383.93865299224854 SerialFromSparki: IR,INSSTART,X,PO,x,45.92,y,-33.04,<,90 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :X :({'x': 45.92, 'y': -33.04, '<': 90}) :False
+  (HI) robotPose: {'x': 45.92, 'y': -37.04, '<': 90}
+  (HI): robotPoseFromInstruction: {'x': 45.92, 'y': -37.04, '<': 90, 'NODEID': 11}
+  (HI): lastRobotDictItem: {'x': 45.92, 'y': -37.04, '<': 90, 'NODEID': 11}
+ 
+Time: 386.54378390312195 SerialFromSparki: IR,StateChg,x,45.69,y,-21.81,<,90,el,980,ll,104,lc,116,lr,112,er,464,ell,0,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,1,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 401.81746888160706 SerialFromSparki: IR,StateChg,x,45.69,y,-16.61,<,90,el,980,ll,713,lc,914,lr,977,er,973,ell,0,lll,1,lcl,1,lrl,0,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,0,ser,1,sas,0,sgl,0 info:(u know this)
+Time: 403.6883268356323 SerialFromSparki: Obst:73.26 info:
+Time: 403.98322105407715 SerialFromSparki: IR,StateChg,x,45.69,y,-16.15,<,90,el,980,ll,980,lc,980,lr,980,er,973,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,1,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 403.9881091117859 SerialFromSparki: IR,INSSTOP,X,PO,x,45.69,y,-16.15,<,90,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :X :({'x': 45.69, 'y': -16.15, '<': 90}) :False
+  (HI) robotPose: {'x': 45.69, 'y': -20.15, '<': 90}
+ 
+IN PROCESSVALUELIST............. LEN: 3
+ 
+--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------
+
+gv.lastRobotDictItem from last processValueList: {'x': 45.92, 'y': -37.04, '<': 90, 'NODEID': 11} 
+
+Below is tempList (process value list items to process)
+  robotDictItem: {'x': 45.69, 'y': -19.21, '<': 90, 'dest<': 180, 'TYPE': 'sri'}
+  robotDictItem: {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae'}
+proc tempList, gv.lastRobotDictItem {'x': 45.92, 'y': -37.04, '<': 90, 'NODEID': 11}
+Found sri: {'x': 45.69, 'y': -19.21, '<': 180, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12, 'orig<': 90}
+proc tempList, gv.lastRobotDictItem {'x': 45.69, 'y': -19.21, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12}
+Found SAE: {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode: X
+gv.lastRobotDictItem: {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+gv.robotPoseFromInstruction: {'x': 45.92, 'y': -37.04, '<': 90, 'NODEID': 11}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+  {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11}
+  {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6}
+  {'x': 45.69, 'y': -19.21, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+gv.paths2Visit:
+  {'x': 26.53, 'y': -18.31, '<': 180, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -18.31, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 270}
+  {'x': 45.69, 'y': -19.21, '<': 180, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12, 'orig<': 90}
+pathBeingVisited
+  {'x': 45.57, 'y': -37.25, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11, 'orig<': 180}
+gv.goalDict is empty
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  NodeId: 10 value: {'x': 56.49, 'y': -37.64, 'NODEID': 10}
+  NodeId: 11 value: {'x': 45.57, 'y': -37.25, 'NODEID': 11}
+  NodeId: 12 value: {'x': 45.69, 'y': -19.21, 'NODEID': 12}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  {'id1': 8, '<': 90, 'id2': 10, 'len': 23.44}
+  {'id1': 10, '<': 270, 'id2': 8, 'len': 23.44}
+  {'id1': 10, '<': 180, 'id2': 11, 'len': 10.94}
+  {'id1': 11, '<': 0, 'id2': 10, 'len': 10.94}
+  {'id1': 11, '<': 180, 'id2': 6, 'len': 18.17}
+  {'id1': 6, '<': 0, 'id2': 11, 'len': 18.17}
+  {'id1': 11, '<': 90, 'id2': 12, 'len': 17.83}
+  {'id1': 12, '<': 270, 'id2': 11, 'len': 17.83}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8}, 6: {5: 18.8, 7: 23.33, 11: 18.17}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32, 10: 23.44}, 9: {8: 11.32}, 10: {8: 23.44, 11: 10.94}, 11: {10: 10.94, 6: 18.17, 12: 17.83}, 12: {11: 17.83}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 404.30235600471497 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+in getDirectionsForNodes
+*****************
+Sending this to sparki: M,x,45.69,y,-19.21,<,-1,X,x,45.69,y,-19.21,<,180
+*****************
+In send2Sparki, theLen: 48 string: M,x,45.69,y,-19.21,<,-1,X,x,45.69,y,-19.21,<,180
+Time: 404.4762260913849  Instruction sent
+Time: 404.476361989975 SerialFromSparki: IR,INSSTART,M,PO,x,45.76,y,-15.71,<,89 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 45.76, 'y': -15.71, '<': 89}) :False
+  (HI) robotPose: {'x': 45.69, 'y': -19.71, '<': 89}
+  (HI): robotPoseFromInstruction: {'x': 45.69, 'y': -19.71, '<': 89, 'NODEID': 12}
+  (HI): lastRobotDictItem: {'x': 45.69, 'y': -19.71, '<': 89, 'NODEID': 12}
+ 
+Time: 404.6851878166199 SerialFromSparki: IR,INSSTOP,M,PO,x,45.77,y,-14.82,<,89,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 45.77, 'y': -14.82, '<': 89}) :False
+  (HI) robotPose: {'x': 45.7, 'y': -18.82, '<': 89}
+Time: 405.30910992622375 SerialFromSparki: IR,INSSTART,X,PO,x,41.70,y,-18.82,<,180 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :X :({'x': 41.7, 'y': -18.82, '<': 180}) :False
+  (HI) robotPose: {'x': 45.7, 'y': -18.82, '<': 180}
+  (HI): robotPoseFromInstruction: {'x': 45.7, 'y': -18.82, '<': 180, 'NODEID': 12}
+  (HI): lastRobotDictItem: {'x': 45.7, 'y': -18.82, '<': 180, 'NODEID': 12}
+ 
+Time: 407.9422929286957 SerialFromSparki: IR,StateChg,x,29.62,y,-18.99,<,180,el,754,ll,109,lc,112,lr,100,er,202,ell,1,lll,1,lcl,1,lrl,1,erl,1,sdl,0,sdr,0,sol,1,sae,0,slp,1,srp,1,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 423.45440697669983 SerialFromSparki: IR,StateChg,x,24.85,y,-18.99,<,180,el,665,ll,103,lc,100,lr,94,er,972,ell,1,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,0,ser,1,sas,0,sgl,0 info:(u know this)
+Time: 425.170264005661 SerialFromSparki: IR,StateChg,x,24.38,y,-18.99,<,180,el,976,ll,106,lc,100,lr,95,er,973,ell,0,lll,1,lcl,1,lrl,1,erl,0,sdl,0,sdr,0,sol,1,sae,0,slp,0,srp,0,sel,1,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 425.33836483955383 SerialFromSparki: IR,StateChg,x,7.13,y,-18.99,<,180,el,980,ll,888,lc,975,lr,980,er,973,ell,0,lll,1,lcl,0,lrl,0,erl,0,sdl,0,sdr,1,sol,0,sae,0,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,0 info:(u know this)
+Time: 431.54349994659424 SerialFromSparki: Obst:5.26 info:
+Time: 431.81940388679504 SerialFromSparki: IR,StateChg,x,6.66,y,-18.99,<,180,el,980,ll,980,lc,980,lr,980,er,973,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,1,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,1 info:(u know this)
+Time: 431.82446694374084 SerialFromSparki: IR,INSSTOP,X,PO,x,6.66,y,-18.99,<,180,Obst,t info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :X :({'x': 6.66, 'y': -18.99, '<': 180}) :True
+  (HI) robotPose: {'x': 10.66, 'y': -18.99, '<': 180}
+ 
+IN PROCESSVALUELIST............. LEN: 5
+ 
+--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------
+
+gv.lastRobotDictItem from last processValueList: {'x': 45.7, 'y': -18.82, '<': 180, 'NODEID': 12} 
+
+Below is tempList (process value list items to process)
+  robotDictItem: {'x': 27.23, 'y': -18.99, '<': 180, 'dest<': 270, 'TYPE': 'sri'}
+  robotDictItem: {'x': 27.0, 'y': -18.99, '<': 180, 'dest<': 90, 'TYPE': 'sli'}
+  robotDictItem: {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae'}
+  robotDictItem: {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sgl'}
+proc tempList, gv.lastRobotDictItem {'x': 45.7, 'y': -18.82, '<': 180, 'NODEID': 12}
+Found sri: {'x': 27.23, 'y': -18.99, '<': 270, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 180}
+proc tempList, gv.lastRobotDictItem {'x': 27.23, 'y': -18.99, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 5}
+Found sli: {'x': 27.0, 'y': -18.99, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 180}
+proc tempList, gv.lastRobotDictItem {'x': 27.0, 'y': -18.99, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5}
+Found SAE: {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+proc tempList, gv.lastRobotDictItem {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+Found SGL: {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode: X
+gv.lastRobotDictItem: {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+gv.robotPoseFromInstruction: {'x': 45.7, 'y': -18.82, '<': 180, 'NODEID': 12}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+  {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11}
+  {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6}
+  {'x': 45.69, 'y': -19.21, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+  {'x': 27.23, 'y': -18.99, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 27.0, 'y': -18.99, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+gv.paths2Visit:
+  {'x': 26.53, 'y': -18.31, '<': 180, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 270}
+  {'x': 26.53, 'y': -18.31, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 270}
+  {'x': 27.0, 'y': -18.99, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 180}
+pathBeingVisited
+  {'x': 45.69, 'y': -19.21, '<': 180, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12, 'orig<': 90}
+gv.goalDict {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  NodeId: 10 value: {'x': 56.49, 'y': -37.64, 'NODEID': 10}
+  NodeId: 11 value: {'x': 45.57, 'y': -37.25, 'NODEID': 11}
+  NodeId: 12 value: {'x': 45.69, 'y': -19.21, 'NODEID': 12}
+  NodeId: 13 value: {'x': 10.66, 'y': -18.99, 'NODEID': 13}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  {'id1': 8, '<': 90, 'id2': 10, 'len': 23.44}
+  {'id1': 10, '<': 270, 'id2': 8, 'len': 23.44}
+  {'id1': 10, '<': 180, 'id2': 11, 'len': 10.94}
+  {'id1': 11, '<': 0, 'id2': 10, 'len': 10.94}
+  {'id1': 11, '<': 180, 'id2': 6, 'len': 18.17}
+  {'id1': 6, '<': 0, 'id2': 11, 'len': 18.17}
+  {'id1': 11, '<': 90, 'id2': 12, 'len': 17.83}
+  {'id1': 12, '<': 270, 'id2': 11, 'len': 17.83}
+  {'id1': 12, '<': 180, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 0, 'id2': 12, 'len': 18.47}
+  {'id1': 5, '<': 180, 'id2': 13, 'len': 16.34}
+  {'id1': 13, '<': 0, 'id2': 5, 'len': 16.34}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8, 12: 18.47, 13: 16.34}, 6: {5: 18.8, 7: 23.33, 11: 18.17}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32, 10: 23.44}, 9: {8: 11.32}, 10: {8: 23.44, 11: 10.94}, 11: {10: 10.94, 6: 18.17, 12: 17.83}, 12: {11: 17.83, 5: 18.47}, 13: {5: 16.34}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 432.14791202545166 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+Visited {'x': 27.0, 'y': -18.99, '<': 90, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 180} from 180', we removed it
+Visited {'x': 26.53, 'y': -18.31, '<': 0, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5, 'orig<': 270} from 180', we removed it
+in getDirectionsForNodes
+  node2GoTo: 13 workNode: {'x': 10.66, 'y': -18.99, 'NODEID': 13}
+  node2GoTo: 5 workNode: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+*****************
+Sending this to sparki: M,x,10.66,y,-18.99,<,-1,M,x,26.53,y,-18.31,<,-1,X,x,26.53,y,-18.31,<,180
+*****************
+In send2Sparki, theLen: 72 string: M,x,10.66,y,-18.99,<,-1,M,x,26.53,y,-18.31,<,-1,X,x,26.53,y,-18.31,<,180
+Time: 432.3132839202881  Instruction sent
+Time: 432.3135061264038 SerialFromSparki: IR,INSSTART,M,PO,x,14.23,y,-18.99,<,0 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 14.23, 'y': -18.99, '<': 0}) :False
+  (HI) robotPose: {'x': 10.23, 'y': -18.99, '<': 0}
+  (HI): robotPoseFromInstruction: {'x': 10.23, 'y': -18.99, '<': 0, 'NODEID': 13}
+  (HI): lastRobotDictItem: {'x': 10.23, 'y': -18.99, '<': 0, 'NODEID': 13}
+ 
+Time: 437.377210855484 SerialFromSparki: IR,INSSTOP,M,PO,x,14.69,y,-18.99,<,0,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 14.69, 'y': -18.99, '<': 0}) :False
+  (HI) robotPose: {'x': 10.69, 'y': -18.99, '<': 0}
+Time: 437.84624195098877 SerialFromSparki: IR,INSSTART,M,PO,x,14.69,y,-18.85,<,2 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 14.69, 'y': -18.85, '<': 2}) :False
+  (HI) robotPose: {'x': 10.69, 'y': -18.99, '<': 2}
+  (HI): robotPoseFromInstruction: {'x': 10.69, 'y': -18.99, '<': 2, 'NODEID': 13}
+  (HI): lastRobotDictItem: {'x': 10.69, 'y': -18.99, '<': 2, 'NODEID': 13}
+ 
+Time: 438.19023275375366 SerialFromSparki: IR,INSSTOP,M,PO,x,30.68,y,-19.42,<,2,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 30.68, 'y': -19.42, '<': 2}) :False
+  (HI) robotPose: {'x': 26.68, 'y': -19.56, '<': 2}
+Time: 455.9554228782654 SerialFromSparki: IR,INSSTART,X,PO,x,22.68,y,-19.56,<,180 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :X :({'x': 22.68, 'y': -19.56, '<': 180}) :False
+  (HI) robotPose: {'x': 26.68, 'y': -19.56, '<': 180}
+  (HI): robotPoseFromInstruction: {'x': 26.68, 'y': -19.56, '<': 180, 'NODEID': 5}
+  (HI): lastRobotDictItem: {'x': 26.68, 'y': -19.56, '<': 180, 'NODEID': 5}
+ 
+Time: 460.9465847015381 SerialFromSparki: Obst:5.26 info:
+Time: 478.22086787223816 SerialFromSparki: IR,StateChg,x,6.72,y,-19.46,<,180,el,980,ll,980,lc,980,lr,980,er,977,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,1,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,1 info:(u know this)
+Time: 478.22567987442017 SerialFromSparki: IR,INSSTOP,X,PO,x,6.72,y,-19.46,<,180,Obst,t info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :X :({'x': 6.72, 'y': -19.46, '<': 180}) :True
+  (HI) robotPose: {'x': 10.72, 'y': -19.46, '<': 180}
+ 
+IN PROCESSVALUELIST............. LEN: 1
+ 
+--------------- P R O C E S S   V A L U E    L I S T (tempList below) ---------------
+
+gv.lastRobotDictItem from last processValueList: {'x': 26.68, 'y': -19.56, '<': 180, 'NODEID': 5} 
+
+Below is tempList (process value list items to process)
+  robotDictItem: {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae'}
+  robotDictItem: {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sgl'}
+proc tempList, gv.lastRobotDictItem {'x': 26.68, 'y': -19.56, '<': 180, 'NODEID': 5}
+Found SAE: {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+proc tempList, gv.lastRobotDictItem {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+Found SGL: {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode: X
+gv.lastRobotDictItem: {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+gv.robotPoseFromInstruction: {'x': 26.68, 'y': -19.56, '<': 180, 'NODEID': 5}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+  {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11}
+  {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6}
+  {'x': 45.69, 'y': -19.21, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+  {'x': 27.23, 'y': -18.99, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 27.0, 'y': -18.99, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+  {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+gv.paths2Visit:
+pathBeingVisited
+  {'x': 26.53, 'y': -18.31, '<': 180, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5, 'orig<': 270}
+gv.goalDict {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  NodeId: 10 value: {'x': 56.49, 'y': -37.64, 'NODEID': 10}
+  NodeId: 11 value: {'x': 45.57, 'y': -37.25, 'NODEID': 11}
+  NodeId: 12 value: {'x': 45.69, 'y': -19.21, 'NODEID': 12}
+  NodeId: 13 value: {'x': 10.66, 'y': -18.99, 'NODEID': 13}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  {'id1': 8, '<': 90, 'id2': 10, 'len': 23.44}
+  {'id1': 10, '<': 270, 'id2': 8, 'len': 23.44}
+  {'id1': 10, '<': 180, 'id2': 11, 'len': 10.94}
+  {'id1': 11, '<': 0, 'id2': 10, 'len': 10.94}
+  {'id1': 11, '<': 180, 'id2': 6, 'len': 18.17}
+  {'id1': 6, '<': 0, 'id2': 11, 'len': 18.17}
+  {'id1': 11, '<': 90, 'id2': 12, 'len': 17.83}
+  {'id1': 12, '<': 270, 'id2': 11, 'len': 17.83}
+  {'id1': 12, '<': 180, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 0, 'id2': 12, 'len': 18.47}
+  {'id1': 5, '<': 180, 'id2': 13, 'len': 16.34}
+  {'id1': 13, '<': 0, 'id2': 5, 'len': 16.34}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8, 12: 18.47, 13: 16.34}, 6: {5: 18.8, 7: 23.33, 11: 18.17}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32, 10: 23.44}, 9: {8: 11.32}, 10: {8: 23.44, 11: 10.94}, 11: {10: 10.94, 6: 18.17, 12: 17.83}, 12: {11: 17.83, 5: 18.47}, 13: {5: 16.34}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Time: 478.54694986343384 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+TSW2D: pathBeingVisited is empty, check goal
+in getNextGoal2Visit, currentNodeId 13
+in getNextGoal2Visit, gv.goalDict logic, path: [13], dict: {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+in getDirectionsForNodes
+*****************
+Sending this to sparki: M,x,10.72,y,-19.46,<,-1,G,x,10.72,y,-19.46,<,180
+*****************
+In send2Sparki, theLen: 48 string: M,x,10.72,y,-19.46,<,-1,G,x,10.72,y,-19.46,<,180
+Time: 478.7115960121155  Instruction sent
+Time: 478.7117488384247 SerialFromSparki: IR,INSSTART,M,PO,x,14.29,y,-19.46,<,0 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :M :({'x': 14.29, 'y': -19.46, '<': 0}) :False
+  (HI) robotPose: {'x': 10.29, 'y': -19.46, '<': 0}
+  (HI): robotPoseFromInstruction: {'x': 10.29, 'y': -19.46, '<': 0, 'NODEID': 13}
+  (HI): lastRobotDictItem: {'x': 10.29, 'y': -19.46, '<': 0, 'NODEID': 13}
+ 
+Time: 483.77202892303467 SerialFromSparki: IR,INSSTOP,M,PO,x,14.75,y,-19.46,<,0,Obst,f info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :M :({'x': 14.75, 'y': -19.46, '<': 0}) :False
+  (HI) robotPose: {'x': 10.75, 'y': -19.46, '<': 0}
+Time: 484.24085092544556 SerialFromSparki: IR,INSSTART,G,PO,x,6.75,y,-19.46,<,180 info:(already moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Start :G :({'x': 6.75, 'y': -19.46, '<': 180}) :False
+  (HI) robotPose: {'x': 10.75, 'y': -19.46, '<': 180}
+  (HI): robotPoseFromInstruction: {'x': 10.75, 'y': -19.46, '<': 180, 'NODEID': 13}
+  (HI): lastRobotDictItem: {'x': 10.75, 'y': -19.46, '<': 180, 'NODEID': 13}
+ 
+Time: 489.28471088409424 SerialFromSparki: Obst:6.26 info:
+Time: 489.4055860042572 SerialFromSparki: IR,INSSTOP,G,PO,x,6.75,y,-19.46,<,180,Obst,t info:(not moving, sensor pose)
+--------------------------------------------------------------------------------
+handleInstructions (HI) (sensorPose) :Stop :G :({'x': 6.75, 'y': -19.46, '<': 180}) :True
+  (HI) robotPose: {'x': 10.75, 'y': -19.46, '<': 180}
+Time: 489.70953702926636 SerialFromSparki: IR,INS info:
+--------------------------------------------------------------------------------
+In tellSparkiWhatToDo (TS)
+TSW2D: pathBeingVisited is empty, check goal
+gv.goalFound is: 13
+*****************
+Sending this to sparki: Q,x,-1.0,y,-1.0,<,-1
+*****************
+In send2Sparki, theLen: 20 string: Q,x,-1.0,y,-1.0,<,-1
+Time: 489.88287377357483  Instruction sent
+Time: 489.883074760437 SerialFromSparki: IR,Done info:
+********************************************************************************
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+gv.startOfMaze (start position): {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+World xMin: 5.32 yMin: -60.87 xMax: 84.47 yMax: 0.0
+gv.currentMode:  
+gv.lastRobotDictItem: {'x': 10.75, 'y': -19.46, '<': 180, 'NODEID': 13}
+gv.robotPoseFromInstruction: {'x': 10.75, 'y': -19.46, '<': 180, 'NODEID': 13}
+gv.pathsVisited:
+  {'x': 5.32, 'y': 0.0, '<': 0, 'TYPE': 'sas', 'NODEID': 0}
+  {'x': 26.88, 'y': -0.71, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 1}
+  {'x': 73.38, 'y': -0.1, '<': 0, 'dest<': 270, 'TYPE': 'sli', 'NODEID': 2}
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 180, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 26.53, 'y': -18.31, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 26.53, 'y': -37.11, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 27.09, 'y': -60.43, '<': 270, 'dest<': 0, 'TYPE': 'sri', 'NODEID': 7}
+  {'x': 56.31, 'y': -60.87, '<': 0, 'dest<': 90, 'TYPE': 'sri', 'NODEID': 8}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 56.49, 'y': -37.64, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 10}
+  {'x': 45.57, 'y': -37.25, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 11}
+  {'x': 27.4, 'y': -37.26, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 6}
+  {'x': 26.94, 'y': -37.26, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 6}
+  {'x': 45.69, 'y': -19.21, '<': 90, 'dest<': 180, 'TYPE': 'sri', 'NODEID': 12}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+  {'x': 27.23, 'y': -18.99, '<': 180, 'dest<': 270, 'TYPE': 'sri', 'NODEID': 5}
+  {'x': 27.0, 'y': -18.99, '<': 180, 'dest<': 90, 'TYPE': 'sli', 'NODEID': 5}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+  {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sgl', 'NODEID': 13}
+gv.paths2Visit:
+pathBeingVisited
+  {}
+gv.goalDict {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+gv.goalBeingChecked: 13
+*** gv.goalFound: 13
+gv.potentialGoalDicts
+  {'x': 84.47, 'y': -0.1, '<': 0, 'TYPE': 'sae', 'NODEID': 3}
+  {'x': 73.48, 'y': -16.73, '<': 270, 'TYPE': 'sae', 'NODEID': 4}
+  {'x': 67.63, 'y': -60.87, '<': 0, 'TYPE': 'sae', 'NODEID': 9}
+  {'x': 45.69, 'y': -20.15, '<': 90, 'TYPE': 'sae', 'NODEID': 12}
+  {'x': 10.66, 'y': -18.99, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+  {'x': 10.72, 'y': -19.46, '<': 180, 'TYPE': 'sae', 'NODEID': 13}
+gv.nodeList
+  NodeId: 0 value: {'x': 5.32, 'y': 0.0, 'NODEID': 0}
+  NodeId: 1 value: {'x': 26.88, 'y': -0.71, 'NODEID': 1}
+  NodeId: 2 value: {'x': 73.38, 'y': -0.1, 'NODEID': 2}
+  NodeId: 3 value: {'x': 84.47, 'y': -0.1, 'NODEID': 3}
+  NodeId: 4 value: {'x': 73.48, 'y': -16.73, 'NODEID': 4}
+  NodeId: 5 value: {'x': 26.53, 'y': -18.31, 'NODEID': 5}
+  NodeId: 6 value: {'x': 26.53, 'y': -37.11, 'NODEID': 6}
+  NodeId: 7 value: {'x': 27.09, 'y': -60.43, 'NODEID': 7}
+  NodeId: 8 value: {'x': 56.31, 'y': -60.87, 'NODEID': 8}
+  NodeId: 9 value: {'x': 67.63, 'y': -60.87, 'NODEID': 9}
+  NodeId: 10 value: {'x': 56.49, 'y': -37.64, 'NODEID': 10}
+  NodeId: 11 value: {'x': 45.57, 'y': -37.25, 'NODEID': 11}
+  NodeId: 12 value: {'x': 45.69, 'y': -19.21, 'NODEID': 12}
+  NodeId: 13 value: {'x': 10.66, 'y': -18.99, 'NODEID': 13}
+gv.nodeConnectionList
+  {'id1': 0, '<': 0, 'id2': 1, 'len': 21.57}
+  {'id1': 1, '<': 180, 'id2': 0, 'len': 21.57}
+  {'id1': 1, '<': 0, 'id2': 2, 'len': 46.5}
+  {'id1': 2, '<': 180, 'id2': 1, 'len': 46.5}
+  {'id1': 2, '<': 0, 'id2': 3, 'len': 11.09}
+  {'id1': 3, '<': 180, 'id2': 2, 'len': 11.09}
+  {'id1': 2, '<': 270, 'id2': 4, 'len': 16.82}
+  {'id1': 4, '<': 90, 'id2': 2, 'len': 16.82}
+  {'id1': 1, '<': 270, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 90, 'id2': 1, 'len': 18.47}
+  {'id1': 5, '<': 270, 'id2': 6, 'len': 18.8}
+  {'id1': 6, '<': 90, 'id2': 5, 'len': 18.8}
+  {'id1': 6, '<': 270, 'id2': 7, 'len': 23.33}
+  {'id1': 7, '<': 90, 'id2': 6, 'len': 23.33}
+  {'id1': 7, '<': 0, 'id2': 8, 'len': 29.2}
+  {'id1': 8, '<': 180, 'id2': 7, 'len': 29.2}
+  {'id1': 8, '<': 0, 'id2': 9, 'len': 11.32}
+  {'id1': 9, '<': 180, 'id2': 8, 'len': 11.32}
+  {'id1': 8, '<': 90, 'id2': 10, 'len': 23.44}
+  {'id1': 10, '<': 270, 'id2': 8, 'len': 23.44}
+  {'id1': 10, '<': 180, 'id2': 11, 'len': 10.94}
+  {'id1': 11, '<': 0, 'id2': 10, 'len': 10.94}
+  {'id1': 11, '<': 180, 'id2': 6, 'len': 18.17}
+  {'id1': 6, '<': 0, 'id2': 11, 'len': 18.17}
+  {'id1': 11, '<': 90, 'id2': 12, 'len': 17.83}
+  {'id1': 12, '<': 270, 'id2': 11, 'len': 17.83}
+  {'id1': 12, '<': 180, 'id2': 5, 'len': 18.47}
+  {'id1': 5, '<': 0, 'id2': 12, 'len': 18.47}
+  {'id1': 5, '<': 180, 'id2': 13, 'len': 16.34}
+  {'id1': 13, '<': 0, 'id2': 5, 'len': 16.34}
+  As a graph: {0: {1: 21.57}, 1: {0: 21.57, 2: 46.5, 5: 18.47}, 2: {1: 46.5, 3: 11.09, 4: 16.82}, 3: {2: 11.09}, 4: {2: 16.82}, 5: {1: 18.47, 6: 18.8, 12: 18.47, 13: 16.34}, 6: {5: 18.8, 7: 23.33, 11: 18.17}, 7: {6: 23.33, 8: 29.2}, 8: {7: 29.2, 9: 11.32, 10: 23.44}, 9: {8: 11.32}, 10: {8: 23.44, 11: 10.94}, 11: {10: 10.94, 6: 18.17, 12: 17.83}, 12: {11: 17.83, 5: 18.47}, 13: {5: 16.34}}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

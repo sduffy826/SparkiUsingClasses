@@ -189,6 +189,7 @@ def getNodeAtPosition(x, y, createIfNonExistant=True):
     if nodeIdToReturn == -1 and createIfNonExistant: # Not found, add it
       nodeIdToReturn = len(gv.nodeList) # Len is 1 greater than index position, so can use it without any modification
       gv.nodeList.append({"x" : x, "y" : y, "NODEID" : nodeIdToReturn}) # Added nodeid 11/23 so can use in getDirection...
+      writeSpeech("Added node {0}".format(nodeIdToReturn))
     return nodeIdToReturn
   except:
     print("Exception raised - getNodeAtPosition")
@@ -396,6 +397,7 @@ def hasPathBeenVisited(dictOfPath2Check):
     for nodeAlreadyVisited in gv.pathsVisited:
       if dictOfPath2Check["NODEID"] == nodeAlreadyVisited["NODEID"]:
         if utilities.areAnglesCloseEnough(dictOfPath2Check["<"],nodeAlreadyVisited["<"]):
+          print("xxx {0} was visited {1}".format(str(dictOfPath2Check),str(nodeAlreadyVisited)))
           beenVisited = True
     return beenVisited
   except:
@@ -577,9 +579,13 @@ def processValueList():
 
     # If error's we'll put the path we were just on back onto the list of paths to visit
     if len(gv.errorList) > 0:   
-      angle2Travel = utilities.getAngleAfterAdjustment(firstRobotPose["<"],180)    
-      path2Travel  = { "x" : firstRobotPose["x"], "y" : firstRobotPose["y"], "<" : angle2Travel, 
-                        "TYPE" : "CORRECTION", "INFO" : "Had errors on path" }
+      # changed to use gv.pathBeingVisited
+      path2Travel = gv.pathBeingVisited.copy()
+      path2Travel["TYPE"] = "CORRECTION"
+      path2Travel["INFO"] = "Had errors on path"
+      #angle2Travel = utilities.getAngleAfterAdjustment(firstRobotPose["<"],180)    
+      #path2Travel  = { "x" : firstRobotPose["x"], "y" : firstRobotPose["y"], "<" : angle2Travel, 
+      #                  "TYPE" : "CORRECTION", "INFO" : "Had errors on path" }
 
       # $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ this needs to be adjusted it has sensorPose
       gv.paths2Visit.append(path2Travel)
@@ -644,6 +650,7 @@ def processValueList():
 
           # Check that it hasn't already been visited, if not add it to the list
           if hasPathBeenVisited(intersectDict) == False:
+            writeSpeech("Added new path to visit")
             gv.paths2Visit.append(intersectDict.copy()) 
      
         # Save this item as the last one looked at if not sgl... sgl has sae also and we'll log that one
@@ -667,6 +674,7 @@ def setPathValueListFromString(stringFromSparki):
     if len(arrayOfValues) > 2:  # Has to has more than two values
       keyWord = arrayOfValues[0]
       if keyWord == "IR" and arrayOfValues[1].upper() == "STATECHG":
+        writeSpeech("State change")
         if gv.DEBUGGING: writeHelper("in setPathValueListFromString")
         stateObj = getState(arrayOfValues)
         gv.pathValueList.append(stateObj)
@@ -735,6 +743,7 @@ def tellSparkiWhatToDo():
       if gv.originalMode == gv.C_EXPLORE and gv.savedPickleMap == False:
         zSaveMapElementsToPickle()
         gv.savedPickleMap = True
+        writeSpeech("Done exploring map")
 
       print("TSW2D: pathBeingVisited is empty, check goal")
       if gv.goalFound == ' ':
@@ -744,11 +753,38 @@ def tellSparkiWhatToDo():
         print("gv.goalFound is: {0}".format(gv.goalFound))
 
     if len(gv.pathBeingVisited) == 0: # No nodes or goals to vist tell em we're done
+      writeSpeech("All done")
       return gv.C_DONE + ",x,-1.0,y,-1.0,<,-1"  # Need to pass all the elements that sparki expects, it'll ignore them"
     else:
+      if movementType == gv.C_EXPLORE:
+        writeSpeech("Exploration will start at position {0} and {1}".format(gv.pathBeingVisited["x"], \
+                                                                                   gv.pathBeingVisited["y"]))
+      else:       
+        writeSpeech("Searching for goal at node: {0}".format(gv.pathBeingVisited["NODEID"]))
       return tellSparkiHelper(getDirectionsForNodes(nodes2Target, gv.pathBeingVisited, movementType))
   except:
     print("Exception raised - tellSparkiWhatToDo")
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fname, exc_tb.tb_lineno)
+    sys.exit()
+
+# --------------------------------------------------------------------------------------------------
+# Routine to write out a string to the file that will be spoken (have speakTextFileContents.py running
+# in another terminal session)
+def writeSpeech(stringToSpeak):  
+  try:
+    if gv.writeSpeechFile > 0:
+      if gv.writeSpeechFile == 1:  # First time call... create output file with header
+        if utilities.fileExists(gv.speechFile):
+          utilities.fileArchive(gv.speechFile)
+    
+        gv.speechFileHandle = open(gv.speechFile,"w")
+        gv.writeSpeechFile  = 2
+    gv.speechFileHandle.write(stringToSpeak + "\n")
+    gv.speechFileHandle.flush()
+  except:
+    print("Exception raised - writeSpeech")
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     print(exc_type, fname, exc_tb.tb_lineno)

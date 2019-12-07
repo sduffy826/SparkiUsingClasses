@@ -27,6 +27,11 @@ csvFieldNames = ["x_value", "y_value"]
 csvWriter     = None
 writeCSVData  = 1  
 
+# File for speaking
+speechFile       = "serialProcessorSpeak.Me"
+speechFileHandle = None
+writeSpeechFile  = 1
+
 # Pickle files to save variables.
 pickleWithMap   = "pickleWithMap.bin"
 savedPickleMap  = False

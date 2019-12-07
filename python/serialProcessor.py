@@ -209,6 +209,7 @@ resetRobotPose  = False # If on we'll tell robot what his pose is on first instr
 # If we have a map saved already ask the user which way they want to run it 
 # eXplore (find map) or Goal mode where we start searching for goals
 if utilities.fileExists(gv.pickleWithMap):
+  sparkiStats.writeSpeech("Enter MODE")
   theResp = " "
   while ((theResp != "X") and (theResp != "G")):
     theResp = utilities.getInputChar("Enter mode: e'X'plore or 'G'oal").upper()
@@ -230,6 +231,7 @@ if gv.writeCSVData:
   with open(gv.csvFileName, 'a') as csv_file:
     gv.csvWriter = csv.DictWriter(csv_file, fieldnames=gv.csvFieldNames)
 """
+sparkiStats.writeSpeech("Awaiting handshake")
 while True:
   print("Waiting for handshake from sparki")
   ser.write(b' ')  # Poke the port
@@ -279,6 +281,7 @@ while ((currTime < runTime) and (leaveLoop == False)):
       #print("shmoo {0}".format(shmoo))
       print(separator)
       if resetRobotPose:
+        sparkiStats.writeSpeech("Resetting Starting Pose")
         # On first instruction we need to tell robot what his pose is
         # The 'startOfMaze' has the pose of the sensor... the start always has that which
         # makes sense when u think about it... we need to get the robot pose for that
@@ -349,3 +352,6 @@ gv.logFile.close()
 
 if gv.writeCSVData > 1:
   gv.csvFileHandle.close()  
+
+if gv.writeSpeechFile > 1:
+  gv.speechFileHandle.close()

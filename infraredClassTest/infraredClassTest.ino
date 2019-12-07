@@ -518,9 +518,13 @@ void loop() {
       infraredObj->setInfraredBaseReadings();  // Just updates the base structure
       InfraredAttributes baseAttr = infraredObj->getBaseAttributes();
       sparki.beep(); 
+      Serial.println("Move to line");
       delay(3000);
-      infraredObj->adjustToLineCenter();
-      localizationObj->writeMsg2Serial("Done");
+      for (int i = 0; i < 3; i++) {
+        delay(1000);
+        infraredObj->adjustToLineCenter();
+        localizationObj->writeMsg2Serial("Done");
+      }
       Serial.println("Done");
       Serial.flush();
     #endif
