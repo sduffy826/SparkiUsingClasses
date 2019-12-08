@@ -11,20 +11,20 @@ import utilities
 import csv
 
 useBluetooth = False
-isIBMMacBook = False
+isIBMMacBook = True
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 
 if useBluetooth == False:
   if isIBMMacBook:
-    ser = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=57600)
+    ser = serial.Serial(port='/dev/cu.usbmodem14401', baudrate=57600)
   else:
     ser = serial.Serial(port='/dev/cu.usbmodem1411', baudrate=19200)
 
 readLines = 0
 runTime   = 3600         # Run for 60 minutes
 startTime = time.time()  # Returns time in seconds since epoch
-ser.write(b'Trigger')    # Push something on the serial port, this will activate it
+ser.write(b' ')    # Push something on the serial port, this will activate it
 
 gv.logFile = open(serialLogFile,"at") # Append and text file
 currTime   = time.time() - startTime
@@ -151,6 +151,7 @@ def isSparkiStartStopInstruction(theInstruction2Check):
         rtnDict["MODE"]    = dumArray[2] # This is the value that matches C_EXPLORE, C_GOAL....
         rtnDict["POSE"]    = { "x" : float(dumArray[5]), "y" : float(dumArray[7]), "<" : int(dumArray[9])}
         if dumArray[1] == "INSSTART":
+          print(" ") # Skip a line
           rtnDict["GOAL"] = False 
         else:
           rtnDict["GOAL"] = (dumArray[11] == "T")
@@ -162,7 +163,7 @@ def send2Sparki(theString):
   print("In send2Sparki, theLen: {0} string: {1}".format(theLen,theString))
   ser.write(chr(1).encode())  # this is the trigger for the start... this would never appear in data normally
   ser.write(chr(theLen).encode())
-  time.sleep(0.05)
+  #time.sleep(0.05)
   ser.write(theString.encode())
   time.sleep(0.1)
 
@@ -234,7 +235,7 @@ if gv.writeCSVData:
 sparkiStats.writeSpeech("Awaiting handshake")
 while True:
   print("Waiting for handshake from sparki")
-  ser.write(b' ')  # Poke the port
+  #ser.write(b' ')  # Poke the port
   stringFromSparki = ser.readline().decode('ascii').strip()
   if stringFromSparki == "IR,HNDSHK":
     ser.write(("$"+gv.originalMode).encode())
@@ -247,11 +248,15 @@ print("Handshake complete, told sparki that we're in {0} mode".format(gv.origina
 # Enter main loop now
 while ((currTime < runTime) and (leaveLoop == False)):
   try:
+    ignoreString     = False 
+    isPoseForMapping = False
     stringFromSparki = ser.readline().decode('ascii').strip()  
-    if ((len(stringFromSparki) > 3) and (stringFromSparki[0:3] == "IP,")):
+    if ((len(stringFromSparki) > 1) and (stringFromSparki[0:2] == "AP")):
+      sparkiStats.writeSpeech("Adjust Pose")
+      ignoreString = True
+    elif ((len(stringFromSparki) > 3) and (stringFromSparki[0:3] == "IP,")):
       isPoseForMapping = True
     else:
-      isPoseForMapping = False
       gv.logFile.write(stringFromSparki + "\n")
       suffixMsg = infoAboutString(stringFromSparki)
       print("Time: {0} SerialFromSparki: {1} info:{2}".format(currTime,stringFromSparki,suffixMsg))
@@ -271,11 +276,14 @@ while ((currTime < runTime) and (leaveLoop == False)):
       # error on the initial 'explore' path (means a restart)
       # The routine below also converts the sensorPose into the robot pose
       leaveLoop = handleInstruction(isStartIns,insMode,insPose,insGoal)
+    elif ignoreString:
+      pass
     elif isPoseForMapping:  # Just data for mapping the world, we write it to file for mapping
       writePose(stringFromSparki)
     elif stringFromSparki.upper() == "IR,DONE":
       print(asterisk)
       leaveLoop = True
+      continue
     elif stringFromSparki.upper() == "IR,INS":      # Want instructions on where to go
       #shmoo = ser.readline().decode('ascii').strip()  
       #print("shmoo {0}".format(shmoo))
@@ -316,7 +324,7 @@ while ((currTime < runTime) and (leaveLoop == False)):
     
     # If in 'explore' mode then we'll update the path value list (it's used to determine map), we
     # don't do that when in goal mode or 'goto' mode
-    if ((gv.currentMode == gv.C_EXPLORE) and (isPoseForMapping == False)):
+    if ((gv.currentMode == gv.C_EXPLORE) and (isPoseForMapping == False) and (ignoreString == False)):
       sparkiStats.setPathValueListFromString(stringFromSparki)
     if gv.DEBUGGING:
       print("len pathValueList: {0}".format(len(gv.pathValueList)))

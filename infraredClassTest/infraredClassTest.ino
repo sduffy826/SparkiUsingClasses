@@ -22,14 +22,14 @@ void setup() {
     delay(5);
     sparki.beep();
     delay(DELAY_AFTER_SERIAL_STARTUP);  
-    Serial.setTimeout(120000);  // Set serial timeout to 2 minutes 
+   // Serial.setTimeout(120000);  // Set serial timeout to 2 minutes 
    
     // Clear anything on the serial port
     if (Serial.available() > 0)  {
       while (Serial.available() > 0) {
-        char theChar = (char)Serial.read(); 
-        delay(DELAY_FOR_SERIAL_COMM);
+        Serial.read();         
       }
+      delay(DELAY_FOR_SERIAL_COMM);
     }
     sparki.beep();
   #endif
@@ -44,21 +44,23 @@ char handShakeWithComputer(LocalizationClass &locObj) {
   char lastChar = ' ';
   byte iteration = 0;
   while ((iteration < 20) && (rtnChar == ' ')) {
-    delay(500);
     if (Serial.available() > 0) {
       rtnChar = (char)Serial.read();
       if (lastChar != '$') {
         lastChar = rtnChar;
         rtnChar  = ' ';
       }
-      else {
-        while (Serial.available() > 0) {
-          Serial.read();  // Take other stuff off
-        }
-      }
     }
+    else 
+      delay(500);
     iteration++;
   }
+  delay(20);
+  // Clear port
+  while (Serial.available() > 0) {
+    Serial.read(); 
+  }
+    
   return rtnChar;      
 }
 
@@ -237,10 +239,12 @@ void loop() {
         // We need to recheck if we go a long distance :)
         if ((adjustedLine == true) && ( deltaMM > INFRARED_SPACE_RECHECK_LINE_MM)) 
           adjustedLine = false;
-        
+       
         //if ((adjustedLine == false) && ( ((int)(currDistanceTraveled*10) - startDistanceInMM) > (INFRARED_SPACE_BEFORE_LINE_CHECK*10))) {
         if ((adjustedLine == false) && (deltaMM > INFRARED_SPACE_BEFORE_LINE_CHECK_MM)) {
           if (DEBUGINFRARED) { Serial.println("*A*"); localizationObj->showPose(poseOfSensor); }
+          Serial.println(F("AP"));  // Ajust pose... tell python what we're doing
+          Serial.flush();
           
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
           movementsObj->stopMoving();                                       // Stop moving
@@ -334,8 +338,8 @@ void loop() {
           // If the wait for instructions flag is on then wait :)
           if (waitForInstructions) {            
             if (DEBUGINFRARED) Serial.println("in waitForInstructions");
-            // Stop so you can act on whatever instructions you're given
             
+            // Stop so you can act on whatever instructions you're given
             movementsObj->stopMoving();          
             if (DEBUGINFRARED) Serial.println("stop");
             sparki.beep();
@@ -350,7 +354,9 @@ void loop() {
             localizationObj->showPose(poseOfSensor,false);
             localizationObj->writeMsg2Serial(",Obst,",false);
             localizationObj->writeMsg2Serial((check4Obstacle ? "t" : "f"));
-
+            //Serial.println(" ");
+            //delay(10); 
+            
             /*
             Serial.print("IR,INSSTOP,");
             Serial.print(currentInstruction.instruction);
@@ -374,8 +380,7 @@ void loop() {
               // It will return a boolean true if we got instructions and false otherwise... that's
               // only being used here for console output
               waitForInstructions = infraredObj->waitForInstructions(queueOfInstructions);
-              if (waitForInstructions == false) localizationObj->writeMsg2Serial("NoINS!");
-
+              if (waitForInstructions == false) { localizationObj->writeMsg2Serial("NoINS!"); }
               
               if (DEBUGINFRARED) {
                 localizationObj->writeMsg2Serial("GotInstructions");
@@ -385,7 +390,7 @@ void loop() {
   
                 InfraredInstructions theIns;
                 Serial.print("qOfIns,size:");
-                Serial.print(queueOfInstructions.count());
+                Serial.println(queueOfInstructions.count());
                 if (queueOfInstructions.isEmpty() == false) {                  
                   theIns = queueOfInstructions.peek();
                   Serial.print(" topItem,ins:"); Serial.print(theIns.instruction);

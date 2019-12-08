@@ -795,7 +795,7 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
   }
 
   Serial.println(F("IR,INS"));  // Tells python you want instructions
-  
+  Serial.flush();
   //localizationObj->writeMsg2Serial("IR,INS");
 
   // Python will first tell us how many characters will follow we'll use that to allocate the array
@@ -840,6 +840,7 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
     inputBuffer[indexPos] = '\0';  // null terminate it
  
     // Take any junk off port
+    delay(2);
     while (Serial.available() > 0) {
       Serial.read();
       delay(2);

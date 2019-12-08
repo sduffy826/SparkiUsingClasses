@@ -16,7 +16,7 @@ if len(sys.argv) >= 2:
 else: 
   fileToSpeak = gv.speechFile
  
-seconds2Wait = 60
+seconds2Wait = 120
 lastRecord   = -1
 lastTime     = time.time()
  

@@ -391,6 +391,7 @@ def getState(arrayValues):
 # --------------------------------------------------------------------------------------------------
 # Little helper routine to see if the dictionary item passed in (with NODEID, <) 
 # already matches a path that has been visited before.
+# 12/08/2019 added logic to check if it's connected to another node on that angle 
 def hasPathBeenVisited(dictOfPath2Check):
   try:
     beenVisited = False
@@ -399,6 +400,12 @@ def hasPathBeenVisited(dictOfPath2Check):
         if utilities.areAnglesCloseEnough(dictOfPath2Check["<"],nodeAlreadyVisited["<"]):
           print("xxx {0} was visited {1}".format(str(dictOfPath2Check),str(nodeAlreadyVisited)))
           beenVisited = True
+    if (beenVisited == False): # See if it's already connected on the angle to another node
+      for nodeAlreadyVisited in gv.nodeConnectionList:
+        if dictOfPath2Check["NODEID"] == nodeAlreadyVisited["id1"]:
+          if utilities.areAnglesCloseEnough(dictOfPath2Check["<"],nodeAlreadyVisited["<"]):
+            print("xxxNode {0} was visited {1}".format(str(dictOfPath2Check),str(nodeAlreadyVisited)))
+            beenVisited = True
     return beenVisited
   except:
     print("Exception raised - hasPathBeenVisited")
@@ -734,6 +741,7 @@ def tellSparkiWhatToDo():
   try:
     writeHelper("In tellSparkiWhatToDo (TS)")
     if len(gv.pendingInstructions) > 0:  # If there are pending instructions send them
+      print("Sending pending instructions")
       return tellSparkiHelper("")
 
     movementType = gv.C_EXPLORE
