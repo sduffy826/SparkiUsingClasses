@@ -37,7 +37,17 @@
    another session... it reads the values from the csv file and will display a map of the sparki's movements.<br />
    Note: you can always run this program after the simulation but it's more fun to watch the map 
    changing in real time.</p>
-   
+<p>Python program <strong>speakTextFileContents.py</strong> is a cool little program that will
+   speak the contents of a file.  You can use this to get audio information about the sparki's
+   travels as it's running.  To use this you need to set<pre> 
+     writeSpeechFile  = 1</pre>
+   in the sharedVars.py file.  This will cause the information the sparki sends to 
+   <strong>serialProcessor.py</strong> to be written out to a file.   What you'll want to do
+   is have this program running in a different terminal session from the 'serialProcessor' program;
+   after you start serialProcessor you just execute this program.  Note you can pass the name
+   of the file to 'read', if you don't pass one it'll use the global variable defined
+   in sharedVars.py</p>  
+
 <p>To run the simulation do the following
   <ul> 
     <li>Assuming you're using VS code... if not don't worry about clearing terminal</li>
@@ -56,6 +66,8 @@
         but wait till after the sparki has started moving forward before you do (you don't have
         to attempt to read the csv file before it has been opened for writing by the
         serialProcessor code)</li>
+    <li>If you want audio feedback (and set variable in sharedVars.py), then launch the speech
+        program ('python3 speakTextFileContents.py') in it's own terminal session</li>      
   </ul>
 </p>
 
@@ -96,21 +108,21 @@ Move forward distance2Travel while not done
     loop back to the top
   If state changed then
     if at end of tape 
-      wait4Instruction &lt;- true 
-      check4Obstacle &lt;- true 
+      wait4Instruction <- true 
+      check4Obstacle <- true 
     else if just past an intersection (left or right) 
       if no line in front of intersection 
-        wait4Instruction &lt;- true 
+        wait4Instruction <- true 
     else if driftedLeft or driftedRight (n/a for duct tape... too wide)
       call routine (adjustForDrifting) (will move angle back torward center of tape)    
     
     if check4Obstacle 
       stop moving 
-      obstacle &lt;- (ultrasonicReading < MAX_GOAL_DISTANCE)
+      obstacle <- (ultrasonicReading < MAX_GOAL_DISTANCE)
     if mode is eXplore mode
       send following info down serial port: 'StateChange', IR attributes, SensorPose, obstacle
     if notMoving 
-      wait4Instructions &lt;- true 
+      wait4Instructions <- true 
     if wait4Instructions
       stop moving 
       send following down serial port 'IR,INSTOP', instruction, poseOfSensor, obstacle
@@ -118,7 +130,7 @@ Move forward distance2Travel while not done
         wait for python to give instructions and put them in 'queueOfInstructions'
       if queueOfInstructions is empty (meaning didn't get any from above)
         tell python program we're DONE 
-        done &lt;- true
+        done <- true
       else
         currentInstruction = queueOfInstructions.pop()  // This has instruction (Move,Xplore...) and pose 
         switch (currentInstruction.instruction) 

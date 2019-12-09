@@ -808,7 +808,7 @@ bool InfraredClass::waitForInstructions(QueueArray<InfraredInstructions> &queueO
   if (bytes2Read == 1)
     bytes2Read = readFromSerialPort();
   
-  if (DEBUGINFRARED == false) { Serial.print(F("bytes2Read:")); Serial.println(bytes2Read); }
+  if (DEBUGINFRARED) { Serial.print(F("bytes2Read:")); Serial.println(bytes2Read); }
   
   char *str_data = NULL;
   if (bytes2Read > 0) {

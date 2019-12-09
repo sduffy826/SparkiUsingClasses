@@ -15,6 +15,7 @@ DEBUGGING    = False
 TAPEWIDTH    = 4.7 # 2.5 # 4.7
 MINTAPEWIDTH = TAPEWIDTH - 0.7
 MAXTAPEWIDTH = TAPEWIDTH + 1.1
+TAPEIGNOREWIDTH = 1.0  # If see intersection less than this tape width it'll be ignored
 
 SERIALTERMINATOR = "|"
 

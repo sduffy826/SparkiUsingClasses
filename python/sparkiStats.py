@@ -285,7 +285,7 @@ def getNextPath2Visit():
     pidx = len(gv.paths2Visit) - 1
     while pidx >= 0:      
       path2Check = gv.paths2Visit[pidx].copy()
-      path2Check["<"] = utilities.getAngleAfterAdjustment(path2Check["<"],180)
+      #path2Check["<"] = utilities.getAngleAfterAdjustment(path2Check["<"],180)
       if hasPathBeenVisited(path2Check):
         print("Visited {0} from 180', we removed it".format(gv.paths2Visit[pidx]))
         gv.paths2Visit.pop(pidx)  # Remove it from the list we visited from other direction
@@ -542,7 +542,10 @@ def processValueList():
           widthBetweenStartAndEnd = getDistanceBetweenNodes(leftDictItem,tempDict) 
           if widthBetweenStartAndEnd < gv.MINTAPEWIDTH or widthBetweenStartAndEnd > gv.MAXTAPEWIDTH:
             # Invalid tape width
-            processValueErrorHelper("slp",leftDictItem,gv.errorList,
+            if widthBetweenStartAndEnd < gv.TAPEIGNOREWIDTH:
+              print("** Saw tape noise, width {0}, was ignored".format(widthBetweenStartAndEnd))
+            else:
+              processValueErrorHelper("slp",leftDictItem,gv.errorList,
                                     "Invalid intersection width: {0}".format(widthBetweenStartAndEnd))
           else:
             # Records good, record it
@@ -571,7 +574,10 @@ def processValueList():
           widthBetweenStartAndEnd = getDistanceBetweenNodes(rightDictItem,tempDict) 
           if widthBetweenStartAndEnd < gv.MINTAPEWIDTH or widthBetweenStartAndEnd > gv.MAXTAPEWIDTH:
             # Invalid tape width
-            processValueErrorHelper("srp",rightDictItem,gv.errorList,
+            if widthBetweenStartAndEnd < gv.TAPEIGNOREWIDTH:
+              print("** Saw tape noise, width {0}, was ignored".format(widthBetweenStartAndEnd))
+            else:
+              processValueErrorHelper("srp",rightDictItem,gv.errorList,
                                     "Invalid intersection width: {0}".format(widthBetweenStartAndEnd))
           else:
             # Records good, record it

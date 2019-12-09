@@ -37,7 +37,7 @@ void setup() {
 }
 
 char handShakeWithComputer(LocalizationClass &locObj) {
-  LocalizationClass *locPtr = &locObj;
+  //LocalizationClass *locPtr = &locObj;
   //locPtr->writeMsg2Serial("IR,HNDSHK");
   Serial.println(F("IR,HNDSHK"));
   char rtnChar = ' ';
@@ -64,6 +64,7 @@ char handShakeWithComputer(LocalizationClass &locObj) {
   return rtnChar;      
 }
 
+// Supposed to calculate the free memory but I don't trust this :)
 int freeRam () {
   extern int __heap_start, *__brkval; 
   int v; 
@@ -101,22 +102,6 @@ void loop() {
     // We don't need to calculate the world... we'll update it as we move
     // thru the world
 
-    #define TESTOBSTACLE false
-    #if TESTOBSTACLE
-      for (int i = 0; i < 10; i++) {
-        Serial.print(F("getFreeSpaceInFrontExcludingGripper(0)"));
-        Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
-        delay(200);
-        Serial.print(F("getDistanceFromCenterOfRobotToObstacle(0)"));
-        Serial.println(ultrasonicObj->getDistanceFromCenterOfRobotToObstacle(0));
-        delay(200);
-        Serial.print(F("getFreeSpaceInFrontOfGripper(0)"));
-        Serial.println(ultrasonicObj->getFreeSpaceInFrontOfGripper(0));
-        delay(200);
-      }
-    #endif
-
-
     // ----------------------------------------------------------------------------------------
     // Preliminary navigation work - follow tape
     // ----------------------------------------------------------------------------------------
@@ -136,7 +121,6 @@ void loop() {
       int baseEdgeLeft = infraredObj->getBaseAttributes().edgeLeft;  // Save edge reading, we'll use this to check for intersections
       if (DEBUGINFRARED) infraredObj->showInfraredAttributes("Base",infraredObj->getBaseAttributes(),poseOfSensor,false);
       
-      //int numStateChanges = 0;
       bool done = false;
       #if DEBUGINFRARED
         unsigned long baseTimer = millis();
@@ -144,7 +128,6 @@ void loop() {
       #endif
 
       bool waitForInstructions = false;  
-      //bool setLastAttributes = true;
       bool check4Obstacle      = false;
       bool isMoving            = false;
       bool adjustedLine        = false;
@@ -157,7 +140,6 @@ void loop() {
       float distanceToTravel = INFRARED_MAX_DISTANCE_TO_TRAVEL;  // Just some long distance for the first time  
 
       currentInstruction.instruction = handShakeWithComputer(localizationObject);  // The python program will tell us the mode we're in
-      //currentInstruction.instruction = handShakeWithComputer();  // The python program will tell us the mode we're in
       if (currentInstruction.instruction == ' ') {
         distanceToTravel = 0.0;
         done             = true;
@@ -216,7 +198,7 @@ void loop() {
         }
 
         // If out of memory then you can disable the line adjusting by turning flag on below
-        // The logic for adjusting to tape is: if and edge sensor is one or we've traveled a given distance check
+        // The logic for adjusting to tape is: if an edge sensor is one or we've traveled a given distance check
         //   that we're on the center of the tape... note this doesn't work if intersections are too close to eachother..
         //   if memory wasn't a concern I'd check that we traveled a minimum distance before checking the edge but 
         //   there isn't enuf memory to add that now... if find a way to save more memory then add that here
@@ -235,6 +217,7 @@ void loop() {
         }
         */
 
+        // We'll adjust if we've traveled the 'recheck' amount or we've traveled min distance after a turn etc..
         int deltaMM = (int)(currDistanceTraveled*10) - startDistanceInMM;
         // We need to recheck if we go a long distance :)
         if ((adjustedLine == true) && ( deltaMM > INFRARED_SPACE_RECHECK_LINE_MM)) 
@@ -275,7 +258,7 @@ void loop() {
           }
           else if (currAttributes.startLeftPath || currAttributes.startRightPath) {  // Start of path that's to left or right
             startDistanceInMM = (int)(currDistanceTraveled*10);
-            // *********** CHANGE SO THAT IT ENSURES IT'S AT INTERSECTION AND NOT DRIFTED INTO LINE.... THINKING
+            // *********** MAY WANT TO CHANGE SO THAT IT ENSURES IT'S AT INTERSECTION AND NOT DRIFTED INTO LINE.... THINKING
             // YOU COULD BACKUP A LITTLE, TURN LEFT TILL U SEE LINE KEEP TRACK OF ANGLE, DO THE SAME THING TURNING RIGHT
             // IF THE ANGLES ARE DIFFERENT THEN YOU KNOW YOU'RE NOT ON CENTER...
           }
@@ -318,11 +301,11 @@ void loop() {
               Serial.print("spaceInFrontOfGripper: ");
               Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
             }
-            float theNum = ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0);
-            Serial.print(F("Obst:"));
-            Serial.println(theNum);
-            if (theNum > INFRARED_MAX_GOAL_DISTANCE) check4Obstacle = false;
-            //check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
+            //float theNum = ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0);
+            //Serial.print(F("Obst:"));
+            //Serial.println(theNum);
+            //if (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) > INFRARED_MAX_GOAL_DISTANCE) check4Obstacle = false;
+            check4Obstacle = (ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0) < INFRARED_MAX_GOAL_DISTANCE);
           }
             
           // If running in explor mode then send info to python program, we write out the state change, it's pose and the flag to say we found our goal
@@ -354,8 +337,6 @@ void loop() {
             localizationObj->showPose(poseOfSensor,false);
             localizationObj->writeMsg2Serial(",Obst,",false);
             localizationObj->writeMsg2Serial((check4Obstacle ? "t" : "f"));
-            //Serial.println(" ");
-            //delay(10); 
             
             /*
             Serial.print("IR,INSSTOP,");
@@ -463,21 +444,30 @@ void loop() {
               }
             }
           }
-
-/*          if (setLastAttributes) {
-            // Move the currentAttributes into lastAttributes
-            infraredObj->assignSourceAttributesToTarget(currAttributes, lastAttributes);
-            //numStateChanges++;
-            //done = (numStateChanges > 5);
-          }
-          else {
-            setLastAttributes = true;
-          } */
         }
       }
       movementsObj->stopMoving();
       
       localizationObj->writeMsg2Serial("IR,Done");
+    #endif
+
+
+    // ----------------------------------------------------------------------------------------
+    // Show obstacle distances    
+    // ----------------------------------------------------------------------------------------
+    #define TESTOBSTACLE false
+    #if TESTOBSTACLE
+      for (int i = 0; i < 10; i++) {
+        Serial.print(F("getFreeSpaceInFrontExcludingGripper(0)"));
+        Serial.println(ultrasonicObj->getFreeSpaceInFrontExcludingGripper(0));
+        delay(200);
+        Serial.print(F("getDistanceFromCenterOfRobotToObstacle(0)"));
+        Serial.println(ultrasonicObj->getDistanceFromCenterOfRobotToObstacle(0));
+        delay(200);
+        Serial.print(F("getFreeSpaceInFrontOfGripper(0)"));
+        Serial.println(ultrasonicObj->getFreeSpaceInFrontOfGripper(0));
+        delay(200);
+      }
     #endif
 
 
@@ -513,8 +503,7 @@ void loop() {
           continue;  // Go back to the start of the loop
         }
         delay(50);
-      }
-      
+      } 
     #endif
 
     #define TESTCENTERONLINE false

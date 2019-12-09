@@ -21,6 +21,8 @@ lastRecord   = -1
 lastTime     = time.time()
  
 engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+engine.setProperty('voice','com.apple.speech.synthesis.voice.samantha')
 def speakIt(text2Speak):
  engine.say(text2Speak)
  engine.runAndWait()
@@ -35,8 +37,8 @@ while (time.time() - lastTime) < seconds2Wait:
          speakIt(lineOfText)
          lastRecord = lineNo
          lastTime   = time.time() # Reset the counter
-       else:
-         time.sleep(0.25)
+         #else:
+         #  time.sleep(0.5)
  except:
    time.sleep(0.5)
 

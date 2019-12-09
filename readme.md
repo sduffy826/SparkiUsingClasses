@@ -6,7 +6,7 @@
 
 ## NOTES
 
-- Here's a brief overview of includes you should be interested in.  I encapsulated the classes to expose public methods for dealing with a given area... i.e. any code that wants to find out the distance an obstacle is using the ultrasosnic sensor will do that by calling methods within the ulltrasonicClass.  The associated .cpp's have implementation of those methods.
+- Here's a brief overview of includes you should be interested in.  I encapsulated the classes to expose public methods for dealing with a given area... i.e. any code that wants to find out the distance an obstacle is using the ultrasosnic sensor will do that by calling methods within the ulltrasonicClass.  The associated .cpp's have implementation of those methods.  **Disclaimer** there's some code that should be refactored into a common class etc... but I'm very close to out of memory, and moving things around at this point may compromise the projects, so am leaving it as is for now... I may change after demos are complete.
   - **sparkiClassCommon.h** has common definitions and global variable definitions; you should be able to control a lot of functionality by just tweaking the 'defines' listed here
   - **determineWorldClass.h** code for managing the robots world, eventually will have map with all the attributes in it
   - **infraredClass.h** code for working with the infrared sensors; mainly following tape/lines; has routines for centering on tape, determining state changes when following lines (i.e. intersections, drifting, ...)
@@ -30,6 +30,7 @@
 - A light logic test, to find light may want to use shadow logic... i.e. if light is low then the ultrasonic sensor will cause a shadow on light sensors... maybe moving the sensor at different angles can help identify light source
 - Revisit using accelerometer to detect collisions... at first I couldn't get working but try again
 - Recheck data types (i.e us struct and define var as int : &lt;bitSpec&gt;;)
+- Review/refactor code as needed (i.e. have common class for serial communications etc...)
 
 ## Code for testing/calibration (most of this is in the ../sparki directory, and the sparki repo)
 - **movementTest**: This has code used to test movements; I used this to calculate how fast sparki is (2.78cm/sec); to do this you can use the moveForward function, it'll show the elapsed time to move that distance.  I found that sparki was off; it actually moved further than requested.  See the sparkiMovementAnalysis spreadsheet in the sparki_python repo for calculations I did.
@@ -41,7 +42,7 @@
     - You need to have enough distance to do this, so keep track of how long the wall has been next to you... when you see a state change in distance you log where you are... you continue to move forward till it hits the next increment; you now have a distance traveled in x direction, and delta in the y direction; you can calculate the angle that you are offset by.... you then backup till you're at desired distance to the wall (note may want to go little more to account for +- of the sensor), you then stop and turn using the angle you just calculated.
   
 ## External code
-  - Due to memory constraints I developed python code for project 3 (infrared sensor mapping/goal searching).  The idea is that the sparki sends state information over the serial line and the python program reads/processes it.  When the sparki gets to a node (endpoint/intersection) it asks the python program for the next set of instructions; like GoTo, eXplore, check Goal etc...  See **python code** below for more, I just wanted to mention it here so you know it exists as you read thru the sparki code.
+  - Due to memory constraints I developed python code for project 5 (infrared sensor mapping/goal searching).  The idea is that the sparki sends state information over the serial line and the python program reads/processes it.  When the sparki gets to a node (endpoint/intersection) it asks the python program for the next set of instructions; like GoTo, eXplore, check Goal etc...  See **python code** below for more, I just wanted to mention it here so you know it exists as you read thru the sparki code.
 
 
 ## LEGEND Serial communications
@@ -498,12 +499,14 @@ Debugging/output methods
  
 ---
 ## Python Code
-  - Code related to infrared sensor: Due to memory limitations the mapping/searching functions required couldn't be implemented on the sparki.  The sparki communicates over the serial line to a set of python programs that handle the funcitonality.  Basically what you need to do is launch the sparki program, after it loads you then launch the python program; it connects to the sparki and the two will communicate till the goal is reached.  A little more on the code
+  - Code related to infrared sensor: Due to memory limitations the mapping/searching functions required couldn't be implemented on the sparki.  The sparki communicates over the serial line to a set of python programs that handle the funcitonality.  Basically what you need to do is launch the sparki program, after it loads you then launch the python program; it connects to the sparki and the two will communicate till the goal is reached.  **Note** check out the readme.md file in the infraredClassTest folder, it has detail on the programs(s).  Here's a little overview here:
     - **serialProcessor.py** This is the program to launch; if you've already mapped the world then the program will ask you how you want to run, enter 'X' if you want to eXplore and re-map the world, or 'G' if you want to search for the Goal (i.e. and endpoint with a block in front of it).
     - **sparkiStats.py** This has a lot of the functions/utilities supporting mapping/goal searching.  There are routines for maintaining nodes, potential goals, paths visited etc... 
     - **utilities.py** Miscellaneous utility functions (i.e. calculating distance between points, file archiving, ...)
     - **sharedVars.py** This has the global variables/constants.  Look this over, this is where you can alter how the program runs.  Note: when a 'map' has been determined then the variables needed to maintain the map information is written to a 'pickle' file... the variables for that are identified in this file.
     - **dijkstrasClass.py** This code handles the searching the graph.  I looked into A* also but dijkstras is basically A* without the heuristic to determine cost to endpoint.  A* is faster but given that speed on our graph wasn't really a concern and the fact that A* requires another element (end point cost) associated with the node I chose dijkstras algorithm (the memory concern was spawned because I first wrote this for the sparki... moved it to python when sparki had other memory issues)
+    - **speakTextFileContents.py** Program to talk to you about what the sparki's doing while it's exploring/searching map.  See readmin in infraredClassTest for more.
+    - **plotXYRealtimeAnimation.py** Program to plot a map of what the sparki's doing... it updates in 'real time'.  See readmin in infraredClassTest for more.
     
   - Miscellaneous Programs
     - **readSerialPort.py** Test program for serial communications
