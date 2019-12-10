@@ -11,7 +11,7 @@ import utilities
 import csv
 
 useBluetooth = False
-isIBMMacBook = True
+isIBMMacBook = False
 
 serialLogFile = "serialLog." + datetime.now().isoformat(timespec='seconds').replace("-","").replace(":","") + ".csv"
 

@@ -56,9 +56,10 @@
 ```
  'IR,StateChg,x,10.76,y,0.00,<,0,el,980,ll,956,lc,910,lr,970,er,971,ell,0,lll,0,lcl,0,lrl,0,erl,0,sdl,0,sdr,0,sol,0,sae,1,slp,0,srp,0,sel,0,ser,0,sas,0,sgl,1'
 ```
-There's a description of the elements below (the value after IR is a description 'StateChg' meaning a state changed was detected).  Note: internally the sparki compares the last reading to the current one in order to detect state changes... and worth mentioning the line detection logic compares the current readings to a base reading taken when the program starts.
+There is a description of the elements below (the value after IR is a description 'StateChg' meaning a state changed was detected).  Note: internally the sparki compares the last reading to the current one in order to detect state changes... and worth mentioning the line detection logic compares the current readings to a base reading taken when the program starts.
+
 | Tag | Value |
-| -------- | -------------- |
+| --- | --- |
 | **Pose of Sensor (not robot)** |
 | x | x-Coordinate |
 | y | y-Coordinate |
