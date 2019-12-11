@@ -11,7 +11,7 @@
 
 #define DEBUGINFRARED false
 
-#define WRITEMAPDATA true
+#define WRITEMAPDATA false
 
 #define INFRARED_LINE_THRESHOLD .05            // .10 Means 10%, so if 10% diff from base it'll register as a line
 #define INFRARED_MIN_READING 100               // Had to make it very small, on the gaffer tape the values are < 100

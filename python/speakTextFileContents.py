@@ -37,8 +37,8 @@ while (time.time() - lastTime) < seconds2Wait:
          speakIt(lineOfText)
          lastRecord = lineNo
          lastTime   = time.time() # Reset the counter
-         #else:
-         #  time.sleep(0.5)
+       else:
+         time.sleep(0.25)
  except:
    time.sleep(0.5)
 
