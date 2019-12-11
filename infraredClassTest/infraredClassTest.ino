@@ -230,8 +230,10 @@ void loop() {
           Serial.flush();
           
           distanceToTravel -= movementsObj->getDistanceTraveledSoFar();     // Get remaining distance for when we start moving
-          movementsObj->stopMoving();                                       // Stop moving
+          movementsObj->stopMoving();         // Stop moving
           adjustedLine = infraredObj->adjustToTape();
+          if (adjustedLine)                                                 // Made adjustment reset start distance counter
+            startDistanceInMM = (int)(currDistanceTraveled*10);
           continue;  // Go back to the start of the loop, this will make us start moving again
         }
         
@@ -257,13 +259,15 @@ void loop() {
             check4Obstacle      = true;
           }
           else if (currAttributes.startLeftPath || currAttributes.startRightPath) {  // Start of path that's to left or right
-            startDistanceInMM = (int)(currDistanceTraveled*10);
+            if (adjustedLine == false)   // If haven't adjusted to line yet then reset counter 
+              startDistanceInMM = (int)(currDistanceTraveled*10);
             // *********** MAY WANT TO CHANGE SO THAT IT ENSURES IT'S AT INTERSECTION AND NOT DRIFTED INTO LINE.... THINKING
             // YOU COULD BACKUP A LITTLE, TURN LEFT TILL U SEE LINE KEEP TRACK OF ANGLE, DO THE SAME THING TURNING RIGHT
             // IF THE ANGLES ARE DIFFERENT THEN YOU KNOW YOU'RE NOT ON CENTER...
           }
           else if (currAttributes.endLeftPath || currAttributes.endRightPath ) { 
-            startDistanceInMM = (int)(currDistanceTraveled*10);
+            if (adjustedLine == false) 
+              startDistanceInMM = (int)(currDistanceTraveled*10);
             if (currAttributes.onLine == false) {
               // We're past the end of the intersection and there's no path in front of us
               waitForInstructions = true;
