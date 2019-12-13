@@ -43,6 +43,9 @@ void loop() {
     ultrasonicPtr = &ultrasonicObj;
 
     if (true == true) {
+      Serial.println("Start program");
+      delay(5000);
+      
       ultrasonicPtr->positionServo(0);
       Serial.println("getDistanceFromServoAtAngle");
       ultrasonicPtr->showUltrasonic(ultrasonicPtr->getServoAngle(),ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle()));
