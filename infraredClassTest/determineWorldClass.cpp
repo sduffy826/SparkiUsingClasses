@@ -76,7 +76,7 @@ WorldCoord DetermineWorldClass::getWorldCoordinates() {
 // where the reading took place and the distance to the obstacle
 
 // !!!!!!!!!!!!!!!!!!! EXPAND THIS TO SEND DATA OVER SERIAL PORT SO WE KNOW LOCATION OF OBSTACLES
-void recordObstacleFromPoseToLength(const Pose &servoPivotPose, const float &distanceToObstacle) {
+void DetermineWorldClass::recordObstacleFromPoseToLength(const Pose &servoPivotPose, const float &distanceToObstacle) {
   #if USE_LCD
     sparki.clearLCD();
     Serial.println("In World got obstacle");

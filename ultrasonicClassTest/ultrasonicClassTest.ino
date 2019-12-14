@@ -42,7 +42,26 @@ void loop() {
     UltrasonicClass ultrasonicObj;
     ultrasonicPtr = &ultrasonicObj;
 
+    LocalizationClass localizationObj;
+    localizationObj.setPose(1.0, 2.0, 3.0);
+       
+    DetermineWorldClass determineWorldObj(ultrasonicObj, localizationObj);
+   
+    ultrasonicPtr->setDetermineWorldObj(determineWorldObj);
+    ultrasonicPtr->setLocalizationObj(localizationObj);
+
     if (true == true) {
+      for (int idx = -85; idx < 85; idx++) {
+      // for (int idx = 20; idx > -20; idx--) {
+        ultrasonicPtr->positionServo(idx);
+        delay(50);
+        ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle());  
+      }
+      ultrasonicPtr->positionServo(0);
+      
+    }
+
+    if (true == false) {
       Serial.println("Start program");
       delay(5000);
       
@@ -119,7 +138,7 @@ void loop() {
       ultrasonicObj.positionServo(0);
      }
 
-
+     #define SHOWULTRADETADDR false
      #if SHOWULTRADETADDR  // This is for showing address and how to update a class with a reference to another object
        // Here it should be null
        ultrasonicPtr->showDetermineWorldAddr();

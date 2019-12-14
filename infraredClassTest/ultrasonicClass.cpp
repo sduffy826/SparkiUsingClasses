@@ -41,7 +41,17 @@ float UltrasonicClass::getDistanceFromServoAtAngle(const int &angleOfServo) {
     sumPings += sparki.ping();
   }
   sumPings = (sumPings / (float)ULTRASONIC_SAMPLE_SIZE );
-  return sumPings < 0 ? ULTRASONIC_MAX_RANGE : (sumPings > ULTRASONIC_MAX_RANGE ? ULTRASONIC_MAX_RANGE : sumPings);
+  if (sumPings < 0) {
+    return ULTRASONIC_MAX_RANGE;
+  }
+  else
+    if (sumPings > ULTRASONIC_MAX_RANGE) {
+      return ULTRASONIC_MAX_RANGE;
+    }
+    else {
+      sendObstacleReadingToDetermineWorld(sumPings); // Send reading to the world
+      return sumPings;
+    }
 }
 
 
@@ -78,7 +88,9 @@ float UltrasonicClass::getSensorTolerance() {
 
 // Send the reading from the servo to the determine world object
 void UltrasonicClass::sendObstacleReadingToDetermineWorld(const float &distanceFromServo) {
+  Serial.println("foo");
   if (SEND_ULTRASONIC_READINGS_TO_WORLD && (localizationObj != NULL) && (determineWorldObj != NULL)) {
+    Serial.println("Bar");
     // Servo axis pose is at ULTRASONIC_SERVO_PIVOT_OFFSET ahead of the center of the robot, so call methods to calculate it.
     Pose servoPivotPose = localizationObj->calculatePose(localizationObj->getPose(), localizationObj->getCurrentAngle(), ULTRASONIC_SERVO_PIVOT_OFFSET);
 
