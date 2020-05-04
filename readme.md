@@ -166,7 +166,7 @@ I listed the classes alphabetically except for the first one... that has the con
 ## InfraredClass
 **Code/logic related to the five infrared sensors underneath sparki** It also has routines to manage navigation using these sensors (i.e. following tape).
 ```
-  // This struction has all the attributes related to infrared sensors; the max readings are
+  // This structure has all the attributes related to infrared sensors; the max readings are
   // 1000 so we represent that in 10bits; the *_line variables are flags to signify if we 
   // detect a line for that sensor.  Below that are the flags for state... they are used
   // to let the sparki take particular action when a particular state is raised.
