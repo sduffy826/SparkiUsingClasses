@@ -1,3 +1,6 @@
+## Info/News
+- 12/15/2019  I am done with the assignments; there's more that could be done with this (documentation/refinement/cleanup), but until I build an arduino bot this code will go dormant (I don't own a sparki).  
+
 ## General
 - The work here was performed from various assignments with the arcbotics 'sparki' robot (and more assignments are coming).  This is a fluid repository and I'm making changes very frequently (at least for the next 6 weeks).  When I get closer to the finish line I'll make sure that the documentation/code is 'cleaner' and more accurate, but you should be able to get a feel for where I am and what I'm doing.  Some of the info toward the beginning of this 'readme' may not be as interesting as the classes/methods; if you want, read the fist bullet under 'NOTES" and then jump down to the Code/Class Definition section.
 
@@ -163,7 +166,7 @@ I listed the classes alphabetically except for the first one... that has the con
 ## InfraredClass
 **Code/logic related to the five infrared sensors underneath sparki** It also has routines to manage navigation using these sensors (i.e. following tape).
 ```
-  // This struction has all the attributes related to infrared sensors; the max readings are
+  // This structure has all the attributes related to infrared sensors; the max readings are
   // 1000 so we represent that in 10bits; the *_line variables are flags to signify if we 
   // detect a line for that sensor.  Below that are the flags for state... they are used
   // to let the sparki take particular action when a particular state is raised.
@@ -421,7 +424,8 @@ Debugging/output methods
 
 
 ## MovementsClass
-**Provides access to movement of the robot**  This handles forward, backard, turning; it also has methods for following wall, adjust to wall etc... if it has to do with changing the robots pose it should be in here :)  This class also has a reference to the other objects (i.e. Localization) so it keeps all the objects in sync.
+**Provides access to movement of the robot**  This handles forward, backard, turning; it also has methods for following wall, adjust to wall etc... if it has to do with changing the robots pose it should be in here :)  This class also has a reference to the other objects (i.e. Localization) so it keeps all the objects in sync.  **NOTE**: for fun I did some 'world mapping' testing... take a look at the .ino file, there's a block that shows how 'mapping' using the ultrasonic sensor could work; there's associated python code to read sparki values and display the map graphically... it's pretty cool
+
 - Constructor
   - **MovementsClass(UltrasonicClass &ultrasonicObject, LocalizationClass &localizationObject, DetermineWorldClass &determineWorldObject)** - Constructor, pass in object references the objects needed within the movements class.
 

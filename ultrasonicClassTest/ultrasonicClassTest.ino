@@ -50,15 +50,14 @@ void loop() {
     ultrasonicPtr->setDetermineWorldObj(determineWorldObj);
     ultrasonicPtr->setLocalizationObj(localizationObj);
 
-    if (true == true) {
+    if (true == false) {
       for (int idx = -85; idx < 85; idx++) {
       // for (int idx = 20; idx > -20; idx--) {
         ultrasonicPtr->positionServo(idx);
         delay(50);
         ultrasonicPtr->getDistanceFromServoAtAngle(ultrasonicPtr->getServoAngle());  
       }
-      ultrasonicPtr->positionServo(0);
-      
+      ultrasonicPtr->positionServo(0);      
     }
 
     if (true == false) {

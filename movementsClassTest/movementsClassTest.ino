@@ -57,7 +57,37 @@ void loop() {
       Serial.println(theDistance);
     }    
 
+    // Random exploration... this will randomly move about the world and take readings.
+    // The intent is to have the python program 'readSerialObstacles.py' running while this
+    // is, it'll take these readings and write them to a file.  You can then use the
+    // python program 'MapWorldTester.py' to graphically display it (it uses the MapWorldClass.py 
+    // program).
+    // fyi, this is really for demo, and the python code should be in /seanduff/VS_Code/sparki
     if (true == true) {
+      localizationObj.setPose(0.0,0.0,0);
+
+      #define MINSERVO -80
+      #define MAXSERVO 80
+      int currServoAngle = 0;
+      int increment = 10;
+      float distance2Obstacle = ultrasonicObj.getDistanceFromServoAtAngle(currServoAngle);
+      for (int i = 0; i < 20; i++) {
+        int angle2Turn2 = random(0,360);  // gives values 0->359
+        movementObj.turnToAngle(angle2Turn2);
+        distance2Obstacle = ultrasonicObj.getDistanceFromServoAtAngle(currServoAngle);
+        while (distance2Obstacle > 25.0) {
+          movementObj.moveForward(999.0,0,false);
+          increment = (currServoAngle == MINSERVO ? 10 : (currServoAngle == MAXSERVO ? -10 : increment));
+          currServoAngle += increment;
+          distance2Obstacle = ultrasonicObj.getDistanceFromServoAtAngle(currServoAngle);
+          Serial.print(currServoAngle);
+          Serial.print(",");
+          Serial.println(distance2Obstacle);
+        }
+      }
+    }
+    
+    if (true == false) {
       // Test moving, we save original spot, move some distance away and then return to it
       movementObj.initMovements();
       localizationObj.setPose(13.2,7.6,30.0);
@@ -84,6 +114,7 @@ void loop() {
       localizationObj.showLocation();
       
     }
+    
     if (true == false) {
       // routine below has the logic to calculate our rectangular world coordinates
       movementObj.initMovements();
