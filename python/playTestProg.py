@@ -23,5 +23,8 @@ chicken = { "abc" : "letters",
             "123" : "numbers",
             "boo" : 4 }
 print(len(chicken))
+print(chicken["123"])
+print(chicken)
+chicken["cole"] = "Cool dog"
 print(chicken)
 
